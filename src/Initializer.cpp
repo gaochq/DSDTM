@@ -7,17 +7,23 @@
 namespace DSDTM
 {
 
-    Initializer::Initializer()
+    Initializer::Initializer(Frame &frame):
+            mReferFrame(frame)
     {
 
     }
 
-    bool Initializer::Init_RGBDCam(Frame *frame)
+    Initializer::~Initializer()
+    {
+
+    }
+
+    bool Initializer::Init_RGBDCam(Frame &frame)
     {
         return true;
     }
 
-    bool Initializer::Init_MonocularCam(Frame *lastFrame, Frame *currentFrame)
+    bool Initializer::Init_MonocularCam(Frame &lastFrame, Frame &currentFrame)
     {
         return true;
     }

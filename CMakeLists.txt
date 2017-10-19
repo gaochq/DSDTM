@@ -36,7 +36,8 @@ add_library(${PROJECT_NAME} SHARED
 	src/Config.cpp
 	src/Camera.cpp
 	src/Tracking.cpp
-	src/Initializer.cpp)
+	src/Initializer.cpp
+        src/Rarsac_base.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}

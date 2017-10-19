@@ -3,10 +3,15 @@
 //
 
 #include "Frame.h"
+#include "Rarsac_base.h"
 
 
 namespace DSDTM
 {
+    Frame::Frame()
+    {
+
+    }
     Frame::Frame(Frame &frame):
             mCamera(frame.mCamera), mId(frame.mId), mdCloTimestamp(frame.mdCloTimestamp),
             mdDepTimestamp(frame.mdDepTimestamp), mT_c2w(frame.mT_c2w), mColorImg(frame.mColorImg),
@@ -49,5 +54,41 @@ namespace DSDTM
         {
             cv::pyrDown(Img_Pyr[i-1], Img_Pyr[i]);
         }
+    }
+
+    void Frame::GetKeypoints(std::vector<cv::Point2f> &KeyPoints)
+    {
+        for (int i = 0; i < mvFeatures.size(); ++i)
+        {
+            KeyPoints.push_back(cv::Point2f(mvFeatures[i].mpx[0],
+                                            mvFeatures[i].mpx[0]));
+        }
+    }
+
+    void Frame::Set_Gridproba(std::vector<cv::Point2f> _pts, std::vector<bool> _status)
+    {
+        int a[100] = {0};
+        int b[100] = {0};
+
+        for (int i = 0; i < _pts.size(); ++i)
+        {
+            int Index = Rarsac_base::Get_GridIndex(_pts[i]);
+            a[Index]++;
+            if(_status[i])
+                b[Index]++;
+        }
+
+        for (int j = 0; j < 100; ++j)
+        {
+            if(a[j]!=0)
+                mvGrid_probability[j] = std::max(0.2, static_cast<float>(b[j])/a[j]);
+            else
+                mvGrid_probability[j] = 0.2;
+        }
+    }
+
+    void Frame::Reset_Gridproba()
+    {
+        mvGrid_probability.resize(100, 0.0);
     }
 }

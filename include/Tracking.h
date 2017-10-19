@@ -6,14 +6,15 @@
 #define DSDTM_TRACKING_H
 
 #include "Feature_detection.h"
+#include "Initializer.h"
+#include "Frame.h"
 
 namespace DSDTM
 {
 
 class Camera;
-class Frame;
 class Feature_detector;
-class Initializer;
+class Frame;
 
 class Tracking
 {
@@ -27,8 +28,8 @@ private:
         Recoliaze   = 4
     };
 
-private:
-    Tracking();
+public:
+    Tracking(Camera *_cam);
     ~Tracking();
 
     //! Tracking on the rgbd camera
@@ -37,20 +38,26 @@ private:
     //! Tracking on the
     void Track_Monocular(cv::Mat &Image, double TimeStamp);
 
-    //! The main tracking function
-    Tracking_State Track();
-
-
 private:
+    //! The main tracking function
+    void Track();
 
-//    Camera_Model            mCamModel;          //! Cmaera Model
-//    Camera                  mCam;               //! Camera
+    //! Tracking with lkt algorithm
+    void LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
+
+    //! Reject outliers with RARSAC algorithm
+    void Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
+
+public:
+    Camera                  *mCam;               //! Camera
 
     Tracking_State          mState;             //! Tracking state
-    Frame                   *mLastFrame;
-    Frame                   *mCurrentFrame;
+    Frame                   mLastFrame;
+    Frame                   mCurrentFrame;
+    Frame                   mInitFrame;
 
     Initializer             *mInitializer;
+    int                     mPyra_levels;
 
 };
 

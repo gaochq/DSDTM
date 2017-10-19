@@ -6,6 +6,7 @@
 #define DSDTM_INITIALIZER_H
 
 #include "Camera.h"
+#include "Frame.h"
 
 
 namespace DSDTM
@@ -17,14 +18,20 @@ class Feature_detector;
 class Initializer
 {
 public:
-    Initializer();
+    Initializer(Frame &frame);
     ~Initializer();
 
+    //! Initalize the RGBD camera
+    bool Init_RGBDCam(Frame &frame);
+
+    //! Initalize the Monocular camera
+    bool Init_MonocularCam(Frame &lastFrame, Frame &currentFrame);
+
 private:
-    bool Init_RGBDCam(Frame *frame);
-    bool Init_MonocularCam(Frame *lastFrame, Frame *currentFrame);
 
 
+public:
+    Frame           mReferFrame;
 };
 }
 

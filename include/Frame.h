@@ -17,6 +17,7 @@ typedef std::vector<Feature> mFeatures;
 class Frame
 {
 public:
+    Frame();
     Frame(Frame &frame);
     Frame(Camera* _cam, cv::Mat _colorIag, double _timestamp);
     Frame(Camera* _cam, cv::Mat _colorImg, double _ctimestamp, cv::Mat _depthImg, double _dtimestamp);
@@ -27,6 +28,15 @@ public:
 
     //! Compute thr image pyramid
     void ComputeImagePyramid(const cv::Mat Image, std::vector<cv::Mat> &Img_Pyr);
+
+    //! Extract keypoints from features
+    void GetKeypoints(std::vector<cv::Point2f> &KeyPoints);
+
+    //! Set the probability of rarsac grid between [0.2 1]
+    void Set_Gridproba(std::vector<cv::Point2f> _pts, std::vector<bool> _status);
+
+    //! Reset the probability of rarsac grid
+    void Reset_Gridproba();
 
 public:
     typedef std::shared_ptr<Frame> FramePtr;
@@ -40,6 +50,7 @@ public:
     cv::Mat                 mDepthImg;
     mFeatures               mvFeatures;
     int                     mPyra_levels;
+    std::vector<float>      mvGrid_probability;
 
 };
 }// namespace DSDTM

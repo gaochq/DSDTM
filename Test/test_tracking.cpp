@@ -43,13 +43,40 @@ void LoadImages(const string &strImageFilename, vector<string> &vstrImageFilenam
 
 int main(int argc, char **argv)
 {
-    int a = 2;
+    std::vector<long> a;
+    std::vector<long> b;
 
-    DSDTM::Features features;
-
-    for (int i = 0; i < 10; ++i)
+    for (int r = 0; r < 10; ++r)
     {
-        a++;
+        for (long i = 0; i < 100000; ++i) {
+            a.push_back(i);
+        }
+
+        double start = static_cast<double>(cvGetTickCount());
+        for (long j = 0; j < a.size(); ++j) {
+            b.push_back(j);
+        }
+        double time = ((double) cvGetTickCount() - start) / cvGetTickFrequency();
+        cout << time << "us" <<"  ";
+        b.clear();
+
+        long n = 0;
+        double start1 = static_cast<double>(cvGetTickCount());
+        std::for_each(a.begin(), a.end(), [&](int i) {
+            ++n;
+            b.push_back(n);
+        });
+        double time1 = ((double) cvGetTickCount() - start1) / cvGetTickFrequency();
+        cout << time1 << "us" <<"  ";
+        b.clear();
+
+        double start2 = static_cast<double>(cvGetTickCount());
+        for (std::vector<long>::iterator it = a.begin(); it != a.end(); it++) {
+            b.push_back(*it);
+        }
+        double time2 = ((double) cvGetTickCount() - start2) / cvGetTickFrequency();
+        cout << time1 << "us" <<"  "<< endl;
     }
+
     return  0;
 }
