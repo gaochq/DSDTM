@@ -1,0 +1,22 @@
+%YAML:1.0
+# data
+dataset_dir: /home/buyi/Datasets/longhouse
+
+# camera intrinsics
+# fr1
+Camera.fx: 517.3
+Camera.fy: 516.5
+Camera.cx: 325.1
+Camera.cy: 249.7
+
+# fr2
+#camera.fx: 520.9
+#camera.fy: 521.0
+#camera.cx: 325.1
+#camera.cy: 249.7
+
+camera.depth_scale: 5000
+
+# VO Parameters
+Camera.PyraLevels: 5
+Camera.CellSize: 30
