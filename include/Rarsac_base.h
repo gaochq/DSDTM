@@ -14,11 +14,11 @@ namespace DSDTM
 class Rarsac_base
 {
 public:
-    Rarsac_base(Frame *_frame);
+    Rarsac_base(Frame *_frame, std::vector<cv::Point2f> &_pts1, std::vector<cv::Point2f> &_pts2);
     ~Rarsac_base();
 
     //! Calculate the F matrix using Rarsac algorithm and delete outliers
-    void Compute_Fmat(const std::vector<cv::Point2f> Cur_pts, const std::vector<cv::Point2f> Prev_pts);
+    void RejectFundamental();
 
     //! Get the bin index of the feature
     static int Get_GridIndex(cv::Point2f _pt);
@@ -32,9 +32,15 @@ private:
     double Sampson_Distance(cv::Point2f PointA, cv::Point2f PointB, cv::Mat _F);
 
     //! Get inliers from the Sampson Distance
-    void Get_Inliers(const std::vector<cv::Point2f> Cur_pts, const std::vector<cv::Point2f> Prev_pts,
-                     const cv::Mat _F, const std::vector<bool> _status);
+    void Get_Inliers(const cv::Mat _F, std::vector<bool> _status);
 
+    //! Compare two mvBinIdexProba from max to min
+    bool CompareBin(const std::pair<int, double> &a, const std::pair<int, double> &b)
+    {
+        return a.second > b.second;
+    }
+
+    void ComputeFundamental();
 
 
 
@@ -51,6 +57,11 @@ private:
     double              mdOutlierThreshold;
     int                 mHalf_GridWidth;
     int                 mHalf_GridHeight;
+
+    std::vector<cv::Point2f> mvCur_pts;
+    std::vector<cv::Point2f> mvPrev_pts;
+
+    std::vector< std::pair<int, double> > mvBinIdexProba;
 };
 }// namspace DSDTM
 #endif //DSDTM_RARSAC_BASE_H

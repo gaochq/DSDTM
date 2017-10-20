@@ -81,7 +81,7 @@ namespace DSDTM
         for (int j = 0; j < 100; ++j)
         {
             if(a[j]!=0)
-                mvGrid_probability[j] = std::max(0.2, static_cast<float>(b[j])/a[j]);
+                mvGrid_probability[j] = std::max(0.2, static_cast<double>(b[j])/a[j]);
             else
                 mvGrid_probability[j] = 0.2;
         }

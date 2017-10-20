@@ -1,82 +1,64 @@
-//
-// Created by buyi on 17-10-18.
-//
-
-#include "Camera.h"
-#include "Frame.h"
-#include "Feature_detection.h"
-
-#include <fstream>
+#include <iostream>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 
-void LoadImages(const string &strImageFilename, vector<string> &vstrImageFilenamesRGB, vector<double> &vTimestamps)
-{
-    ifstream fAssociation;
-    fAssociation.open(strImageFilename.c_str());
-    while(!fAssociation.eof())
-    {
-        string s;
-        //! read the first three lines of txt file
-        getline(fAssociation,s);
-        getline(fAssociation,s);
-        getline(fAssociation,s);
-        getline(fAssociation,s);
 
-        if(!s.empty())
-        {
-            stringstream ss;
-            ss << s;
-            double t;
-            string sRGB, sD;
-            ss >> t;
-            vTimestamps.push_back(t);
-            ss >> sRGB;
-            vstrImageFilenamesRGB.push_back(sRGB);
-            ss >> t;
-            ss >> sD;
-            //vstrImageFilenamesD.push_back(sD);
-
+void printResult(vector<int>& vecInt, int t[]){
+    for(int i = 0; i < vecInt.size(); ++i){
+        if(vecInt[i] == 1){
+            cout << t[i] << " ";
         }
+    }
+    cout << endl;
+}
+
+bool compare(int a, int b){
+    if(a > b){
+        return true;
+    }else{
+        return false;
     }
 }
 
-int main(int argc, char **argv)
-{
-    std::vector<long> a;
-    std::vector<long> b;
-
-    for (int r = 0; r < 10; ++r)
-    {
-        for (long i = 0; i < 100000; ++i) {
-            a.push_back(i);
-        }
-
-        double start = static_cast<double>(cvGetTickCount());
-        for (long j = 0; j < a.size(); ++j) {
-            b.push_back(j);
-        }
-        double time = ((double) cvGetTickCount() - start) / cvGetTickFrequency();
-        cout << time << "us" <<"  ";
-        b.clear();
-
-        long n = 0;
-        double start1 = static_cast<double>(cvGetTickCount());
-        std::for_each(a.begin(), a.end(), [&](int i) {
-            ++n;
-            b.push_back(n);
-        });
-        double time1 = ((double) cvGetTickCount() - start1) / cvGetTickFrequency();
-        cout << time1 << "us" <<"  ";
-        b.clear();
-
-        double start2 = static_cast<double>(cvGetTickCount());
-        for (std::vector<long>::iterator it = a.begin(); it != a.end(); it++) {
-            b.push_back(*it);
-        }
-        double time2 = ((double) cvGetTickCount() - start2) / cvGetTickFrequency();
-        cout << time1 << "us" <<"  "<< endl;
+void combination(int t[], int c, int total){
+    //initial first combination like:1,1,0,0,0  
+    vector<int> vecInt(total,0);
+    for(int i = 0; i < c; ++i){
+        vecInt[i] = 1;
     }
 
-    return  0;
+    printResult(vecInt, t);
+
+    for(int i = 0; i < total - 1; ++i){
+        if(vecInt[i] == 1 && vecInt[i+1] == 0){
+            //1. first exchange 1 and 0 to 0 1  
+            swap(vecInt[i], vecInt[i+1]);
+
+            //2.move all 1 before vecInt[i] to left  
+            sort(vecInt.begin(),vecInt.begin() + i, compare);
+
+            //after step 1 and 2, a new combination is exist  
+            printResult(vecInt, t);
+
+            //try do step 1 and 2 from front  
+            i = -1;
+        }
+    }
+
 }
+
+
+int main(int argc, char* argv[])
+{
+    const int N = 100;
+    int t[100]={0};
+    for (int i = 0; i < 100; ++i)
+    {
+        t[i] = i+1;
+    }
+    combination(t, 8, N);
+    system("pause");
+    return 0;
+}  
