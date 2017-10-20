@@ -50,7 +50,7 @@ public:
     cv::Mat                 mDepthImg;
     mFeatures               mvFeatures;
     int                     mPyra_levels;
-    std::vector<float>      mvGrid_probability;
+    std::vector<double>      mvGrid_probability;
 
 };
 }// namespace DSDTM

@@ -20,3 +20,8 @@ camera.depth_scale: 5000
 # VO Parameters
 Camera.PyraLevels: 5
 Camera.CellSize: 30
+
+
+#Rarsac algorithm
+Rarsac.Threshold: 1.25
+Rarsac.MaxIterators: 1000

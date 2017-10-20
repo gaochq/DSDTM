@@ -10,6 +10,7 @@
 #include <vector>
 #include <list>
 #include <memory>
+#include "math.h"
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -19,6 +20,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/eigen.hpp>
 
 #include <sophus/se3.h>
 
