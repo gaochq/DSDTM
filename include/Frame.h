@@ -32,9 +32,6 @@ public:
     //! Extract keypoints from features
     void GetKeypoints(std::vector<cv::Point2f> &KeyPoints);
 
-    //! Set the probability of rarsac grid between [0.2 1]
-    void Set_Gridproba(std::vector<cv::Point2f> _pts, std::vector<bool> _status);
-
     //! Reset the probability of rarsac grid
     void Reset_Gridproba();
 

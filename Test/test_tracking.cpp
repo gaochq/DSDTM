@@ -31,8 +31,10 @@ void combination(int t[], int c, int total){
 
     printResult(vecInt, t);
 
-    for(int i = 0; i < total - 1; ++i){
-        if(vecInt[i] == 1 && vecInt[i+1] == 0){
+    for(int i = 0; i < total - 1; ++i)
+    {
+        if(vecInt[i] == 1 && vecInt[i+1] == 0)
+        {
             //1. first exchange 1 and 0 to 0 1  
             swap(vecInt[i], vecInt[i+1]);
 

@@ -65,30 +65,8 @@ namespace DSDTM
         }
     }
 
-    void Frame::Set_Gridproba(std::vector<cv::Point2f> _pts, std::vector<bool> _status)
-    {
-        int a[100] = {0};
-        int b[100] = {0};
-
-        for (int i = 0; i < _pts.size(); ++i)
-        {
-            int Index = Rarsac_base::Get_GridIndex(_pts[i]);
-            a[Index]++;
-            if(_status[i])
-                b[Index]++;
-        }
-
-        for (int j = 0; j < 100; ++j)
-        {
-            if(a[j]!=0)
-                mvGrid_probability[j] = std::max(0.2, static_cast<double>(b[j])/a[j]);
-            else
-                mvGrid_probability[j] = 0.2;
-        }
-    }
-
     void Frame::Reset_Gridproba()
     {
-        mvGrid_probability.resize(100, 0.0);
+        mvGrid_probability.resize(100, 0.5);
     }
 }

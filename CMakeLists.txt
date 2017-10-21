@@ -37,7 +37,7 @@ add_library(${PROJECT_NAME} SHARED
 	src/Camera.cpp
 	src/Tracking.cpp
 	src/Initializer.cpp
-        src/Rarsac_base.cpp)
+	src/Rarsac_base.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
@@ -52,3 +52,11 @@ target_link_libraries(test_Feature_detection ${PROJECT_NAME})
 # Test the tracking process
 add_executable(test_tracking Test/test_tracking.cpp)
 target_link_libraries(test_tracking ${PROJECT_NAME})
+
+# Test the tracking process
+add_executable(test_combination Test/test_combination.cpp)
+target_link_libraries(test_combination ${PROJECT_NAME})
+
+# Test the tracking process
+add_executable(test Test/test.cpp)
+target_link_libraries(test ${PROJECT_NAME})

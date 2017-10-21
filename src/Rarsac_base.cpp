@@ -25,12 +25,46 @@ namespace DSDTM
             mvBin_probability[k] = mFrame->mvGrid_probability[k]/Proba_Sum;
 
             std::pair<int, double> tpIndexProba = std::make_pair(k, mvBin_probability[k]);
-            mvBinIdexProba.push_back(tpIndexProba);
+            mvBinIndexProba.push_back(tpIndexProba);
         }
         mvGrid_probability.resize(10*10, 0.0);
 
-        std::sort(mvBinIdexProba.begin(), mvBinIdexProba.end(), CompareBin);
+        std::sort(mvBinIndexProba.begin(), mvBinIndexProba.end(), CompareBin);
+
+        //! Put features in different bin
+        mvBinFeatures.resize(10*10);
+        for (int i = 0; i < mvCur_pts.size(); ++i)
+        {
+            int Index = Get_GridIndex(mvCur_pts[i]);
+            mvBinFeatures[Index].push_back(i);
+        }
+        for (int j = 0; j < mvBinFeatures.size(); ++j)
+        {
+            if(mvBinFeatures.size()==0)
+            {
+                //! Store a invalid feature index
+                mvBinFeatures[j].push_back(mvCur_pts.size()+1);
+            }
+        }
+
+        //! Initalize the state of features
+        mvStatus.resize(mvCur_pts.size(), false);
     }
+
+    bool Rarsac_base::Get_Features(int Index, std::pair<cv::Point2f, cv::Point2f> _featurePair)
+    {
+        std::random_shuffle(mvBinFeatures[Index].begin(), mvBinFeatures[Index].end());
+
+        if(mvBinFeatures[Index].back()< mvCur_pts.size())
+        {
+            _featurePair = std::make_pair(mvCur_pts[mvBinFeatures[Index].back()],
+                                          mvCur_pts[mvBinFeatures[Index].back()]);
+            return true;
+        }
+        else
+            return false;
+    }
+
 
     void Rarsac_base::Set_GridOccupied(cv::Point2f _pt)
     {
@@ -43,7 +77,7 @@ namespace DSDTM
                + static_cast<int>(_pt.x/mGridSize_Col);
     }
 
-
+    /*
     void Rarsac_base::RejectFundamental()
     {
 
@@ -52,7 +86,7 @@ namespace DSDTM
             mvGrid_probability[Get_GridIndex(mvCur_pts[i])] = 0.5;
         }
 
-        mvStatus.resize(mvCur_pts.size(), false);
+
 
         std::vector<cv::Point2f> Fcur_pts, Fprev_pts;
         float tError = std::numeric_limits<float>::max();
@@ -120,6 +154,7 @@ namespace DSDTM
             tError = pow((1-tInlier_Proba), tBest_Iterators);
         }
     }
+     */
 
     double Rarsac_base::Sampson_Distance(cv::Point2f PointA, cv::Point2f PointB, cv::Mat _F)
     {
@@ -167,27 +202,128 @@ namespace DSDTM
                 mvGrid_probability[j] = 0.2;
         }
 
-        /*
-        double Proba_Sum = std::accumulate(mvGrid_probability.begin(), mvGrid_probability.end(), 0.0);
-        for (int k = 0; k < 100; ++k)
-        {
-            mvBin_probability[k] = mvGrid_probability[k]/Proba_Sum;
-        }
-         */
-
     }
 
-    void Rarsac_base::ComputeFundamental()
+    std::vector<bool> Rarsac_base::RejectFundamental()
     {
+        std::pair<cv::Point2f, cv::Point2f> tFeature_pair;
+        std::vector< std::pair<int, double> > tv8binINdex;
         std::vector<cv::Point2f> Fcur_pts, Fprev_pts;
         int tIterator_Num = 0;
+        int Erase_flag = 8;
+        float tError = std::numeric_limits<float>::max();
+        int tBest_Iterators = 0;
+        double tInlier_Proba = 0;
+        cv::Mat F_Mat;
+        double mScore = std::numeric_limits<double>::min();
 
-        for (int i = 0; i < mMaxIteators; ++i)
+        for (int i = 0; i < 100; ++i)
         {
+            int tFlagassign = 0;
+            while(tFlagassign<8)
+            {
+                if(Get_Features(mvBinIndexProba[tFlagassign+i].first, tFeature_pair))
+                {
+                    Fcur_pts.push_back(tFeature_pair.first);
+                    Fprev_pts.push_back(tFeature_pair.second);
+                    tFlagassign++;
+                }
+            }
+
+            Erase_flag = Erase_flag+i;
+            int Erase_flag_right = Erase_flag;
+            int Erase_flag_left = 7;
+
+            while (Erase_flag_left>=0)
+            {
+                if(tIterator_Num>=2000)
+                    break;
+
+                if(Erase_flag_right==101)
+                {
+                    Erase_flag_left--;
+                    if(Erase_flag_left<0)
+                        break;
+                    Erase_flag_right = Erase_flag;
+                    if(Get_Features(mvBinIndexProba[Erase_flag_left+1+i].first, tFeature_pair))
+                    {
+                        Fcur_pts[Erase_flag_left + 1] = tFeature_pair.first;
+                        Fprev_pts[Erase_flag_left + 1] = tFeature_pair.second;
+                    }
+                }
+
+                //! The main part of rarsac
+                else
+                {
+                    std::vector<bool> tvStatus;
+
+                    //! Compute the F matrix and get inliers
+                    cv::findFundamentalMat(Fprev_pts, Fcur_pts, F_Mat, CV_FM_8POINT);
+                    Get_Inliers(F_Mat, tvStatus);
+
+                    //! Compute the score
+                    double Proba_Sum=0, tdScore=0, ProbaSqure_Sum=0;
+                    Eigen::Vector2d Wighted_pos(0.0, 0.0);
+                    Eigen::Vector2d WightedMean_pos(0.0, 0.0);
+                    Eigen::Matrix2d Cov_Matrix = Eigen::MatrixXd::Zero(2,2);
+
+
+                    //! (1) compute the mean position of inliers
+                    for (int v = 0; v < 100; ++v)
+                    {
+                        Proba_Sum += mvGrid_probability[v];
+                        ProbaSqure_Sum += mvGrid_probability[v]*mvGrid_probability[v];
+                        Wighted_pos += mvGrid_probability[v]*Eigen::Vector2d(mGridSize_Row*v/10 + mHalf_GridHeight,
+                                                                             mGridSize_Col*v%10 + mHalf_GridWidth);
+                    }
+                    WightedMean_pos = Wighted_pos/Proba_Sum;
+
+                    //! (2) compute the covariance matrix
+                    for (int l = 0; l < 100; ++l)
+                    {
+                        Eigen::Vector2d Position_tmp;
+                        Position_tmp = Eigen::Vector2d(mGridSize_Row*l/10 + mHalf_GridHeight,
+                                                       mGridSize_Col*l%10 + mHalf_GridWidth)- WightedMean_pos;
+                        Cov_Matrix += mvGrid_probability[l]*Position_tmp*Position_tmp.transpose();
+                    }
+                    Cov_Matrix = Proba_Sum/(ProbaSqure_Sum - Proba_Sum*Proba_Sum)*Cov_Matrix;
+                    tdScore = Proba_Sum*M_PI*Cov_Matrix.determinant();
+
+                    //! (3) compute the final score
+                    if(tdScore>mScore)
+                    {
+                        mvGrid_probability.resize(10*10, 0);
+                        mScore = tdScore;
+                        mvStatus = tvStatus;
+                        tBest_Iterators = 0;
+                        tInlier_Proba = 0;
+
+                        for (int m = 0; m < 100; ++m)
+                        {
+                            tInlier_Proba += mvGrid_probability[m]*mvBin_probability[m];
+                        }
+                        tInlier_Proba = pow(tInlier_Proba, 8);
+                    }
+
+                    tIterator_Num++;
+                    tBest_Iterators++;
+                    tError = pow((1-tInlier_Proba), tBest_Iterators);
+                    if(tError<mdeta)
+                        break;
+
+                    tIterator_Num++;
+                }
+                if(Get_Features(mvBinIndexProba[Erase_flag_right].first, tFeature_pair))
+                {
+                    Fcur_pts[Erase_flag_left] = tFeature_pair.first;
+                    Fprev_pts[Erase_flag_left] = tFeature_pair.second;
+                }
+                Erase_flag_right++;
+            }
 
         }
 
+        return mvStatus;
     }
-
 
 }// namespace DSDTM

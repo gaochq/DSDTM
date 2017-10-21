@@ -18,6 +18,16 @@ namespace DSDTM
 
     }
 
+    void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, std::vector<bool> _Status)
+    {
+        for (int i = 0; i < _Points.size(); ++i)
+        {
+            if(!_Status[i])
+                _Points.erase(_Points.begin() + i);
+        }
+
+    }
+
     void Tracking::Track_RGBDCam(cv::Mat colorImg, double ctimestamp, cv::Mat depthImg, double dtimestamp)
     {
         if(!colorImg.data || !depthImg.data)
@@ -62,30 +72,30 @@ namespace DSDTM
 
     void Tracking::LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts)
     {
-        std::vector<uchar> mvLStatus;
-        std::vector<float> mPyrLK_error;
+        std::vector<uchar> tvStatus;
+        std::vector<float> tPyrLK_error;
 
         cv::calcOpticalFlowPyrLK(mLastFrame.mColorImg, mCurrentFrame.mColorImg,
-                                 _last_Pts, _cur_Pts, mvLStatus, mPyrLK_error,
+                                 _last_Pts, _cur_Pts, tvStatus, tPyrLK_error,
                                  cv::Size(21, 21), mPyra_levels);
 
         std::vector<cv::Point2f>::iterator Last_Pts_it = _last_Pts.begin();
         std::vector<cv::Point2f>::iterator Cur_Pts_it = _cur_Pts.begin();
-        std::vector<Feature>::iterator Last_Features_it = mLastFrame.mvFeatures.begin();
+//        std::vector<Feature>::iterator Last_Features_it = mLastFrame.mvFeatures.begin();
 
         for (int i = 0; i < _last_Pts.size(); ++i)
         {
-            if(!mvLStatus[i])
+            if(!tvStatus[i])
             {
                 _last_Pts.erase(Last_Pts_it);
                 _cur_Pts.erase(Cur_Pts_it);
-                mLastFrame.mvFeatures.erase(Last_Features_it);
+//                mLastFrame.mvFeatures.erase(Last_Features_it);
 
                 continue;
             }
             Last_Pts_it++;
             Cur_Pts_it++;
-            Last_Features_it++;
+//            Last_Features_it++;
         }
 
 
@@ -93,6 +103,12 @@ namespace DSDTM
 
     void Tracking::Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts)
     {
+        std::vector<bool> tvStatus;
+        mRarsac_base = Rarsac_base(&mCurrentFrame, _cur_Pts, _last_Pts);
+        tvStatus = mRarsac_base.RejectFundamental();
+
 
     }
+
+
 }
