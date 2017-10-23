@@ -33,18 +33,31 @@ namespace DSDTM
         return Index;
     }
 
-    void Feature_detector::Set_CellIndexOccupy(Eigen::Vector2d &px)
+    void Feature_detector::Set_CellIndexOccupy(cv::Point2f &px)
     {
-        int Index = static_cast<int>((px[1]/mCell_size)*mGrid_cols) + static_cast<int>(px[0]/mCell_size);
+        int Index = static_cast<int>((px.y/mCell_size)*mGrid_cols) + static_cast<int>(px.x/mCell_size);
         mvGrid_occupy[Index] = true;
     }
 
     void Feature_detector::Set_ExistingFeatures(const mFeatures &features)
     {
+        mvGrid_occupy.resize(mGrid_rows*mGrid_cols, false);
         std::for_each(features.begin(), features.end(), [&](Feature feature)
         {
             Set_CellIndexOccupy(feature.mpx);
         });
+    }
+
+    void Feature_detector::Set_ExistingFeatures(const std::vector<cv::Point2f> &features)
+    {
+        int Index;
+        mvGrid_occupy.resize(mGrid_rows*mGrid_cols, false);
+
+        for (int i = 0; i < features.size(); ++i)
+        {
+            Index = static_cast<int>((features[i].y/mCell_size)*mGrid_cols) + static_cast<int>(features[i].x/mCell_size);
+            mvGrid_occupy[Index] = true;
+        }
     }
 
     void Feature_detector::ResetGrid()
@@ -52,7 +65,7 @@ namespace DSDTM
         std::fill(mvGrid_occupy.begin(), mvGrid_occupy.end(), false);
     }
 
-    void Feature_detector::detect(Frame* frame, const double detection_threshold, mFeatures &features)
+    void Feature_detector::detect(Frame* frame, const double detection_threshold)
     {
         Corners corners(mGrid_cols*mGrid_rows, Corner(0, 0, detection_threshold, 0, 0.0f));
 
@@ -91,7 +104,7 @@ namespace DSDTM
         std::for_each(corners.begin(), corners.end(), [&](Corner& c)
         {
             if(c.score > detection_threshold)
-                features.push_back(Feature(frame, Eigen::Vector2d(c.x, c.y), c.level));
+                frame->mvFeatures.push_back(Feature(frame, cv::Point2f(c.x, c.y), c.level));
         });
 
         ResetGrid();

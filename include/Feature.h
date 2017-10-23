@@ -15,11 +15,11 @@ class Frame;
 struct Feature
 {
     Frame*              mframe;
-    Eigen::Vector2d     mpx;
+    cv::Point2f         mpx;
     int                 mlevel;
     Eigen::Vector2d     mgrad;
 
-    Feature(Frame* _frame, const Eigen::Vector2d& _px, int _level):
+    Feature(Frame* _frame, const cv::Point2f& _px, int _level):
             mframe(_frame),
             mpx(_px),
             mlevel(_level),

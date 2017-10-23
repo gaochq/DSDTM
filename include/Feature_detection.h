@@ -39,13 +39,16 @@ public:
     int Get_CellIndex(int x, int y, int level);
 
     //! Set the cell be occupied
-    void Set_CellIndexOccupy(Eigen::Vector2d& px);
+    void Set_CellIndexOccupy(cv::Point2f &px);
 
     //! Set the existing features grrid to be occupied
     void Set_ExistingFeatures(const mFeatures& features);
 
+    //! Set the existing features grrid to be occupied
+    void Set_ExistingFeatures(const std::vector<cv::Point2f> &features);
+
     //! Extract fast corners from curren frame
-    void detect(Frame* frame, const double detection_threshold, mFeatures& features);
+    void detect(Frame* frame, const double detection_threshold);
 
     //! Reset the states of gridcell
     void ResetGrid();

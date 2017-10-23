@@ -7,7 +7,6 @@
 
 #include "Feature_detection.h"
 #include "Initializer.h"
-#include "Frame.h"
 #include "Rarsac_base.h"
 
 namespace DSDTM
@@ -17,6 +16,8 @@ class Camera;
 class Feature_detector;
 class Frame;
 class Rarsac_base;
+class Feature_detector;
+class Initializer;
 
 class Tracking
 {
@@ -50,7 +51,13 @@ private:
     //! Reject outliers with RARSAC algorithm
     void Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
 
+    //! Delete outliers according to lkt and fundamental status
+    void ReduceFeatures(std::vector<cv::Point2f> &_Points, std::vector<uchar> _Status);
     void ReduceFeatures(std::vector<cv::Point2f> &_Points, std::vector<bool> _Status);
+
+    //! Display image and features
+    void Show_Features(std::vector<cv::Point2f> _features);
+
 
 public:
     Camera                  *mCam;               //! Camera
@@ -64,6 +71,7 @@ public:
     int                     mPyra_levels;
 
     Rarsac_base             mRarsac_base;
+    Feature_detector        *mFeature_detector;
 
 };
 

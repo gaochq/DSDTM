@@ -16,7 +16,7 @@ namespace DSDTM
             mCamera(frame.mCamera), mId(frame.mId), mdCloTimestamp(frame.mdCloTimestamp),
             mdDepTimestamp(frame.mdDepTimestamp), mT_c2w(frame.mT_c2w), mColorImg(frame.mColorImg),
             mvImg_Pyr(frame.mvImg_Pyr), mDepthImg(frame.mDepthImg), mvFeatures(frame.mvFeatures),
-            mPyra_levels(frame.mPyra_levels)
+            mPyra_levels(frame.mPyra_levels), mvGrid_probability(frame.mvGrid_probability)
     {
 
     }
@@ -42,9 +42,17 @@ namespace DSDTM
 
     void Frame::InitFrame()
     {
+        ResetFrame();
         mPyra_levels = Config::Get<int>("Camera.PyraLevels");
         mvImg_Pyr.resize(mPyra_levels);
         ComputeImagePyramid(mColorImg, mvImg_Pyr);
+    }
+
+    void Frame::ResetFrame()
+    {
+        mDepthImg.release();
+        mvFeatures.clear();
+        mvGrid_probability.clear();
     }
 
     void Frame::ComputeImagePyramid(const cv::Mat Image, std::vector<cv::Mat> &Img_Pyr)
@@ -56,12 +64,19 @@ namespace DSDTM
         }
     }
 
-    void Frame::GetKeypoints(std::vector<cv::Point2f> &KeyPoints)
+    void Frame::GetFeatures(std::vector<cv::Point2f> &_features)
     {
         for (int i = 0; i < mvFeatures.size(); ++i)
         {
-            KeyPoints.push_back(cv::Point2f(mvFeatures[i].mpx[0],
-                                            mvFeatures[i].mpx[0]));
+            _features.push_back(mvFeatures[i].mpx);
+        }
+    }
+
+    void Frame::SetFeatures(const std::vector<cv::Point2f> &_features)
+    {
+        for (int i = 0; i < _features.size(); ++i)
+        {
+            mvFeatures.push_back(Feature(this, _features[i],0));
         }
     }
 

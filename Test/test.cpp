@@ -8,12 +8,14 @@
 int main(int argc, char **argv)
 {
     std::vector<int> a;
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         a.push_back(i);
     }
 
     int b = a[a.size()-1];
+    
+    int c = static_cast<int>(5.10);
 
     b++;
     return 0;

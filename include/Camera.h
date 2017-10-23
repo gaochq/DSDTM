@@ -64,6 +64,9 @@ public:
     //! Initalize the camera parameters
     void Init_CamParam(const std::string &Paramfile);
 
+    //! whether is the point in image
+    bool IsInImage(cv::Point2f _point);
+
 public:
     typedef std::shared_ptr<Camera> CameraPtr;
 

@@ -29,8 +29,14 @@ public:
     //! Compute thr image pyramid
     void ComputeImagePyramid(const cv::Mat Image, std::vector<cv::Mat> &Img_Pyr);
 
-    //! Extract keypoints from features
-    void GetKeypoints(std::vector<cv::Point2f> &KeyPoints);
+    //! Return keypoints from features
+    void GetFeatures(std::vector<cv::Point2f> &KeyPoints);
+
+    //! Return keypoints from features
+    void SetFeatures(const std::vector<cv::Point2f> &KeyPoints);
+
+    //! Clear all the members in frame
+    void ResetFrame();
 
     //! Reset the probability of rarsac grid
     void Reset_Gridproba();
@@ -47,7 +53,7 @@ public:
     cv::Mat                 mDepthImg;
     mFeatures               mvFeatures;
     int                     mPyra_levels;
-    std::vector<double>      mvGrid_probability;
+    std::vector<double>     mvGrid_probability;
 
 };
 }// namespace DSDTM

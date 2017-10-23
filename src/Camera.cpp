@@ -30,6 +30,9 @@ namespace DSDTM
         mfy = Config::Get<float>("Camera.fy");
         mcx = Config::Get<float>("Camera.cx");
         mcy = Config::Get<float>("Camera.cy");
+
+        mwidth = Config::Get<int>("Camera.width");
+        mheight = Config::Get<int>("Camera.height");
     }
 
     Eigen::Vector2f Camera::Keypoint2Vector(const cv::KeyPoint &point)
@@ -64,6 +67,12 @@ namespace DSDTM
         return Eigen::Vector3d( depth*(point[0] - mcx)/mfx,
                                 depth*(point[1] - mcy)/mfy,
                                 depth);
+    }
 
+    bool Camera::IsInImage(cv::Point2f _point)
+    {
+        if (_point.x>=0 && _point.x<mheight && _point.y>=0 && _point.y<mwidth)
+            return true;
+        return false;
     }
 }// namespace DSDTM

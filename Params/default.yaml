@@ -9,6 +9,9 @@ Camera.fy: 516.5
 Camera.cx: 325.1
 Camera.cy: 249.7
 
+Camera.width: 640
+Camera.height: 480
+
 # fr2
 #camera.fx: 520.9
 #camera.fy: 521.0

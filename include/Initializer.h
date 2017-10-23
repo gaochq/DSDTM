@@ -7,6 +7,7 @@
 
 #include "Camera.h"
 #include "Frame.h"
+#include "Feature_detection.h"
 
 
 namespace DSDTM
@@ -32,6 +33,7 @@ private:
 
 public:
     Frame           mReferFrame;
+    Feature_detector        *mFeature_detector;
 };
 }
 

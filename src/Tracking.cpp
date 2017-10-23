@@ -11,11 +11,21 @@ namespace DSDTM
     {
         mState = Not_Init;
         mPyra_levels = Config::Get<int>("Camera.PyraLevels");
+        mFeature_detector = new Feature_detector(_cam->mheight, _cam->mwidth);
     }
 
     Tracking::~Tracking()
     {
 
+    }
+
+    void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, std::vector<uchar> _Status)
+    {
+        for (int i = 0; i < _Points.size(); ++i)
+        {
+            if(!_Status[i])
+                _Points.erase(_Points.begin() + i);
+        }
     }
 
     void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, std::vector<bool> _Status)
@@ -25,7 +35,6 @@ namespace DSDTM
             if(!_Status[i])
                 _Points.erase(_Points.begin() + i);
         }
-
     }
 
     void Tracking::Track_RGBDCam(cv::Mat colorImg, double ctimestamp, cv::Mat depthImg, double dtimestamp)
@@ -46,27 +55,35 @@ namespace DSDTM
             if(mInitializer->Init_RGBDCam(mCurrentFrame))
             {
                 mState = OK;
-                mLastFrame.Reset_Gridproba();
+                mCurrentFrame.Reset_Gridproba();
                 mInitFrame = Frame(mCurrentFrame);
-
-                return;
             }
         }
         else
             Track();
 
+        mLastFrame.ResetFrame();
         mLastFrame = Frame(mCurrentFrame);
+        mCurrentFrame.ResetFrame();
     }
 
     void Tracking::Track()
     {
-        std::vector<cv::Point2f> Cur_Pts, Last_Pts;
-        mLastFrame.GetKeypoints(Last_Pts);
+        std::vector<cv::Point2f> Cur_Pts, Last_Pts, Pts_tmp;
+        mLastFrame.GetFeatures(Last_Pts);
 
         LKT_Track(Cur_Pts, Last_Pts);
 
+//        Rarsac_F(Cur_Pts, Last_Pts);
 
+        //TODO: show image and deal with features
+        Show_Features(Cur_Pts);
 
+        mCurrentFrame.SetFeatures(Cur_Pts);
+        mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
+        mFeature_detector->detect(&mCurrentFrame, 20);
+        mLastFrame.GetFeatures(Pts_tmp);
+        Show_Features(Pts_tmp);
 
     }
 
@@ -79,36 +96,56 @@ namespace DSDTM
                                  _last_Pts, _cur_Pts, tvStatus, tPyrLK_error,
                                  cv::Size(21, 21), mPyra_levels);
 
-        std::vector<cv::Point2f>::iterator Last_Pts_it = _last_Pts.begin();
-        std::vector<cv::Point2f>::iterator Cur_Pts_it = _cur_Pts.begin();
-//        std::vector<Feature>::iterator Last_Features_it = mLastFrame.mvFeatures.begin();
-
-        for (int i = 0; i < _last_Pts.size(); ++i)
+        for (int i = 0; i < _cur_Pts.size(); ++i)
         {
-            if(!tvStatus[i])
-            {
-                _last_Pts.erase(Last_Pts_it);
-                _cur_Pts.erase(Cur_Pts_it);
-//                mLastFrame.mvFeatures.erase(Last_Features_it);
-
+            if (mCam->IsInImage(_cur_Pts[i]))
                 continue;
+            else
+            {
+                _cur_Pts.erase(_cur_Pts.begin() + i);
+                _last_Pts.erase(_last_Pts.begin() + i);
+                i--;
             }
-            Last_Pts_it++;
-            Cur_Pts_it++;
-//            Last_Features_it++;
+
         }
 
+        ReduceFeatures(_cur_Pts, tvStatus);
+        ReduceFeatures(_last_Pts, tvStatus);
+//        ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
 
     }
 
     void Tracking::Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts)
     {
         std::vector<bool> tvStatus;
+        mCurrentFrame.mvGrid_probability = mLastFrame.mvGrid_probability;
         mRarsac_base = Rarsac_base(&mCurrentFrame, _cur_Pts, _last_Pts);
         tvStatus = mRarsac_base.RejectFundamental();
 
+        //ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
+        ReduceFeatures(_cur_Pts, tvStatus);
+        ReduceFeatures(_last_Pts, tvStatus);
 
     }
+
+    void Tracking::Show_Features(std::vector<cv::Point2f> _features)
+    {
+        cv::Mat Image_new = mCurrentFrame.mColorImg.clone();
+        if(Image_new.channels() < 3)
+            cv::cvtColor(Image_new, Image_new, CV_GRAY2BGR);
+        for_each(_features.begin(), _features.end(), [&](cv::Point2f feature)
+        {
+            cv::rectangle(Image_new,
+                          cv::Point2f(feature.x - 2, feature.y - 2),
+                          cv::Point2f(feature.x + 2, feature.y + 2),
+                          cv::Scalar (0, 255, 0));
+        });
+
+        cv::namedWindow("Feature_Detect");
+        cv::imshow("Feature_Detect", Image_new);
+        cv::waitKey(1);
+    }
+
 
 
 }

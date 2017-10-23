@@ -14,6 +14,7 @@ namespace DSDTM
 class Rarsac_base
 {
 public:
+    Rarsac_base();
     Rarsac_base(Frame *_frame, std::vector<cv::Point2f> &_pts1, std::vector<cv::Point2f> &_pts2);
     ~Rarsac_base();
 
@@ -26,7 +27,7 @@ public:
 private:
 
     //! Get features from mvBinFeatures
-    bool Get_Features(int Index, std::pair<cv::Point2f, cv::Point2f> _featurePair);
+    bool Get_Features(int Index, std::pair<cv::Point2f, cv::Point2f> &_featurePair);
 
     //! Set the bin of _pt be occupied
     void Set_GridOccupied(cv::Point2f _pt);
@@ -35,7 +36,7 @@ private:
     double Sampson_Distance(cv::Point2f PointA, cv::Point2f PointB, cv::Mat _F);
 
     //! Get inliers from the Sampson Distance
-    void Get_Inliers(const cv::Mat _F, std::vector<bool> _status);
+    void Get_Inliers(const cv::Mat _F, std::vector<bool> &_status);
 
     //! Compare two mvBinIdexProba from max to min
     static bool CompareBin(const std::pair<int, double> &a, const std::pair<int, double> &b)

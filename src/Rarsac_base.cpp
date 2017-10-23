@@ -6,6 +6,11 @@
 
 namespace DSDTM
 {
+    Rarsac_base::Rarsac_base()
+    {
+
+    }
+
     Rarsac_base::Rarsac_base(Frame *_frame, std::vector<cv::Point2f> &_pts1, std::vector<cv::Point2f> &_pts2):
             mFrame(_frame), mvCur_pts(_pts1), mvPrev_pts(_pts2)
     {
@@ -40,7 +45,7 @@ namespace DSDTM
         }
         for (int j = 0; j < mvBinFeatures.size(); ++j)
         {
-            if(mvBinFeatures.size()==0)
+            if(mvBinFeatures[j].size()==0)
             {
                 //! Store a invalid feature index
                 mvBinFeatures[j].push_back(mvCur_pts.size()+1);
@@ -51,14 +56,22 @@ namespace DSDTM
         mvStatus.resize(mvCur_pts.size(), false);
     }
 
-    bool Rarsac_base::Get_Features(int Index, std::pair<cv::Point2f, cv::Point2f> _featurePair)
+    Rarsac_base::~Rarsac_base()
     {
-        std::random_shuffle(mvBinFeatures[Index].begin(), mvBinFeatures[Index].end());
+
+    }
+
+    bool Rarsac_base::Get_Features(int Index, std::pair<cv::Point2f, cv::Point2f> &_featurePair)
+    {
+        if (mvBinFeatures[Index].size()>1)
+        {
+            std::random_shuffle(mvBinFeatures[Index].begin(), mvBinFeatures[Index].end());
+        }
 
         if(mvBinFeatures[Index].back()< mvCur_pts.size())
         {
             _featurePair = std::make_pair(mvCur_pts[mvBinFeatures[Index].back()],
-                                          mvCur_pts[mvBinFeatures[Index].back()]);
+                                          mvPrev_pts[mvBinFeatures[Index].back()]);
             return true;
         }
         else
@@ -73,8 +86,8 @@ namespace DSDTM
 
     int Rarsac_base::Get_GridIndex(cv::Point2f _pt)
     {
-        return static_cast<int>(_pt.y/mGridSize_Row)*10
-               + static_cast<int>(_pt.x/mGridSize_Col);
+        return static_cast<int>(_pt.y/mGridSize_Col-1)*10
+               + static_cast<int>(_pt.x/mGridSize_Row+1);
     }
 
     /*
@@ -176,8 +189,9 @@ namespace DSDTM
         return Sampson_Distance;
     }
 
-    void Rarsac_base::Get_Inliers(const cv::Mat _F, std::vector<bool> _status)
+    void Rarsac_base::Get_Inliers(const cv::Mat _F, std::vector<bool> &_status)
     {
+        _status.resize(mvCur_pts.size(), false);
         int a[100] = {0};
         int b[100] = {0};
 
@@ -220,14 +234,14 @@ namespace DSDTM
         for (int i = 0; i < 100; ++i)
         {
             int tFlagassign = 0;
-            while(tFlagassign<8)
+            while(Fcur_pts.size()<8)
             {
                 if(Get_Features(mvBinIndexProba[tFlagassign+i].first, tFeature_pair))
                 {
                     Fcur_pts.push_back(tFeature_pair.first);
                     Fprev_pts.push_back(tFeature_pair.second);
-                    tFlagassign++;
                 }
+                tFlagassign++;
             }
 
             Erase_flag = Erase_flag+i;
@@ -239,7 +253,7 @@ namespace DSDTM
                 if(tIterator_Num>=2000)
                     break;
 
-                if(Erase_flag_right==101)
+                if(Erase_flag_right==100)
                 {
                     Erase_flag_left--;
                     if(Erase_flag_left<0)
@@ -258,7 +272,7 @@ namespace DSDTM
                     std::vector<bool> tvStatus;
 
                     //! Compute the F matrix and get inliers
-                    cv::findFundamentalMat(Fprev_pts, Fcur_pts, F_Mat, CV_FM_8POINT);
+                    F_Mat = cv::findFundamentalMat(mvCur_pts, mvPrev_pts, CV_FM_RANSAC);
                     Get_Inliers(F_Mat, tvStatus);
 
                     //! Compute the score
@@ -286,8 +300,8 @@ namespace DSDTM
                                                        mGridSize_Col*l%10 + mHalf_GridWidth)- WightedMean_pos;
                         Cov_Matrix += mvGrid_probability[l]*Position_tmp*Position_tmp.transpose();
                     }
-                    Cov_Matrix = Proba_Sum/(ProbaSqure_Sum - Proba_Sum*Proba_Sum)*Cov_Matrix;
-                    tdScore = Proba_Sum*M_PI*Cov_Matrix.determinant();
+                    Cov_Matrix = Proba_Sum/(Proba_Sum*Proba_Sum - ProbaSqure_Sum)*Cov_Matrix;
+                    tdScore = Proba_Sum*M_PI*sqrt(Cov_Matrix.determinant());
 
                     //! (3) compute the final score
                     if(tdScore>mScore)
