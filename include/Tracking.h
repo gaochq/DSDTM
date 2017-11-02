@@ -50,6 +50,7 @@ private:
 
     //! Reject outliers with RARSAC algorithm
     void Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
+    void Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
 
     //! Delete outliers according to lkt and fundamental status
     void ReduceFeatures(std::vector<cv::Point2f> &_Points, std::vector<uchar> _Status);

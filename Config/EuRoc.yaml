@@ -1,15 +1,15 @@
 %YAML:1.0
 # data
-dataset_dir: /home/buyi/Datasets/longhouse
+dataset_dir: /home/buyi/Datasets/EuRoC/mav0/cam0
 
 # camera intrinsics
 # fr1
-Camera.fx: 517.3
-Camera.fy: 516.5
-Camera.cx: 325.1
-Camera.cy: 249.7
+Camera.fx: 458.654
+Camera.fy: 457.296
+Camera.cx: 367.215
+Camera.cy: 248.375
 
-Camera.width: 640
+Camera.width: 752
 Camera.height: 480
 
 # fr2
@@ -23,6 +23,7 @@ camera.depth_scale: 5000
 # VO Parameters
 Camera.PyraLevels: 5
 Camera.CellSize: 30
+Camera.Max_fts: 200
 
 
 #Rarsac algorithm

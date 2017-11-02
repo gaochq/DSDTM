@@ -8,26 +8,26 @@
 namespace DSDTM
 {
 
-    void Config::setParameterFile(const std::string& filename)
+void Config::setParameterFile(const std::string& filename)
+{
+    if(config == nullptr)
+        config = std::shared_ptr<Config>(new Config);
+
+    config->mfile = cv::FileStorage(filename.c_str(), cv::FileStorage::READ);
+    if(!config->mfile.isOpened())
     {
-        if(config == nullptr)
-            config = std::shared_ptr<Config>(new Config);
-
-        config->mfile = cv::FileStorage(filename.c_str(), cv::FileStorage::READ);
-        if(!config->mfile.isOpened())
-        {
-            std::cerr<< "Parameter file" << filename <<"does not exist."<<std::endl;
-            config->mfile.release();
-            return;
-        }
+        std::cerr<< "Parameter file " << filename <<" does not exist."<<std::endl;
+        config->mfile.release();
+        return;
     }
+}
 
-    Config::~Config()
-    {
-        if (mfile.isOpened())
-            mfile.release();
-    }
+Config::~Config()
+{
+    if (mfile.isOpened())
+        mfile.release();
+}
 
-    std::shared_ptr<Config> Config::config = nullptr;
+std::shared_ptr<Config> Config::config = nullptr;
 
 }// namesapce DSDTM

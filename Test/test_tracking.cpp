@@ -81,7 +81,7 @@ int main(int argc, char **argv)
         DepthIMage = cv::imread(Colorimg_path.c_str());
 
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
-        clahe->apply(ColorImage, Image_tmp);
+        clahe->apply(ColorImage, ColorImage);
         double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
 //        cout << time << "us" << endl;
 

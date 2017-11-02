@@ -98,8 +98,6 @@ int main(int argc, char **argv)
         cv::waitKey(1);
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
-        cout << time << "us" << endl;
-
-
+    cout << time << "us" << endl;
     return  0;
 }

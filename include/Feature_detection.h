@@ -26,6 +26,10 @@ struct Corner
     Corner(int _x, int _y ,float _score, int level, float _angle):
             x(_x), y(_y), score(_score), angle(_angle)
     {}
+    bool operator < (const Corner& _c1) const
+    {
+        return (_c1.score < score);
+    }
 };
 typedef std::vector<Corner> Corners;
 
@@ -45,7 +49,7 @@ public:
     void Set_ExistingFeatures(const mFeatures& features);
 
     //! Set the existing features grrid to be occupied
-    void Set_ExistingFeatures(const std::vector<cv::Point2f> &features);
+    void Set_ExistingFeatures(const std::vector<cv::Point2f>& features);
 
     //! Extract fast corners from curren frame
     void detect(Frame* frame, const double detection_threshold);
@@ -65,6 +69,7 @@ public:
     int mPyr_levels;
     int mGrid_rows;
     int mGrid_cols;
+    int mMax_fts;
     std::vector<bool> mvGrid_occupy;
 };
 

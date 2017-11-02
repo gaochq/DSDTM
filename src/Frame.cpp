@@ -76,7 +76,7 @@ namespace DSDTM
     {
         for (int i = 0; i < _features.size(); ++i)
         {
-            mvFeatures.push_back(Feature(this, _features[i],0));
+            mvFeatures.push_back(Feature(this, _features[i], 0));
         }
     }
 
