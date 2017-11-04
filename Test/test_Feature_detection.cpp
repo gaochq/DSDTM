@@ -77,8 +77,8 @@ int main(int argc, char **argv)
 
         //! The single image cost almost 4ms on extracing features
         DSDTM::Frame::FramePtr frame(new DSDTM::Frame(camera.get(), Image_tmp, dTimestamps[i]));
-        DSDTM::mFeatures features;
-        DSDTM::Feature_detector detector(Image_tmp.rows, Image_tmp.cols);
+        DSDTM::Features features;
+        DSDTM::Feature_detector detector;
         detector.detect(frame.get(), 20);
 
 

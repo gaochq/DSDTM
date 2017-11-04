@@ -7,6 +7,11 @@
 
 namespace DSDTM
 {
+    Camera::Camera()
+    {
+
+    }
+
     Camera::Camera(const std::string &Paramfile, const Camera_Model model):
             mCam_Model(model)
     {
@@ -62,10 +67,10 @@ namespace DSDTM
                                 mfy*Point[1]/Point[2] + mcy);
     }
 
-    Eigen::Vector3d Camera::Pixel2Camera(const Eigen::Vector2d &point, double &depth)
+    Eigen::Vector3d Camera::Pixel2Camera(const cv::Point2f &point, float &depth)
     {
-        return Eigen::Vector3d( depth*(point[0] - mcx)/mfx,
-                                depth*(point[1] - mcy)/mfy,
+        return Eigen::Vector3d( depth*(point.x - mcx)/mfx,
+                                depth*(point.y - mcy)/mfy,
                                 depth);
     }
 
@@ -74,5 +79,31 @@ namespace DSDTM
         if (_point.x>=0 && _point.x<mheight && _point.y>=0 && _point.y<mwidth)
             return true;
         return false;
+    }
+
+    void Camera::Draw_Features(cv::Mat &_image, const Features _features)
+    {
+        if(_image.channels() < 3)
+            cv::cvtColor(_image, _image, CV_GRAY2BGR);
+        for_each(_features.begin(), _features.end(), [&](Feature feature)
+        {
+            cv::rectangle(_image,
+                          cv::Point2f(feature.mpx.x - 2, feature.mpx.y - 2),
+                          cv::Point2f(feature.mpx.x + 2, feature.mpx.y + 2),
+                          cv::Scalar (0, 255, 0));
+        });
+    }
+
+    void Camera::Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features)
+    {
+        if(_image.channels() < 3)
+            cv::cvtColor(_image, _image, CV_GRAY2BGR);
+        for_each(_features.begin(), _features.end(), [&](cv::Point2f feature)
+        {
+            cv::rectangle(_image,
+                          cv::Point2f(feature.x - 2, feature.y - 2),
+                          cv::Point2f(feature.x + 2, feature.y + 2),
+                          cv::Scalar (0, 255, 0));
+        });
     }
 }// namespace DSDTM

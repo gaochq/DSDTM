@@ -1,6 +1,7 @@
 %YAML:1.0
 # data
-dataset_dir: /home/buyi/Datasets/longhouse
+# walking people:rgbd_dataset_freiburg3_walking_xyz
+dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_walking_xyz
 
 # camera intrinsics
 # fr1
@@ -27,5 +28,5 @@ Camera.Max_fts: 200
 
 
 #Rarsac algorithm
-Rarsac.Threshold: 1.25
+Rarsac.Threshold: 0.75
 Rarsac.MaxIterators: 1000

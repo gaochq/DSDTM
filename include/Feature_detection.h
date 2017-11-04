@@ -36,7 +36,7 @@ typedef std::vector<Corner> Corners;
 class Feature_detector
 {
 public:
-    Feature_detector(const int Image_height, const int Image_width);
+    Feature_detector();
     ~Feature_detector();
 
     //! Get the cell index from feature coordinate
@@ -46,7 +46,7 @@ public:
     void Set_CellIndexOccupy(cv::Point2f &px);
 
     //! Set the existing features grrid to be occupied
-    void Set_ExistingFeatures(const mFeatures& features);
+    void Set_ExistingFeatures(const Features& features);
 
     //! Set the existing features grrid to be occupied
     void Set_ExistingFeatures(const std::vector<cv::Point2f>& features);
@@ -62,8 +62,8 @@ public:
 
 public:
     typedef std::shared_ptr<Feature_detector> Feature_detectorPtr;
-    const int mImg_height;
-    const int mImg_width;
+    int mImg_height;
+    int mImg_width;
 
     int mCell_size;
     int mPyr_levels;

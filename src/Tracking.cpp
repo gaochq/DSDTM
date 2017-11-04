@@ -11,7 +11,7 @@ Tracking::Tracking(Camera *_cam):
 {
     mState = Not_Init;
     mPyra_levels = Config::Get<int>("Camera.PyraLevels");
-    mFeature_detector = new Feature_detector(_cam->mheight, _cam->mwidth);
+    mFeature_detector = new Feature_detector();
 }
 
 Tracking::~Tracking()
@@ -50,7 +50,8 @@ void Tracking::Track_RGBDCam(cv::Mat colorImg, double ctimestamp, cv::Mat depthI
 
     if(mState==Not_Init)
     {
-        mInitializer = new Initializer(mCurrentFrame);
+        if(!mInitializer)
+            mInitializer = new Initializer(mCurrentFrame, mCam);
 
         if(mInitializer->Init_RGBDCam(mCurrentFrame))
         {
@@ -70,12 +71,12 @@ void Tracking::Track_RGBDCam(cv::Mat colorImg, double ctimestamp, cv::Mat depthI
 void Tracking::Track()
 {
     std::vector<cv::Point2f> Cur_Pts, Last_Pts, Pts_tmp;
-    mLastFrame.GetFeatures(Last_Pts);
+    mLastFrame.Get_Features(Last_Pts);
 
     LKT_Track(Cur_Pts, Last_Pts);
     if(Cur_Pts.size()!=Last_Pts.size())
         std::cerr <<"false"<<std::endl;
-
+    Show_Features(Cur_Pts);
     Rarsac_F(Cur_Pts, Last_Pts);
     //Reject_FMat(Cur_Pts, Last_Pts);
 
@@ -88,8 +89,7 @@ void Tracking::Track()
     if(Cur_Pts.size() < 200)
         mFeature_detector->detect(&mCurrentFrame, 20);
     //std::cout<< mCurrentFrame.mvFeatures.size() << std::endl;
-    mCurrentFrame.GetFeatures(Pts_tmp);
-    Show_Features(Pts_tmp);
+    mCurrentFrame.Get_Features(Pts_tmp);
 
 }
 
@@ -145,15 +145,7 @@ void Tracking::Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::P
 void Tracking::Show_Features(std::vector<cv::Point2f> _features)
 {
     cv::Mat Image_new = mCurrentFrame.mColorImg.clone();
-    if(Image_new.channels() < 3)
-        cv::cvtColor(Image_new, Image_new, CV_GRAY2BGR);
-    for_each(_features.begin(), _features.end(), [&](cv::Point2f feature)
-    {
-        cv::rectangle(Image_new,
-                      cv::Point2f(feature.x - 2, feature.y - 2),
-                      cv::Point2f(feature.x + 2, feature.y + 2),
-                      cv::Scalar (0, 255, 0));
-    });
+    mCam->Draw_Features(Image_new, _features);
 
     cv::namedWindow("Feature_Detect");
     cv::imshow("Feature_Detect", Image_new);

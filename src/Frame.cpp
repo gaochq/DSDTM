@@ -8,12 +8,15 @@
 
 namespace DSDTM
 {
+    unsigned long Frame::mlNextId = 0;
+
     Frame::Frame()
     {
 
     }
+    // Copy contructor
     Frame::Frame(Frame &frame):
-            mCamera(frame.mCamera), mId(frame.mId), mdCloTimestamp(frame.mdCloTimestamp),
+            mCamera(frame.mCamera), mlId(frame.mlId), mdCloTimestamp(frame.mdCloTimestamp),
             mdDepTimestamp(frame.mdDepTimestamp), mT_c2w(frame.mT_c2w), mColorImg(frame.mColorImg),
             mvImg_Pyr(frame.mvImg_Pyr), mDepthImg(frame.mDepthImg), mvFeatures(frame.mvFeatures),
             mPyra_levels(frame.mPyra_levels), mvGrid_probability(frame.mvGrid_probability)
@@ -21,17 +24,21 @@ namespace DSDTM
 
     }
 
+    // construct monocular frame
     Frame::Frame(Camera* _cam, cv::Mat _colorIag, double _timestamp):
             mCamera(_cam), mColorImg(_colorIag), mdCloTimestamp(_timestamp)
     {
+        mlId = mlNextId++;
         InitFrame();
     }
 
+    // construct rgbd frame
     Frame::Frame(Camera *_cam, cv::Mat _colorImg, double _ctimestamp,
                  cv::Mat _depthImg, double _dtimestamp):
             mCamera(_cam), mColorImg(_colorImg), mdCloTimestamp(_ctimestamp),
             mDepthImg(_depthImg), mdDepTimestamp(_dtimestamp)
     {
+        mlId = mlNextId++;
         InitFrame();
     }
 
@@ -45,6 +52,7 @@ namespace DSDTM
         ResetFrame();
         mPyra_levels = Config::Get<int>("Camera.PyraLevels");
         mvImg_Pyr.resize(mPyra_levels);
+
         ComputeImagePyramid(mColorImg, mvImg_Pyr);
     }
 
@@ -64,7 +72,7 @@ namespace DSDTM
         }
     }
 
-    void Frame::GetFeatures(std::vector<cv::Point2f> &_features)
+    void Frame::Get_Features(std::vector<cv::Point2f> &_features)
     {
         for (int i = 0; i < mvFeatures.size(); ++i)
         {
@@ -80,8 +88,21 @@ namespace DSDTM
         }
     }
 
+    float Frame::Get_FeatureDetph(const Feature feature)
+    {
+        uchar *data = mDepthImg.data;
+        return *(data + static_cast<int>(feature.mpx.x*mDepthImg.step
+                                         + feature.mpx.y));
+    }
+
+    void Frame::Add_MapPoint(MapPoint *_Point)
+    {
+        mvMapPoints.push_back(_Point);
+    }
+
     void Frame::Reset_Gridproba()
     {
         mvGrid_probability.resize(100, 0.5);
     }
+
 }

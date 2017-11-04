@@ -7,12 +7,14 @@
 
 #include "Camera.h"
 #include "Feature.h"
+#include "MapPoint.h"
 
 namespace DSDTM
 {
 
+class MapPoint;
 class Camera;
-typedef std::vector<Feature> mFeatures;
+typedef std::vector<Feature> Features;
 
 class Frame
 {
@@ -30,7 +32,7 @@ public:
     void ComputeImagePyramid(const cv::Mat Image, std::vector<cv::Mat> &Img_Pyr);
 
     //! Return keypoints from features
-    void GetFeatures(std::vector<cv::Point2f> &KeyPoints);
+    void Get_Features(std::vector<cv::Point2f> &KeyPoints);
 
     //! Return keypoints from features
     void SetFeatures(const std::vector<cv::Point2f> &KeyPoints);
@@ -41,19 +43,39 @@ public:
     //! Reset the probability of rarsac grid
     void Reset_Gridproba();
 
+    //! Return Features size
+    const int Get_FeatureSize(){ return mvFeatures.size(); }
+
+    //! Set frame pose
+    void Set_Pose(Sophus::SE3 _pose) { mT_c2w = _pose;}
+
+    //! Get the feature depth from depth image
+    float Get_FeatureDetph(const Feature feature);
+
+    //! Add mappoint into frame
+    void Add_MapPoint(MapPoint *_Point);
+
 public:
     typedef std::shared_ptr<Frame> FramePtr;
-    Camera*                 mCamera;
-    unsigned long           mId;
+
+    Features               mvFeatures;
+    unsigned long           mlId;
+    unsigned long           mlNextId;
+
     double                  mdCloTimestamp;         // color image timestamp
     double                  mdDepTimestamp;         // deoth image timestamp
-    Sophus::SE3             mT_c2w;
     cv::Mat                 mColorImg;
     std::vector<cv::Mat>    mvImg_Pyr;
-    cv::Mat                 mDepthImg;
-    mFeatures               mvFeatures;
-    int                     mPyra_levels;
+
     std::vector<double>     mvGrid_probability;
+    cv::Mat                 mDepthImg;
+    Camera*                 mCamera;
+
+    std::vector<MapPoint*>  mvMapPoints;
+
+protected:
+    Sophus::SE3             mT_c2w;
+    int                     mPyra_levels;
 
 };
 }// namespace DSDTM

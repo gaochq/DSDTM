@@ -301,7 +301,7 @@ std::vector<bool> Rarsac_base::RejectFundamental()
                                                    mGridSize_Col*l%10 + mHalf_GridWidth)- WightedMean_pos;
                     Cov_Matrix += mvGrid_probability[l]*Position_tmp*Position_tmp.transpose();
                 }
-                Cov_Matrix = Proba_Sum/(Proba_Sum*Proba_Sum - ProbaSqure_Sum)*Cov_Matrix;
+                Cov_Matrix = Cov_Matrix*Proba_Sum/(Proba_Sum*Proba_Sum - ProbaSqure_Sum);
                 tdScore = Proba_Sum*M_PI*sqrt(Cov_Matrix.determinant());
 
                 //! (3) compute the final score
@@ -327,6 +327,7 @@ std::vector<bool> Rarsac_base::RejectFundamental()
                 {
                     std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
                     std::cout << tError <<"--"<< mScore <<std::endl;
+                    double Proba_Sum = std::accumulate(mFrame->mvGrid_probability.begin(), mFrame->mvGrid_probability.end(), 0.0);
                     return mvStatus;
                 }
 
@@ -342,6 +343,7 @@ std::vector<bool> Rarsac_base::RejectFundamental()
     }
     std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
     std::cout << tError <<"--"<< mScore <<std::endl;
+    double Proba_Sum = std::accumulate(mFrame->mvGrid_probability.begin(), mFrame->mvGrid_probability.end(), 0.0);
     return mvStatus;
 }
 

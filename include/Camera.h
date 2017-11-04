@@ -25,6 +25,7 @@
 #include <sophus/se3.h>
 
 #include "Config.h"
+#include "Frame.h"
 
 
 namespace DSDTM
@@ -39,6 +40,7 @@ enum Camera_Model
 class Camera
 {
 public:
+    Camera();
     Camera(const std::string &Paramfile, const Camera_Model model);
     Camera(Camera_Model model, float _fx, float _fy, float _cx, float _cy);
     ~Camera();
@@ -59,13 +61,17 @@ public:
     Eigen::Vector2d Camera2Pixel(const Eigen::Vector3d &Point);
 
     //! Pixel to Camera
-    Eigen::Vector3d Pixel2Camera(const Eigen::Vector2d &point, double &depth);
+    Eigen::Vector3d Pixel2Camera(const cv::Point2f &point, float &depth);
 
     //! Initalize the camera parameters
     void Init_CamParam(const std::string &Paramfile);
 
     //! whether is the point in image
     bool IsInImage(cv::Point2f _point);
+
+    //! Draw features in image
+    void Draw_Features(cv::Mat &_image, const Features _features);
+    void Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features);
 
 public:
     typedef std::shared_ptr<Camera> CameraPtr;

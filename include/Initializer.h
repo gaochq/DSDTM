@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "Frame.h"
 #include "Feature_detection.h"
+#include "MapPoint.h"
 
 
 namespace DSDTM
@@ -19,7 +20,7 @@ class Feature_detector;
 class Initializer
 {
 public:
-    Initializer(Frame &frame);
+    Initializer(Frame &frame, Camera* camera);
     ~Initializer();
 
     //! Initalize the RGBD camera
@@ -29,11 +30,17 @@ public:
     bool Init_MonocularCam(Frame &lastFrame, Frame &currentFrame);
 
 private:
+    //! Delete features relate to status
+    void ReduceFeatures(Features &_features, std::vector<uchar> _status);
+    void ReduceFeatures(std::vector<cv::Point2f> &_points, std::vector<uchar> _status);
 
 
-public:
-    Frame           mReferFrame;
+private:
+    Frame                   *mReferFrame;
+    Camera                  *mCam;
     Feature_detector        *mFeature_detector;
+
+    bool            mbInitSuccess;
 };
 }
 

@@ -7,16 +7,16 @@
 
 namespace DSDTM
 {
-Feature_detector::Feature_detector(const int Image_height, const int Image_width):
-        mImg_height(Image_height), mImg_width(Image_width)
-
+Feature_detector::Feature_detector()
 {
     mCell_size   = Config::Get<int>("Camera.CellSize");
     mPyr_levels  = Config::Get<int>("Camera.PyraLevels");
-    mMax_fts = Config::Get<int>("Camera.Max_fts");
+    mMax_fts     = Config::Get<int>("Camera.Max_fts");
+    mImg_width   = Config::Get<int>("Camera.width");
+    mImg_height  = Config::Get<int>("Camera.height");
 
-    mGrid_rows = ceil(static_cast<double>(1.0*Image_height/mCell_size));
-    mGrid_cols = ceil(static_cast<double>(1.0*Image_width/mCell_size));
+    mGrid_rows = ceil(static_cast<double>(1.0*mImg_height/mCell_size));
+    mGrid_cols = ceil(static_cast<double>(1.0*mImg_width/mCell_size));
     mvGrid_occupy.resize(mGrid_rows*mGrid_cols, false);
 }
 
@@ -48,7 +48,7 @@ void Feature_detector::Set_CellIndexOccupy(cv::Point2f &px)
         mvGrid_occupy[Index-mGrid_cols] = true;
 }
 
-void Feature_detector::Set_ExistingFeatures(const mFeatures &features)
+void Feature_detector::Set_ExistingFeatures(const Features &features)
 {
     mvGrid_occupy.assign(mGrid_rows*mGrid_cols, false);
     std::for_each(features.begin(), features.end(), [&](Feature feature)
