@@ -47,7 +47,6 @@ private:
     void ComputeFundamental();
 
 
-
 private:
     int                 mGridSize_Col;
     int                 mGridSize_Row;

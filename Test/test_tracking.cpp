@@ -82,7 +82,8 @@ int main(int argc, char **argv)
 
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
-        cout << time << "us" << endl;
+    cout <<"Cost "<< time << " us" << endl;
+    cout <<"Average "<< time/nImages << "us" << endl;
 
     return  0;
 }

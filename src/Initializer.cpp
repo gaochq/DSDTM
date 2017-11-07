@@ -113,7 +113,6 @@ namespace DSDTM
                 for (int i = 0; i < mReferFrame.mvFeatures.size(); ++i)
                 {
                     float z = mReferFrame.Get_FeatureDetph(mReferFrame.mvFeatures[i]);
-                    float p = mReferFrame.mDepthImg.at<float>(mReferFrame.mvFeatures[i].mpx.x, mReferFrame.mvFeatures[i].mpx.y);
                     Eigen::Vector3d tPose = mCam->Pixel2Camera(mReferFrame.mvFeatures[i].mpx, z);
                     MapPoint *tNewPoint = new MapPoint(tPose, &frame);
                     mReferFrame.Add_MapPoint(tNewPoint);

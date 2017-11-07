@@ -92,7 +92,7 @@ namespace DSDTM
         //uchar *data = mDepthImg.data;
         //float z = *(data + static_cast<int>(feature.mpx.x*mDepthImg.step[0]
         //                                 + feature.mpx.y));
-        float p = mDepthImg.at<float>(feature.mpx.x, feature.mpx.y);
+        float p = mDepthImg.at<float>(feature.mpx.y, feature.mpx.x);
         return p;
     }
 

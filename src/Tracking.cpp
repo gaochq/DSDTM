@@ -55,7 +55,7 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
 
     mCurrentFrame = Frame(mCam, colorImg, ctimestamp, tDImg);
 
-    /*
+
     if(mState==Not_Init)
     {
         if(!mInitializer)
@@ -69,7 +69,6 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
         }
     }
     else
-     */
         Track();
 
     mLastFrame.ResetFrame();
@@ -86,17 +85,14 @@ void Tracking::Track()
     {
         //Show_Features(Last_Pts);
         LKT_Track(Cur_Pts, Last_Pts);
-        if (Cur_Pts.size() < 20) {
-            std::cout << "Too few features: " << Cur_Pts.size() << " after KLT" << std::endl;
-            //return;
-        }
-        std::cout << "  " << Cur_Pts.size();
-        //Rarsac_F(Cur_Pts, Last_Pts);
-        Reject_FMat(Cur_Pts, Last_Pts);
+        //std::cout << "  " << Cur_Pts.size();
+        Rarsac_F(Cur_Pts, Last_Pts);
+        //Reject_FMat(Cur_Pts, Last_Pts);
 
         //TODO: show image and deal with features
-        std::cout << " --- " << Cur_Pts.size() << std::endl;
-        if (Cur_Pts.size() < 20) {
+        //std::cout << " --- " << Cur_Pts.size() << std::endl;
+        if (Cur_Pts.size() < 20)
+        {
             std::cout << "Too few features: " << Cur_Pts.size() << " after rarsac" << std::endl;
             //return;
         }
@@ -111,7 +107,7 @@ void Tracking::Track()
     std::vector<cv::Point2f> fea1(Pts_tmp.begin()+Cur_Pts.size(), Pts_tmp.end());
     std::vector<cv::Point2f> fea2(Pts_tmp.begin(), Pts_tmp.begin()+Cur_Pts.size());
     Show_Features(fea2, fea1);
-    std::cout<< mCurrentFrame.mvFeatures.size() << std::endl;
+   // std::cout<< mCurrentFrame.mvFeatures.size() << std::endl;
 }
 
 void Tracking::LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts)

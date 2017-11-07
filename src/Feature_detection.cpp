@@ -36,7 +36,7 @@ int Feature_detector::Get_CellIndex(int x, int y, int level)
 
 void Feature_detector::Set_CellIndexOccupy(const cv::Point2f px)
 {
-    int Index = static_cast<int>((px.y/mCell_size)*mGrid_cols) + static_cast<int>(px.x/mCell_size);
+    int Index = static_cast<int>(px.y/mCell_size)*mGrid_cols + static_cast<int>(px.x/mCell_size);
     mvGrid_occupy[Index] = true;
 
 
@@ -139,7 +139,7 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold)
         Corner tCorner = corners[iter];
         if(tCorner.score > detection_threshold)
         {
-            int Index = static_cast<int>((tCorner.y/mCell_size)*mGrid_cols) + static_cast<int>(tCorner.x/mCell_size);
+            int Index = static_cast<int>(tCorner.y/mCell_size)*mGrid_cols + static_cast<int>(tCorner.x/mCell_size);
             if(mvGrid_occupy[Index])
                 continue;
             frame->mvFeatures.push_back(Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level));
