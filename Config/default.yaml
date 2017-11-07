@@ -1,7 +1,7 @@
 %YAML:1.0
 # data
 # walking people:rgbd_dataset_freiburg3_walking_xyz
-dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_walking_xyz
+dataset_dir: /home/buyi/Datasets/longhouse
 
 # camera intrinsics
 # fr1
@@ -19,7 +19,7 @@ Camera.height: 480
 #camera.cx: 325.1
 #camera.cy: 249.7
 
-camera.depth_scale: 5000
+Camera.depth_scale: 5000
 
 # VO Parameters
 Camera.PyraLevels: 5

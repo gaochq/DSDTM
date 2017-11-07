@@ -58,7 +58,6 @@ namespace DSDTM
 
     void Frame::ResetFrame()
     {
-        mDepthImg.release();
         mvFeatures.clear();
         mvGrid_probability.clear();
     }
@@ -82,6 +81,7 @@ namespace DSDTM
 
     void Frame::SetFeatures(const std::vector<cv::Point2f> &_features)
     {
+        mvFeatures.clear();
         for (int i = 0; i < _features.size(); ++i)
         {
             mvFeatures.push_back(Feature(this, _features[i], 0));
@@ -90,9 +90,11 @@ namespace DSDTM
 
     float Frame::Get_FeatureDetph(const Feature feature)
     {
-        uchar *data = mDepthImg.data;
-        return *(data + static_cast<int>(feature.mpx.x*mDepthImg.step
-                                         + feature.mpx.y));
+        //uchar *data = mDepthImg.data;
+        //float z = *(data + static_cast<int>(feature.mpx.x*mDepthImg.step[0]
+        //                                 + feature.mpx.y));
+        float p = mDepthImg.at<float>(feature.mpx.x, feature.mpx.y);
+        return p;
     }
 
     void Frame::Add_MapPoint(MapPoint *_Point)

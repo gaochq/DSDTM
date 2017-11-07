@@ -26,6 +26,7 @@ struct Feature
             mgrad(0.0, 0.0)
     {}
 };
+typedef std::vector<Feature> Features;
 
 }// namespace DSDTM
 

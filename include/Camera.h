@@ -26,6 +26,7 @@
 
 #include "Config.h"
 #include "Frame.h"
+#include "Feature.h"
 
 
 namespace DSDTM
@@ -72,6 +73,9 @@ public:
     //! Draw features in image
     void Draw_Features(cv::Mat &_image, const Features _features);
     void Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features);
+
+    //! Draw lines in image (mainly in the initialization)
+    void Draw_Lines(cv::Mat &_image, const Features _featuresA, const Features _featuresB);
 
 public:
     typedef std::shared_ptr<Camera> CameraPtr;

@@ -14,7 +14,6 @@ namespace DSDTM
 
 class MapPoint;
 class Camera;
-typedef std::vector<Feature> Features;
 
 class Frame
 {
@@ -60,7 +59,7 @@ public:
 
     Features               mvFeatures;
     unsigned long           mlId;
-    unsigned long           mlNextId;
+    static unsigned long           mlNextId;
 
     double                  mdCloTimestamp;         // color image timestamp
     double                  mdDepTimestamp;         // deoth image timestamp

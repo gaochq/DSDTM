@@ -85,7 +85,8 @@ namespace DSDTM
     {
         if(_image.channels() < 3)
             cv::cvtColor(_image, _image, CV_GRAY2BGR);
-        for_each(_features.begin(), _features.end(), [&](Feature feature)
+
+        std::for_each(_features.begin(), _features.end(), [&](Feature feature)
         {
             cv::rectangle(_image,
                           cv::Point2f(feature.mpx.x - 2, feature.mpx.y - 2),
@@ -98,12 +99,24 @@ namespace DSDTM
     {
         if(_image.channels() < 3)
             cv::cvtColor(_image, _image, CV_GRAY2BGR);
-        for_each(_features.begin(), _features.end(), [&](cv::Point2f feature)
+
+        std::for_each(_features.begin(), _features.end(), [&](cv::Point2f feature)
         {
             cv::rectangle(_image,
                           cv::Point2f(feature.x - 2, feature.y - 2),
                           cv::Point2f(feature.x + 2, feature.y + 2),
                           cv::Scalar (0, 255, 0));
         });
+    }
+
+    void Camera::Draw_Lines(cv::Mat &_image, const Features _featuresA, const Features _featuresB)
+    {
+        if(_image.channels() < 3)
+            cv::cvtColor(_image, _image, CV_GRAY2BGR);
+
+        for (int i = 0; i < _featuresA.size(); ++i)
+        {
+            cv::line(_image, _featuresA[i].mpx, _featuresB[i].mpx, 1);
+        }
     }
 }// namespace DSDTM

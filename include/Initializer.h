@@ -6,6 +6,7 @@
 #define DSDTM_INITIALIZER_H
 
 #include "Camera.h"
+#include "Feature.h"
 #include "Frame.h"
 #include "Feature_detection.h"
 #include "MapPoint.h"
@@ -13,7 +14,7 @@
 
 namespace DSDTM
 {
-
+struct Feature;
 class Frame;
 class Feature_detector;
 
@@ -35,8 +36,11 @@ private:
     void ReduceFeatures(std::vector<cv::Point2f> &_points, std::vector<uchar> _status);
 
 
-private:
-    Frame                   *mReferFrame;
+public:
+    Frame                   mReferFrame;
+
+protected:
+
     Camera                  *mCam;
     Feature_detector        *mFeature_detector;
 

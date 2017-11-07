@@ -36,10 +36,10 @@ public:
     ~Tracking();
 
     //! Tracking on the rgbd camera
-    void Track_RGBDCam(cv::Mat colorImg, double ctimestamp, cv::Mat depthImg, double dtimestamp);
+    void Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg, const double dtimestamp);
 
     //! Tracking on the
-    void Track_Monocular(cv::Mat &Image, double TimeStamp);
+    void Track_Monocular(const cv::Mat &Image, const double TimeStamp);
 
 private:
     //! The main tracking function
@@ -62,17 +62,19 @@ private:
 
 public:
     Camera                  *mCam;               //! Camera
+    int                     mPyra_levels;
+
+protected:
+    float                   mDepthScale;
+
+    Rarsac_base             mRarsac_base;
+    Feature_detector        *mFeature_detector;
+    Initializer             *mInitializer;
 
     Tracking_State          mState;             //! Tracking state
     Frame                   mLastFrame;
     Frame                   mCurrentFrame;
     Frame                   mInitFrame;
-
-    Initializer             *mInitializer;
-    int                     mPyra_levels;
-
-    Rarsac_base             mRarsac_base;
-    Feature_detector        *mFeature_detector;
 
 };
 

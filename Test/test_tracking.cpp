@@ -62,9 +62,9 @@ int main(int argc, char **argv)
 
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");
     string strColorImageFile = Datasets_Dir + "/rgb.txt";
-    string strDepthImageFile = Datasets_Dir + "/rgb.txt";
+    string strDepthImageFile = Datasets_Dir + "/depth.txt";
     LoadImages(strColorImageFile, dColorImageNames, dColorTimestamps);
-    LoadImages(strColorImageFile, dDepthImageNames, dDepthTimestamps);
+    LoadImages(strDepthImageFile, dDepthImageNames, dDepthTimestamps);
 
     int nImages = dColorImageNames.size();
 
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
         string Colorimg_path = Datasets_Dir + "/" + dColorImageNames[i];
         string Depthimg_path = Datasets_Dir + "/" + dDepthImageNames[i];
         ColorImage = cv::imread(Colorimg_path.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
-        DepthIMage = cv::imread(Colorimg_path.c_str());
+        DepthIMage = cv::imread(Depthimg_path.c_str(), CV_LOAD_IMAGE_UNCHANGED);
 
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
         clahe->apply(ColorImage, ColorImage);

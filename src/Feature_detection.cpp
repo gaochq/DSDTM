@@ -76,6 +76,9 @@ void Feature_detector::ResetGrid()
 
 void Feature_detector::detect(Frame* frame, const double detection_threshold)
 {
+    if(frame->mvFeatures.size()>=mMax_fts)
+        return;
+
     Corners corners(mGrid_cols*mGrid_rows, Corner(0, 0, detection_threshold, 0, 0.0f));
 
     for(int L=0; L<mPyr_levels; ++L)
