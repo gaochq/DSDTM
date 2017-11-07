@@ -11,6 +11,8 @@
 
 using namespace std;
 
+bool tbFirstRead = false;
+
 void LoadImages(const string &strImageFilename, vector<string> &vstrImageFilenamesRGB, vector<double> &vTimestamps)
 {
     ifstream fAssociation;
@@ -19,9 +21,13 @@ void LoadImages(const string &strImageFilename, vector<string> &vstrImageFilenam
     {
         string s;
         //! read the first three lines of txt file
-        getline(fAssociation,s);
-        getline(fAssociation,s);
-        getline(fAssociation,s);
+        if(!tbFirstRead)
+        {
+            getline(fAssociation, s);
+            getline(fAssociation, s);
+            getline(fAssociation, s);
+            tbFirstRead = true;
+        }
         getline(fAssociation,s);
 
         if(!s.empty())
@@ -80,7 +86,7 @@ int main(int argc, char **argv)
         DSDTM::Features features;
         DSDTM::Feature_detector detector;
         detector.detect(frame.get(), 20);
-
+        cout << frame.get()->mvFeatures.size() << endl;
 
         cv::Mat Image_new = Image_tmp.clone();
         if(Image_new.channels() < 3)

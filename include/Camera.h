@@ -71,8 +71,8 @@ public:
     bool IsInImage(cv::Point2f _point);
 
     //! Draw features in image
-    void Draw_Features(cv::Mat &_image, const Features _features);
-    void Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features);
+    void Draw_Features(cv::Mat &_image, const Features _features, int _color);
+    void Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, int _color);
 
     //! Draw lines in image (mainly in the initialization)
     void Draw_Lines(cv::Mat &_image, const Features _featuresA, const Features _featuresB);

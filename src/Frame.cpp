@@ -17,9 +17,9 @@ namespace DSDTM
     // Copy contructor
     Frame::Frame(Frame &frame):
             mCamera(frame.mCamera), mlId(frame.mlId), mdCloTimestamp(frame.mdCloTimestamp),
-            mdDepTimestamp(frame.mdDepTimestamp), mT_c2w(frame.mT_c2w), mColorImg(frame.mColorImg),
-            mvImg_Pyr(frame.mvImg_Pyr), mDepthImg(frame.mDepthImg), mvFeatures(frame.mvFeatures),
-            mPyra_levels(frame.mPyra_levels), mvGrid_probability(frame.mvGrid_probability)
+            mT_c2w(frame.mT_c2w), mColorImg(frame.mColorImg), mvImg_Pyr(frame.mvImg_Pyr),
+            mDepthImg(frame.mDepthImg), mvFeatures(frame.mvFeatures), mPyra_levels(frame.mPyra_levels),
+            mvGrid_probability(frame.mvGrid_probability)
     {
 
     }
@@ -33,10 +33,9 @@ namespace DSDTM
     }
 
     // construct rgbd frame
-    Frame::Frame(Camera *_cam, cv::Mat _colorImg, double _ctimestamp,
-                 cv::Mat _depthImg, double _dtimestamp):
+    Frame::Frame(Camera *_cam, cv::Mat _colorImg, double _ctimestamp, cv::Mat _depthImg):
             mCamera(_cam), mColorImg(_colorImg), mdCloTimestamp(_ctimestamp),
-            mDepthImg(_depthImg), mdDepTimestamp(_dtimestamp)
+            mDepthImg(_depthImg)
     {
         mlId = mlNextId++;
         InitFrame();

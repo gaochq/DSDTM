@@ -55,7 +55,7 @@ namespace DSDTM
             //! Show first frame
             cv::namedWindow("Feature_Detect");
             cv::Mat tFeatureImg(mReferFrame.mColorImg);
-            mCam->Draw_Features(tFeatureImg, mReferFrame.mvFeatures);
+            mCam->Draw_Features(tFeatureImg, mReferFrame.mvFeatures, 0);
             cv::imshow("Feature_Detect", tFeatureImg);
 
             mbInitSuccess = true;

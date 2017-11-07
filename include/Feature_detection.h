@@ -43,7 +43,7 @@ public:
     int Get_CellIndex(int x, int y, int level);
 
     //! Set the cell be occupied
-    void Set_CellIndexOccupy(cv::Point2f &px);
+    void Set_CellIndexOccupy(const cv::Point2f px);
 
     //! Set the existing features grrid to be occupied
     void Set_ExistingFeatures(const Features& features);

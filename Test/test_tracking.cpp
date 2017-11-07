@@ -12,19 +12,15 @@
 
 using namespace std;
 
-void LoadImages(const string &strImageFilename, vector<string> &vstrImageFilenamesRGB, vector<double> &vTimestamps)
+void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageFilenamesRGB,
+                vector<string> &vstrImageFilenamesD, vector<double> &vTimestamps)
 {
     ifstream fAssociation;
-    fAssociation.open(strImageFilename.c_str());
+    fAssociation.open(strAssociationFilename.c_str());
     while(!fAssociation.eof())
     {
         string s;
-        //! read the first three lines of txt file
         getline(fAssociation,s);
-        getline(fAssociation,s);
-        getline(fAssociation,s);
-        getline(fAssociation,s);
-
         if(!s.empty())
         {
             stringstream ss;
@@ -37,11 +33,12 @@ void LoadImages(const string &strImageFilename, vector<string> &vstrImageFilenam
             vstrImageFilenamesRGB.push_back(sRGB);
             ss >> t;
             ss >> sD;
-            //vstrImageFilenamesD.push_back(sD);
+            vstrImageFilenamesD.push_back(sD);
 
         }
     }
 }
+
 
 int main(int argc, char **argv)
 {
@@ -55,18 +52,14 @@ int main(int argc, char **argv)
     DSDTM::Camera::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
     DSDTM::Tracking tracking(camera.get());
 
-    vector<double> dColorTimestamps;
-    vector<string> dColorImageNames;
-    vector<double> dDepthTimestamps;
-    vector<string> dDepthImageNames;
-
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");
-    string strColorImageFile = Datasets_Dir + "/rgb.txt";
-    string strDepthImageFile = Datasets_Dir + "/depth.txt";
-    LoadImages(strColorImageFile, dColorImageNames, dColorTimestamps);
-    LoadImages(strDepthImageFile, dDepthImageNames, dDepthTimestamps);
+    vector<string> vstrImageFilenamesRGB;
+    vector<string> vstrImageFilenamesD;
+    vector<double> vTimestamps;
+    string strAssociationFilename = Datasets_Dir + "/associations.txt";
+    LoadImages(strAssociationFilename, vstrImageFilenamesRGB, vstrImageFilenamesD, vTimestamps);
 
-    int nImages = dColorImageNames.size();
+    int nImages = vstrImageFilenamesRGB.size();
 
     cv::Mat ColorImage, Image_tmp, DepthIMage;
 
@@ -75,8 +68,8 @@ int main(int argc, char **argv)
     {
         //! The single image cost almost 10ms on reading and clahe
         double start = static_cast<double>(cvGetTickCount());
-        string Colorimg_path = Datasets_Dir + "/" + dColorImageNames[i];
-        string Depthimg_path = Datasets_Dir + "/" + dDepthImageNames[i];
+        string Colorimg_path = Datasets_Dir + "/" + vstrImageFilenamesRGB[i];
+        string Depthimg_path = Datasets_Dir + "/" + vstrImageFilenamesD[i];
         ColorImage = cv::imread(Colorimg_path.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
         DepthIMage = cv::imread(Depthimg_path.c_str(), CV_LOAD_IMAGE_UNCHANGED);
 
@@ -85,7 +78,7 @@ int main(int argc, char **argv)
         double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
 //        cout << time << "us" << endl;
 
-        tracking.Track_RGBDCam(ColorImage, dColorTimestamps[i], DepthIMage, dDepthTimestamps[i]);
+        tracking.Track_RGBDCam(ColorImage, vTimestamps[i], DepthIMage);
 
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();

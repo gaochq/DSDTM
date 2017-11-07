@@ -76,13 +76,17 @@ namespace DSDTM
 
     bool Camera::IsInImage(cv::Point2f _point)
     {
-        if (_point.x>=0 && _point.x<mheight && _point.y>=0 && _point.y<mwidth)
+        if (_point.x>=0 && _point.x<mwidth && _point.y>=0 && _point.y<mheight)
             return true;
         return false;
     }
 
-    void Camera::Draw_Features(cv::Mat &_image, const Features _features)
+    void Camera::Draw_Features(cv::Mat &_image, const Features _features, int _color)
     {
+        cv::Scalar color = cv::Scalar (0, 255, 0);
+        if(_color)
+            color = cv::Scalar (0, 0, 255);
+
         if(_image.channels() < 3)
             cv::cvtColor(_image, _image, CV_GRAY2BGR);
 
@@ -91,12 +95,16 @@ namespace DSDTM
             cv::rectangle(_image,
                           cv::Point2f(feature.mpx.x - 2, feature.mpx.y - 2),
                           cv::Point2f(feature.mpx.x + 2, feature.mpx.y + 2),
-                          cv::Scalar (0, 255, 0));
+                          color);
         });
     }
 
-    void Camera::Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features)
+    void Camera::Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, int _color)
     {
+        cv::Scalar color = cv::Scalar (0, 255, 0);
+        if(_color)
+            color = cv::Scalar (0, 0, 255);
+
         if(_image.channels() < 3)
             cv::cvtColor(_image, _image, CV_GRAY2BGR);
 
@@ -105,7 +113,7 @@ namespace DSDTM
             cv::rectangle(_image,
                           cv::Point2f(feature.x - 2, feature.y - 2),
                           cv::Point2f(feature.x + 2, feature.y + 2),
-                          cv::Scalar (0, 255, 0));
+                          color);
         });
     }
 

@@ -36,7 +36,7 @@ public:
     ~Tracking();
 
     //! Tracking on the rgbd camera
-    void Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg, const double dtimestamp);
+    void Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg);
 
     //! Tracking on the
     void Track_Monocular(const cv::Mat &Image, const double TimeStamp);
@@ -53,11 +53,12 @@ private:
     void Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
 
     //! Delete outliers according to lkt and fundamental status
-    void ReduceFeatures(std::vector<cv::Point2f> &_Points, std::vector<uchar> _Status);
-    void ReduceFeatures(std::vector<cv::Point2f> &_Points, std::vector<bool> _Status);
+    void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status);
+    void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<bool> _Status);
 
     //! Display image and features
-    void Show_Features(std::vector<cv::Point2f> _features);
+    void Show_Features(const std::vector<cv::Point2f> _features, int color);
+    void Show_Features(const std::vector<cv::Point2f> _features1, const std::vector<cv::Point2f> _features2);
 
 
 public:

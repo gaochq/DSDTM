@@ -21,7 +21,7 @@ public:
     Frame();
     Frame(Frame &frame);
     Frame(Camera* _cam, cv::Mat _colorIag, double _timestamp);
-    Frame(Camera* _cam, cv::Mat _colorImg, double _ctimestamp, cv::Mat _depthImg, double _dtimestamp);
+    Frame(Camera* _cam, cv::Mat _colorImg, double _ctimestamp, cv::Mat _depthImg);
     ~Frame();
 
     //! Initalize the Frame
@@ -62,7 +62,6 @@ public:
     static unsigned long           mlNextId;
 
     double                  mdCloTimestamp;         // color image timestamp
-    double                  mdDepTimestamp;         // deoth image timestamp
     cv::Mat                 mColorImg;
     std::vector<cv::Mat>    mvImg_Pyr;
 

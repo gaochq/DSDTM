@@ -34,18 +34,31 @@ int Feature_detector::Get_CellIndex(int x, int y, int level)
     return Index;
 }
 
-void Feature_detector::Set_CellIndexOccupy(cv::Point2f &px)
+void Feature_detector::Set_CellIndexOccupy(const cv::Point2f px)
 {
     int Index = static_cast<int>((px.y/mCell_size)*mGrid_cols) + static_cast<int>(px.x/mCell_size);
     mvGrid_occupy[Index] = true;
+
+
     if(Index+1>=0 && Index+1<mvGrid_occupy.size())
         mvGrid_occupy[Index+1] = true;
     if(Index-1>=0 && Index-1<mvGrid_occupy.size())
         mvGrid_occupy[Index-1] = true;
+
     if(Index+mGrid_cols>=0 && Index+mGrid_cols<mvGrid_occupy.size())
         mvGrid_occupy[Index+mGrid_cols] = true;
+    if(Index+mGrid_cols-1>=0 && Index+mGrid_cols-1<mvGrid_occupy.size())
+        mvGrid_occupy[Index+mGrid_cols-1] = true;
+    if(Index+mGrid_cols+1>=0 && Index+mGrid_cols+1<mvGrid_occupy.size())
+        mvGrid_occupy[Index+mGrid_cols+1] = true;
+
     if(Index-mGrid_cols>=0 && Index-mGrid_cols<mvGrid_occupy.size())
         mvGrid_occupy[Index-mGrid_cols] = true;
+    if(Index-mGrid_cols+1>=0 && Index-mGrid_cols+1<mvGrid_occupy.size())
+        mvGrid_occupy[Index-mGrid_cols+1] = true;
+    if(Index-mGrid_cols-1>=0 && Index-mGrid_cols-1<mvGrid_occupy.size())
+        mvGrid_occupy[Index-mGrid_cols-1] = true;
+
 }
 
 void Feature_detector::Set_ExistingFeatures(const Features &features)
@@ -125,7 +138,12 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold)
     {
         Corner tCorner = corners[iter];
         if(tCorner.score > detection_threshold)
+        {
+            int Index = static_cast<int>((tCorner.y/mCell_size)*mGrid_cols) + static_cast<int>(tCorner.x/mCell_size);
+            if(mvGrid_occupy[Index])
+                continue;
             frame->mvFeatures.push_back(Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level));
+        }
         if(frame->mvFeatures.size()>=mMax_fts)
             break;
     }
