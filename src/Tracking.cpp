@@ -99,7 +99,7 @@ void Tracking::Track()
     if (Cur_Pts.size()<20)
     {
         std::cout<< "Too few features: " << Cur_Pts.size() << " after KLT" << std::endl;
-        return;
+        //return;
     }
 
     //Rarsac_F(Cur_Pts, Last_Pts);
@@ -110,7 +110,7 @@ void Tracking::Track()
     if (Cur_Pts.size()<20)
     {
         std::cout<< "Too few features: " << Cur_Pts.size() << " after rarsac" << std::endl;
-        return;
+        //return;
     }
     Show_Features(Cur_Pts);
 
