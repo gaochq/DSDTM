@@ -52,7 +52,7 @@ public:
     void Set_ExistingFeatures(const std::vector<cv::Point2f>& features);
 
     //! Extract fast corners from curren frame
-    void detect(Frame* frame, const double detection_threshold);
+    void detect(Frame* frame, const double detection_threshold, const bool tFirst=true);
 
     //! Reset the states of gridcell
     void ResetGrid();

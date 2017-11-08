@@ -76,7 +76,7 @@ namespace DSDTM
 
     bool Camera::IsInImage(cv::Point2f _point)
     {
-        if (_point.x>=0 && _point.x<mwidth && _point.y>=0 && _point.y<mheight)
+        if (cvRound(_point.x) >=1 && cvRound(_point.x)<mwidth-1 && cvRound(_point.y)>=1 && cvRound(_point.y)< mheight-1)
             return true;
         return false;
     }

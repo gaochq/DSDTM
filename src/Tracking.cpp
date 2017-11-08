@@ -115,8 +115,8 @@ void Tracking::Track()
     //Show_Features(Last_Pts);
     LKT_Track(tCur_Pts, tLast_Pts);
     //std::cout << "  " << tCur_Pts.size();
-    Rarsac_F(tCur_Pts, tLast_Pts, tBad_Pts);
-    //Reject_FMat(tCur_Pts, tLast_Pts, tBad_Pts);
+    //Rarsac_F(tCur_Pts, tLast_Pts, tBad_Pts);
+    Reject_FMat(tCur_Pts, tLast_Pts, tBad_Pts);
 
     //TODO: show image and deal with features
     std::cout << " --- " << tCur_Pts.size() << std::endl;
@@ -129,7 +129,7 @@ void Tracking::Track()
     mCurrentFrame.SetFeatures(tCur_Pts);
     mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
     mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
-    mFeature_detector->detect(&mCurrentFrame, 20);
+    mFeature_detector->detect(&mCurrentFrame, 10);
     mCurrentFrame.Get_Features(tPts_tmp);
     std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
     std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());

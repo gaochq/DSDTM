@@ -24,7 +24,7 @@ public:
     //! Get the bin index of the feature
     int Get_GridIndex(cv::Point2f _pt);
 
-private:
+protected:
 
     //! Get features from mvBinFeatures
     bool Get_Features(int Index, std::pair<cv::Point2f, cv::Point2f> &_featurePair);
@@ -44,28 +44,35 @@ private:
         return a.second > b.second;
     }
 
-    void ComputeFundamental();
-
+    //! Get inliners refer to Fundamental matrix
     float CheckFundamental(const cv::Mat &F21, std::vector<bool> &_status, float sigma);
 
+    //! Normalize corners to calculate faundamental matrix
+    cv::Mat Normalize_Points(std::vector <cv::Point2f> Points, std::vector <cv::Point2f> &Norm_Points);
 
-private:
-    int                 mGridSize_Col;
-    int                 mGridSize_Row;
-    Frame               *mFrame;
-    std::vector<bool>   mvGrid_occupancy;
-    std::vector<double> mvGrid_probability;
-    std::vector<double> mvBin_probability;
-    double              mdeta;
-    int                 mMaxIteators;
-    std::vector<bool>   mvStatus;
-    double              mdOutlierThreshold;
-    int                 mHalf_GridWidth;
-    int                 mHalf_GridHeight;
+    //! Solve fundamental matrix
+    cv::Mat ComputeF21(const std::vector<cv::Point2f> &vP1, const std::vector<cv::Point2f> &vP2);
 
-    std::vector<cv::Point2f> mvCur_pts;         // Features in current image
-    std::vector<cv::Point2f> mvPrev_pts;        // Features in previous image
-    std::vector< std::vector<int> > mvBinFeatures;
+
+protected:
+    int                     mGridSize_Col;
+    int                     mGridSize_Row;
+    Frame                   *mFrame;
+
+    int                     mMaxIteators;
+    double                  mdOutlierThreshold;
+    double                  mdTerminThreshold;
+
+    std::vector<bool>       mvStatus;
+    int                     mHalf_GridWidth;
+    int                     mHalf_GridHeight;
+    std::vector<bool>       mvGrid_occupancy;
+    std::vector<double>     mvGrid_probability;
+    std::vector<double>     mvBin_probability;
+
+    std::vector<cv::Point2f>            mvCur_pts;         // Features in current image
+    std::vector<cv::Point2f>            mvPrev_pts;        // Features in previous image
+    std::vector< std::vector<int> >     mvBinFeatures;
 
     std::vector< std::pair<int, double> > mvBinIndexProba;      // Bins ranked according to the probability
 };

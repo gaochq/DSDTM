@@ -42,7 +42,7 @@ namespace DSDTM
 
         if(!mbInitSuccess)
         {
-            mFeature_detector->detect(&frame, 20);
+            mFeature_detector->detect(&frame, 20, false);
             if (frame.Get_FeatureSize() < 50)
             {
                 std::cout << "Too few features in Initalizr" << std::endl;

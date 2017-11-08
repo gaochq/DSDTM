@@ -87,7 +87,7 @@ void Feature_detector::ResetGrid()
     std::fill(mvGrid_occupy.begin(), mvGrid_occupy.end(), false);
 }
 
-void Feature_detector::detect(Frame* frame, const double detection_threshold)
+void Feature_detector::detect(Frame* frame, const double detection_threshold,const bool tFirst)
 {
     if(frame->mvFeatures.size()>=mMax_fts)
         return;
@@ -137,12 +137,14 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold)
     for (int iter = 0; iter < corners.size(); ++iter)
     {
         Corner tCorner = corners[iter];
-        if(tCorner.score > detection_threshold)
+        if(tCorner.score > 20)
         {
             int Index = static_cast<int>(tCorner.y/mCell_size)*mGrid_cols + static_cast<int>(tCorner.x/mCell_size);
             if(mvGrid_occupy[Index])
                 continue;
             frame->mvFeatures.push_back(Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level));
+            //if(tFirst)
+                Set_CellIndexOccupy(cv::Point2f(tCorner.x, tCorner.y));
         }
         if(frame->mvFeatures.size()>=mMax_fts)
             break;
