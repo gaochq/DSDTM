@@ -49,16 +49,21 @@ private:
     void LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
 
     //! Reject outliers with RARSAC algorithm
-    void Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
-    void Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
+    void Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
+                  std::vector<cv::Point2f> &_bad_Pts);
+    void Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
+                     std::vector<cv::Point2f> &_bad_Pts);
 
     //! Delete outliers according to lkt and fundamental status
-    void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status);
-    void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<bool> _Status);
+    void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<bool> _Status,
+                        std::vector<cv::Point2f> *_BadPoints = nullptr);
+    void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status,
+                        std::vector<cv::Point2f> *_BadPoints = nullptr);
 
     //! Display image and features
     void Show_Features(const std::vector<cv::Point2f> _features, int color);
-    void Show_Features(const std::vector<cv::Point2f> _features1, const std::vector<cv::Point2f> _features2);
+    void Show_Features(const std::vector<cv::Point2f> _features1, const std::vector<cv::Point2f> _features2,
+                       const std::vector<cv::Point2f> _features3);
 
 
 public:

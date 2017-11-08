@@ -2,7 +2,7 @@
 # data
 # walking people: rgbd_dataset_freiburg3_walking_xyz
 # sitting people: rgbd_dataset_freiburg3_sitting_static
-dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_walking_xyz
+dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_sitting_static
 
 # camera intrinsics
 # fr1
@@ -29,5 +29,5 @@ Camera.Max_fts: 200
 
 
 #Rarsac algorithm
-Rarsac.Threshold: 1.25
+Rarsac.Threshold: 0.75
 Rarsac.MaxIterators: 1000

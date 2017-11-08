@@ -46,6 +46,8 @@ private:
 
     void ComputeFundamental();
 
+    float CheckFundamental(const cv::Mat &F21, std::vector<bool> &_status, float sigma);
+
 
 private:
     int                 mGridSize_Col;

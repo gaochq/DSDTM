@@ -99,12 +99,8 @@ namespace DSDTM
         });
     }
 
-    void Camera::Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, int _color)
+    void Camera::Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, cv::Scalar _color)
     {
-        cv::Scalar color = cv::Scalar (0, 255, 0);
-        if(_color)
-            color = cv::Scalar (0, 0, 255);
-
         if(_image.channels() < 3)
             cv::cvtColor(_image, _image, CV_GRAY2BGR);
 
@@ -113,7 +109,7 @@ namespace DSDTM
             cv::rectangle(_image,
                           cv::Point2f(feature.x - 2, feature.y - 2),
                           cv::Point2f(feature.x + 2, feature.y + 2),
-                          color);
+                          _color);
         });
     }
 
