@@ -59,7 +59,7 @@ public:
 
     Features               mvFeatures;
     unsigned long           mlId;
-    static unsigned long           mlNextId;
+    static unsigned long    mlNextId;
 
     double                  mdCloTimestamp;         // color image timestamp
     cv::Mat                 mColorImg;

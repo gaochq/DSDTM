@@ -81,12 +81,8 @@ namespace DSDTM
         return false;
     }
 
-    void Camera::Draw_Features(cv::Mat &_image, const Features _features, int _color)
+    void Camera::Draw_Features(cv::Mat &_image, const Features _features, cv::Scalar _color)
     {
-        cv::Scalar color = cv::Scalar (0, 255, 0);
-        if(_color)
-            color = cv::Scalar (0, 0, 255);
-
         if(_image.channels() < 3)
             cv::cvtColor(_image, _image, CV_GRAY2BGR);
 
@@ -95,7 +91,7 @@ namespace DSDTM
             cv::rectangle(_image,
                           cv::Point2f(feature.mpx.x - 2, feature.mpx.y - 2),
                           cv::Point2f(feature.mpx.x + 2, feature.mpx.y + 2),
-                          color);
+                          _color);
         });
     }
 
@@ -122,5 +118,27 @@ namespace DSDTM
         {
             cv::line(_image, _featuresA[i].mpx, _featuresB[i].mpx, 1);
         }
+    }
+
+    void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, int _color)
+    {
+        cv::Mat Image_new = _image.clone();
+        Draw_Features(Image_new, _features, _color);
+
+        cv::namedWindow("Feature_Detect");
+        cv::imshow("Feature_Detect", Image_new);
+        cv::waitKey(1);
+    }
+
+    void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features1,
+                               const std::vector<cv::Point2f> _features2, const std::vector<cv::Point2f> _features3)
+    {
+        cv::Mat Image_new = _image.clone();
+        Draw_Features(Image_new, _features1, cv::Scalar(0, 0, 255));
+        Draw_Features(Image_new, _features2, cv::Scalar(0, 255, 0));
+        Draw_Features(Image_new, _features3, cv::Scalar(255, 0, 0));
+        cv::namedWindow("Feature_Detect");
+        cv::imshow("Feature_Detect", Image_new);
+        cv::waitKey(1);
     }
 }// namespace DSDTM

@@ -71,11 +71,16 @@ public:
     bool IsInImage(cv::Point2f _point);
 
     //! Draw features in image
-    void Draw_Features(cv::Mat &_image, const Features _features, int _color);
+    void Draw_Features(cv::Mat &_image, const Features _features, cv::Scalar _color);
     void Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, cv::Scalar _color);
 
     //! Draw lines in image (mainly in the initialization)
     void Draw_Lines(cv::Mat &_image, const Features _featuresA, const Features _featuresB);
+
+    //! Draw features in current image
+    void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, int _color);
+    void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features1,
+                       const std::vector<cv::Point2f> _features2, const std::vector<cv::Point2f> _features3);
 
 public:
     typedef std::shared_ptr<Camera> CameraPtr;

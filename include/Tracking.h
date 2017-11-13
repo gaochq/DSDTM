@@ -8,6 +8,8 @@
 #include "Feature_detection.h"
 #include "Initializer.h"
 #include "Rarsac_base.h"
+#include "Keyframe.h"
+#include "Map.h"
 
 namespace DSDTM
 {
@@ -18,6 +20,7 @@ class Frame;
 class Rarsac_base;
 class Feature_detector;
 class Initializer;
+class KeyFrame;
 
 class Tracking
 {
@@ -32,7 +35,7 @@ private:
     };
 
 public:
-    Tracking(Camera *_cam);
+    Tracking(Camera *_cam, Map *_map);
     ~Tracking();
 
     //! Tracking on the rgbd camera
@@ -60,11 +63,8 @@ private:
     void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status,
                         std::vector<cv::Point2f> *_BadPoints = nullptr);
 
-    //! Display image and features
-    void Show_Features(const std::vector<cv::Point2f> _features, int color);
-    void Show_Features(const std::vector<cv::Point2f> _features1, const std::vector<cv::Point2f> _features2,
-                       const std::vector<cv::Point2f> _features3);
-
+    //! Solve the pose of cunrrent with last keyframe
+    void TrackWithReferenceFrame((Frame &tFRame));
 
 public:
     Camera                  *mCam;               //! Camera
@@ -81,6 +81,8 @@ protected:
     Frame                   mLastFrame;
     Frame                   mCurrentFrame;
     Frame                   mInitFrame;
+
+    Map                     *mMap;
 
 };
 

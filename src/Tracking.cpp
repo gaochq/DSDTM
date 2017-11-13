@@ -4,10 +4,12 @@
 
 #include "Tracking.h"
 
+
+
 namespace DSDTM
 {
-Tracking::Tracking(Camera *_cam):
-        mCam(_cam), mInitializer(static_cast<Initializer*>(NULL))
+Tracking::Tracking(Camera *_cam, Map *_map):
+        mCam(_cam), mInitializer(static_cast<Initializer*>(NULL)), mMap(_map)
 {
     mState = Not_Init;
     mPyra_levels = Config::Get<int>("Camera.PyraLevels");
@@ -18,6 +20,126 @@ Tracking::Tracking(Camera *_cam):
 
 Tracking::~Tracking()
 {
+
+}
+
+void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg)
+{
+    cv::Mat tDImg;
+    if(!colorImg.data || !depthImg.data)
+    {
+        std::cout<< "No images" <<std::endl;
+
+        mState = No_Images;
+        return;
+    }
+
+    //! Be sure the depth image should be sacled
+    depthImg.convertTo(tDImg, CV_32F, 1.0f/mDepthScale);
+    mCurrentFrame = Frame(mCam, colorImg, ctimestamp, tDImg);
+
+    if(mState==Not_Init)
+    {
+        if(!mInitializer)
+            mInitializer = new Initializer(mCurrentFrame, mCam);
+
+        if(mInitializer->Init_RGBDCam(mCurrentFrame))
+        {
+            mState = OK;
+            mCurrentFrame.Reset_Gridproba();
+            mInitFrame = Frame(mInitializer->mReferFrame);
+
+            KeyFrame *tKeyframe = new KeyFrame(mInitializer->mReferFrame);
+            mMap->AddKeyFrame(tKeyframe);
+        }
+    }
+    else
+        Track();
+
+    mLastFrame.ResetFrame();
+    mLastFrame = Frame(mCurrentFrame);
+    mCurrentFrame.ResetFrame();
+}
+
+void Tracking::Track()
+{
+    std::vector<cv::Point2f> tCur_Pts, tLast_Pts, tPts_tmp, tBad_Pts;
+    mLastFrame.Get_Features(tLast_Pts);
+
+    //Show_Features(Last_Pts);
+    LKT_Track(tCur_Pts, tLast_Pts);
+    //std::cout << "  " << tCur_Pts.size();
+    Rarsac_F(tCur_Pts, tLast_Pts, tBad_Pts);
+    //Reject_FMat(tCur_Pts, tLast_Pts, tBad_Pts);
+
+    //TODO: show image and deal with features
+    std::cout << " --- " << tCur_Pts.size() << std::endl;
+    if (tCur_Pts.size() < 20)
+    {
+        std::cout << "Too few features: " << tCur_Pts.size() << " after rarsac" << std::endl;
+        return;
+    }
+
+    mCurrentFrame.SetFeatures(tCur_Pts);
+    mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
+    mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
+    mFeature_detector->detect(&mCurrentFrame, 10);
+    mCurrentFrame.Get_Features(tPts_tmp);
+    std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
+    std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
+    mCam->Show_Features(mCurrentFrame.mColorImg, tBad_Pts, tvGoodFeatures, tvNewFeatures);
+    //std::cout<< mCurrentFrame.mvFeatures.size() << std::endl;
+}
+
+void Tracking::LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts)
+{
+    std::vector<uchar> tvStatus;
+    std::vector<float> tPyrLK_error;
+
+    cv::calcOpticalFlowPyrLK(mLastFrame.mColorImg, mCurrentFrame.mColorImg,
+                             _last_Pts, _cur_Pts, tvStatus, tPyrLK_error,
+                             cv::Size(21, 21), mPyra_levels);
+
+    for (int i = 0; i < _cur_Pts.size(); ++i)
+    {
+        if (tvStatus[i] && !mCam->IsInImage(_cur_Pts[i]))
+        {
+            tvStatus[i] = 0;
+        }
+    }
+
+    ReduceFeatures(_cur_Pts, tvStatus);
+    ReduceFeatures(_last_Pts, tvStatus);
+//        ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
+}
+
+void Tracking::Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
+                        std::vector<cv::Point2f> &_bad_Pts)
+{
+    std::vector<bool> tvStatus;
+    mCurrentFrame.mvGrid_probability = mLastFrame.mvGrid_probability;
+    mRarsac_base = Rarsac_base(&mCurrentFrame, _cur_Pts, _last_Pts);
+    tvStatus = mRarsac_base.RejectFundamental();
+
+    //ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
+    ReduceFeatures(_cur_Pts, tvStatus, &_bad_Pts);
+    ReduceFeatures(_last_Pts, tvStatus);
+}
+
+void Tracking::Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
+                           std::vector<cv::Point2f> &_bad_Pts)
+{
+    std::vector<uchar> status;
+    cv::findFundamentalMat(_last_Pts, _cur_Pts, cv::FM_RANSAC, 1.0, 0.99, status);
+
+    ReduceFeatures(_cur_Pts, status, &_bad_Pts);
+    ReduceFeatures(_last_Pts, status);
+}
+
+void Tracking::TrackWithReferenceFrame(Frame &tFrame)
+{
+    tFrame.Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
+
 
 }
 
@@ -70,138 +192,6 @@ void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vect
         }
         _Points.resize(j);
     }
-}
-
-void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg)
-{
-    cv::Mat tDImg;
-    if(!colorImg.data || !depthImg.data)
-    {
-        std::cout<< "No images" <<std::endl;
-
-        mState = No_Images;
-        return;
-    }
-
-    //! Be sure the depth image should be sacled
-    depthImg.convertTo(tDImg, CV_32F, 1.0f/mDepthScale);
-    mCurrentFrame = Frame(mCam, colorImg, ctimestamp, tDImg);
-
-    if(mState==Not_Init)
-    {
-        if(!mInitializer)
-            mInitializer = new Initializer(mCurrentFrame, mCam);
-
-        if(mInitializer->Init_RGBDCam(mCurrentFrame))
-        {
-            mState = OK;
-            mCurrentFrame.Reset_Gridproba();
-            mInitFrame = Frame(mInitializer->mReferFrame);
-        }
-    }
-    else
-        Track();
-
-    mLastFrame.ResetFrame();
-    mLastFrame = Frame(mCurrentFrame);
-    mCurrentFrame.ResetFrame();
-}
-
-void Tracking::Track()
-{
-    std::vector<cv::Point2f> tCur_Pts, tLast_Pts, tPts_tmp, tBad_Pts;
-    mLastFrame.Get_Features(tLast_Pts);
-
-    //Show_Features(Last_Pts);
-    LKT_Track(tCur_Pts, tLast_Pts);
-    //std::cout << "  " << tCur_Pts.size();
-    //Rarsac_F(tCur_Pts, tLast_Pts, tBad_Pts);
-    Reject_FMat(tCur_Pts, tLast_Pts, tBad_Pts);
-
-    //TODO: show image and deal with features
-    std::cout << " --- " << tCur_Pts.size() << std::endl;
-    if (tCur_Pts.size() < 20)
-    {
-        std::cout << "Too few features: " << tCur_Pts.size() << " after rarsac" << std::endl;
-        return;
-    }
-
-    mCurrentFrame.SetFeatures(tCur_Pts);
-    mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
-    mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
-    mFeature_detector->detect(&mCurrentFrame, 10);
-    mCurrentFrame.Get_Features(tPts_tmp);
-    std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
-    std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
-    Show_Features(tBad_Pts, tvGoodFeatures, tvNewFeatures);
-    //std::cout<< mCurrentFrame.mvFeatures.size() << std::endl;
-}
-
-void Tracking::LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts)
-{
-    std::vector<uchar> tvStatus;
-    std::vector<float> tPyrLK_error;
-
-    cv::calcOpticalFlowPyrLK(mLastFrame.mColorImg, mCurrentFrame.mColorImg,
-                             _last_Pts, _cur_Pts, tvStatus, tPyrLK_error,
-                             cv::Size(21, 21), mPyra_levels);
-
-    for (int i = 0; i < _cur_Pts.size(); ++i)
-    {
-        if (tvStatus[i] && !mCam->IsInImage(_cur_Pts[i]))
-        {
-            tvStatus[i] = 0;
-        }
-    }
-
-    ReduceFeatures(_cur_Pts, tvStatus);
-    ReduceFeatures(_last_Pts, tvStatus);
-//        ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
-}
-
-void Tracking::Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
-                        std::vector<cv::Point2f> &_bad_Pts)
-{
-    std::vector<bool> tvStatus;
-    mCurrentFrame.mvGrid_probability = mLastFrame.mvGrid_probability;
-    mRarsac_base = Rarsac_base(&mCurrentFrame, _cur_Pts, _last_Pts);
-    tvStatus = mRarsac_base.RejectFundamental();
-
-    //ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
-    ReduceFeatures(_cur_Pts, tvStatus, &_bad_Pts);
-    ReduceFeatures(_last_Pts, tvStatus);
-}
-
-void Tracking::Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
-                           std::vector<cv::Point2f> &_bad_Pts)
-{
-    std::vector<uchar> status;
-    cv::findFundamentalMat(_last_Pts, _cur_Pts, cv::FM_RANSAC, 1.0, 0.99, status);
-
-    ReduceFeatures(_cur_Pts, status, &_bad_Pts);
-    ReduceFeatures(_last_Pts, status);
-}
-
-void Tracking::Show_Features(const std::vector<cv::Point2f> _features, int _color)
-{
-    cv::Mat Image_new = mCurrentFrame.mColorImg.clone();
-    mCam->Draw_Features(Image_new, _features, _color);
-
-    cv::namedWindow("Feature_Detect");
-    cv::imshow("Feature_Detect", Image_new);
-    cv::waitKey(1);
-}
-
-void Tracking::Show_Features(const std::vector<cv::Point2f> _features1, const std::vector<cv::Point2f> _features2,
-                             const std::vector<cv::Point2f> _features3)
-{
-    cv::Mat Image_new = mCurrentFrame.mColorImg.clone();
-    mCam->Draw_Features(Image_new, _features1, cv::Scalar(0, 0, 255));
-    mCam->Draw_Features(Image_new, _features2, cv::Scalar(0, 255, 0));
-    mCam->Draw_Features(Image_new, _features3, cv::Scalar(255, 0, 0));
-    cv::namedWindow("Feature_Detect");
-    cv::imshow("Feature_Detect", Image_new);
-    cv::waitKey(1);
 }
 
 }

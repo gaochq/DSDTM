@@ -114,6 +114,7 @@ double Rarsac_base::Sampson_Distance(cv::Point2f PointA, cv::Point2f PointB, cv:
 //! Get the inliners and calculate the inliner probability
 void Rarsac_base::Get_Inliers(const cv::Mat _F, std::vector<bool> &_status)
 {
+    double start = static_cast<double>(cvGetTickCount());
     _status.resize(mvCur_pts.size(), false);
     int a[100] = {0};
     int b[100] = {0};
@@ -129,7 +130,7 @@ void Rarsac_base::Get_Inliers(const cv::Mat _F, std::vector<bool> &_status)
             b[Index]++;
         }
     }
-
+    double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     //! Set the inlier probality of the bin
     for (int j = 0; j < 100; ++j)
     {
@@ -199,11 +200,11 @@ std::vector<bool> Rarsac_base::RejectFundamental()
                 //F_Mat = cv::findFundamentalMat(Fcur_pts, Fprev_pts, CV_FM_RANSAC, 1.0);
                 //F_Mat = cv::findFundamentalMat(Fcur_pts, Fprev_pts, CV_FM_8POINT);
 
-                //
-
                 F_Mat = ComputeF21(Fcur_pts, Fprev_pts);
-                //Get_Inliers(F_Mat, tvStatus);
                 CheckFundamental(F_Mat, tvStatus, 1.0);
+
+                //! It cost almost 800us per time
+                //Get_Inliers(F_Mat, tvStatus);
 
                 //! Compute the score
                 double Proba_Sum=0, tdScore=0, ProbaSqure_Sum=0;
@@ -254,8 +255,8 @@ std::vector<bool> Rarsac_base::RejectFundamental()
                 tError = pow((1-tInlier_Proba), tBest_Iterators);
                 if(tError < mdTerminThreshold)
                 {
-                    std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
-                    std::cout << tError <<"--"<< mScore <<std::endl;
+                    //std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
+                    //std::cout << tError <<"--"<< mScore <<std::endl;
                     double Proba_Sum = std::accumulate(mFrame->mvGrid_probability.begin(), mFrame->mvGrid_probability.end(), 0.0);
                     return mvStatus;
                 }
@@ -270,14 +271,15 @@ std::vector<bool> Rarsac_base::RejectFundamental()
             Erase_flag_right++;
         }
     }
-    std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
-    std::cout << tError <<"--"<< mScore <<std::endl;
+    //std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
+    //std::cout << tError <<"--"<< mScore <<std::endl;
     double Proba_Sum = std::accumulate(mFrame->mvGrid_probability.begin(), mFrame->mvGrid_probability.end(), 0.0);
     return mvStatus;
 }
 
 float Rarsac_base::CheckFundamental(const cv::Mat &F21, std::vector<bool> &_status, float sigma)
 {
+    double start = static_cast<double>(cvGetTickCount());
     int a[100] = {0};
     int b[100] = {0};
     const int N = mvCur_pts.size();
@@ -360,7 +362,7 @@ float Rarsac_base::CheckFundamental(const cv::Mat &F21, std::vector<bool> &_stat
         else
             _status[i]=false;
     }
-
+    double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     //! Set the inlier probality of the bin
     for (int j = 0; j < 100; ++j)
     {

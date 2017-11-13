@@ -57,6 +57,7 @@ namespace DSDTM
             cv::Mat tFeatureImg(mReferFrame.mColorImg);
             mCam->Draw_Features(tFeatureImg, mReferFrame.mvFeatures, 0);
             cv::imshow("Feature_Detect", tFeatureImg);
+            cv::waitKey(1);
 
             mbInitSuccess = true;
             return false;
@@ -89,17 +90,18 @@ namespace DSDTM
             tvStatus.clear();
 
             //! Reject relate to F
-            cv::findFundamentalMat(tCur_Pts, tLast_Pts, cv::FM_RANSAC, 3, 0.99, tvStatus);
+            cv::findFundamentalMat(tCur_Pts, tLast_Pts, cv::FM_RANSAC, 1.0, 0.99, tvStatus);
             ReduceFeatures(tCur_Pts, tvStatus);
             ReduceFeatures(tLast_Pts, tvStatus);
             mReferFrame.SetFeatures(tLast_Pts);
             frame.SetFeatures(tCur_Pts);
 
             //! Show first frame
-            cv::namedWindow("Feature_Detect");
             cv::Mat tFeatureImg(frame.mColorImg);
             mCam->Draw_Lines(tFeatureImg, frame.mvFeatures, mReferFrame.mvFeatures);
+            mCam->Draw_Features(tFeatureImg, frame.mvFeatures, cv::Scalar(0, 255, 0));
             cv::imshow("Feature_Detect", tFeatureImg);
+            cv::waitKey(1);
 
             if (tCur_Pts.size()<50)
             {

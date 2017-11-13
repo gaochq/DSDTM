@@ -31,4 +31,4 @@ Camera.Max_fts: 200
 #Rarsac algorithm
 Rarsac.Sampson_Dist_threshold: 1.25
 Rarsac.MaxIterators: 1000
-Rarsac.Terminate_threshold: 0.000001
+Rarsac.Terminate_threshold: 0.0001

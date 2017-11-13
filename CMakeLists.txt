@@ -39,7 +39,9 @@ add_library(${PROJECT_NAME} SHARED
 	src/Tracking.cpp
 	src/Initializer.cpp
 	src/Rarsac_base.cpp
-	src/MapPoint.cpp)
+	src/MapPoint.cpp
+	src/Map.cpp
+	src/Keyframe.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}

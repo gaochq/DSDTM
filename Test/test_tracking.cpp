@@ -7,6 +7,7 @@
 #include "Feature_detection.h"
 #include "Feature.h"
 #include "Tracking.h"
+#include "Map.h"
 
 #include <fstream>
 
@@ -34,7 +35,9 @@ void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageF
             ss >> t;
             ss >> sD;
             vstrImageFilenamesD.push_back(sD);
-
+            std::vector<double> a;
+            cv::Mat mat, mat2;
+            mat.col(1) = mat2;
         }
     }
 }
@@ -47,10 +50,10 @@ int main(int argc, char **argv)
         cout << "Usage: Test_Feature_detection Path_To_ParamFile" <<endl;
         return 0;
     }
-
+    DSDTM::Map *mMap = new DSDTM::Map();
     DSDTM::Config::setParameterFile(argv[1]);
     DSDTM::Camera::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
-    DSDTM::Tracking tracking(camera.get());
+    DSDTM::Tracking tracking(camera.get(), mMap);
 
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");
     vector<string> vstrImageFilenamesRGB;
