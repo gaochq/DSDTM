@@ -117,8 +117,12 @@ namespace DSDTM
                     float z = mReferFrame.Get_FeatureDetph(mReferFrame.mvFeatures[i]);
                     Eigen::Vector3d tPose = mCam->Pixel2Camera(mReferFrame.mvFeatures[i].mpx, z);
                     MapPoint *tNewPoint = new MapPoint(tPose, &frame);
-                    mReferFrame.Add_MapPoint(tNewPoint);
+                    if(z>0)
+                    {
+                        mReferFrame.Add_MapPoint(tNewPoint);
+                    }
                 }
+                Optimizer::PoseSolver(mReferFrame, frame);
                 std::cout << "Initalize RGBD Camera successfully ! " << std::endl;
                 return true;
             }

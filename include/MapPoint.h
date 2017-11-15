@@ -24,10 +24,9 @@ public:
 public:
     unsigned long           mlID;
     static unsigned long    mlNextId;
+    Eigen::Vector3d         mPose;
 
 private:
-
-    Eigen::Vector3d         mPose;
 
     unsigned long           mFirstFrame;
     std::list<Feature>      mlObs;

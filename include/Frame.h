@@ -71,8 +71,10 @@ public:
 
     std::vector<MapPoint*>  mvMapPoints;
 
-protected:
     Sophus::SE3             mT_c2w;
+
+protected:
+
     int                     mPyra_levels;
 
 };

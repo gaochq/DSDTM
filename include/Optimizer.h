@@ -13,6 +13,7 @@ namespace DSDTM
 {
 
 class Frame;
+class PoseGraph_Problem;
 
 class Optimizer
 {
@@ -20,69 +21,97 @@ public:
     Optimizer();
     ~Optimizer();
 
-    static void PoseSolver(Frame &tRefFrame, Frame &tCurFrame);
+    static void PoseSolver(Frame &tRefFrame, Frame &tCurFrame, int nIterations=5);
+    static double *se3ToDouble(Eigen::Matrix<double, 6, 1> tso3);
+
+
 };
 
 
-class PoseGraph_Problem: public ceres::SizedCostFunction<2, 7>
+//! 参数块的个数和后面的雅克比矩阵的维数要对应
+class PoseGraph_Problem: public ceres::SizedCostFunction<2, 6>
 {
 public:
-    PoseGraph_Problem(const Eigen::Vector3d tMapPoint, const Eigen::Vector2d tObservation,
-                      const Eigen::Matrix3d tIntrinsic):
-            mMapPoint(tMapPoint), mObservation(tObservation), mIntrinsic(tIntrinsic)
+    PoseGraph_Problem(const Eigen::Vector3d &tMapPoint, const Eigen::Vector2d &tObservation,
+                      const Eigen::Matrix3d &tIntrinsic, const Eigen::Vector2d &tReference):
+            mMapPoint(tMapPoint), mObservation(tObservation), mIntrinsic(tIntrinsic), mReference(tReference)
     {
 
     }
 
-    virtual bool Evaluate(double const *parameters, double residuals, double **jacobians) const
+    virtual bool Evaluate(double const* const* parameters, double* residuals, double **jacobians) const
     {
-        Eigen::Vector3d mTranslation(parameters[0], parameters[1], parameters[2]);
-        Eigen::Quaternion mRotation(parameters[3], parameters[4], parameters[5], parameters[6]);
+        //! Convert se3 into SE3
+        Eigen::Matrix<double, 6, 1> tTrabsform;
+        tTrabsform << parameters[0][0], parameters[0][1], parameters[0][2],
+                      parameters[0][3], parameters[0][4], parameters[0][5];
+        Sophus::SE3 mPose = Sophus::SE3::exp(tTrabsform);
 
         //! column major
         Eigen::Map<Eigen::Vector2d> mResidual(residuals);
-        Eigen::Vector3d tCamPoint = mRotation*mMapPoint + mTranslation;
-        mResidual = mObservation - 1.0/tCamPoint(2)*mIntrinsic.block(0, 0, 1, 1)*tCamPoint.block(0, 0, 1, 0);
+        Eigen::Vector3d tCamPoint = mPose*mMapPoint;
 
-        if(jacobians)
+        Eigen::Vector3d tPixel = mIntrinsic*tCamPoint/tCamPoint(2);
+        mResidual = mObservation - tPixel.block(0, 0, 2, 1);
+
+        if(mResidual(0)>10 || mResidual(1)>10)
+            std::cout<< "error" <<std::endl;
+
+        //std::cout<< "num" <<std::endl;
+        //std::cout << mResidual <<std::endl<<std::endl;
+
+        if(jacobians!=NULL)
         {
-            double x = mMapPoint(0);
-            double y = mMapPoint(1);
-            double z_inv = 1.0/mMapPoint(2);
+            double x = tCamPoint(0);
+            double y = tCamPoint(1);
+            double z_inv = 1.0/tCamPoint(2);
             double z_invsquare = z_inv*z_inv;
 
-            if(jacobians[0])
+            if(jacobians[0]!=NULL)
             {
-                Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> mJacobians1(jacobians[0]);
 
-                mJacobians1(0, 0) = fx*z_inv;
+                Eigen::Map< Eigen::Matrix<double, 2, 6, Eigen::RowMajor> > mJacobians1(jacobians[0]);
+
+                mJacobians1(0, 0) = mfx*z_inv;
                 mJacobians1(0, 1) = 0;
-                mJacobians1(0, 2) = -fx*x*z_invsquare;
-                mJacobians1(0, 3) = -fx*x*y*z_invsquare;
-                mJacobians1(0, 4) = fx + fx*x*x/z_invsquare;
-                mJacobians1(0, 5) = -fx*y/z_inv;
+                mJacobians1(0, 2) = -mfx*x*z_invsquare;
+                mJacobians1(0, 3) = -mfx*x*y*z_invsquare;
+                mJacobians1(0, 4) = mfx + mfx*x*x/z_invsquare;
+                mJacobians1(0, 5) = -mfx*y/z_inv;
+
+                mJacobians1(1, 0) = 0;
+                mJacobians1(1, 1) = mfy*z_inv;
+                mJacobians1(1, 2) = -mfy*y*z_invsquare;
+                mJacobians1(1, 3) = -mfy - mfy*y*y/z_invsquare;
+                mJacobians1(1, 4) = mfy*x*y*z_invsquare;
+                mJacobians1(1, 5) = mfy*x/z_inv;
 
                 mJacobians1 = -1.0*mJacobians1;
             }
 
-            if(jacobians[1])
+            //! There is only one parametre block, so is the jacobian matrix
+            /*
+            if(jacobians!=NULL && jacobians[1]!=NULL)
             {
-                Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> mJacobians2(jacobians[1]);
+                /*
+                Eigen::Map< Eigen::Matrix<double, 1, 6, Eigen::RowMajor> > mJacobians2(jacobians[1]);
 
-                mJacobians1(1, 0) = 0;
-                mJacobians1(1, 1) = fy*z_inv;
-                mJacobians1(1, 2) = -fy*y*z_invsquare;
-                mJacobians1(1, 3) = -fy - fy*y*y/z_invsquare;
-                mJacobians1(1, 4) = fy*x*y*z_invsquare;
-                mJacobians1(1, 5) = fy*y/z_inv;
+                mJacobians2(0, 0) = 0;
+                mJacobians2(0, 1) = mfy*z_inv;
+                mJacobians2(0, 2) = -mfy*y*z_invsquare;
+                mJacobians2(0, 3) = -mfy - mfy*y*y/z_invsquare;
+                mJacobians2(0, 4) = mfy*x*y*z_invsquare;
+                mJacobians2(0, 5) = mfy*y/z_inv;
 
-                mJacobians2 = -1.0*mJacobians2;
+                mJacobians2= -1.0*mJacobians2;
+
+                jacobians[1][0] = 0;
             }
+            */
         }
 
         return true;
     }
-
 
 protected:
     Eigen::Vector3d     mMapPoint;
@@ -90,10 +119,13 @@ protected:
     Eigen::Matrix3d     mSqrt_Info;
     Eigen::Matrix3d     mIntrinsic;
 
-    double              mCam_fx;
-    double              mCam_fy;
-    double              mCam_cx;
-    double              mCam_cy;
+    Eigen::Vector2d     mReference;
+
+    double              mfx;
+    double              mfy;
+    double              mcx;
+    double              mcy;
+
 
 
 };

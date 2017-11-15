@@ -82,6 +82,17 @@ public:
     void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features1,
                        const std::vector<cv::Point2f> _features2, const std::vector<cv::Point2f> _features3);
 
+    //! Return Intrinsic matrix
+    Eigen::Matrix3d Return_Intrinsic() const
+    {
+        Eigen::Matrix3d tIntrinsic;
+        tIntrinsic << mfx, 0, mcx,
+                      0, mfy, mcy,
+                      0,  0,    1;
+
+        return tIntrinsic;
+    }
+
 public:
     typedef std::shared_ptr<Camera> CameraPtr;
 

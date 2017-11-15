@@ -10,6 +10,7 @@
 #include "Frame.h"
 #include "Feature_detection.h"
 #include "MapPoint.h"
+#include "Optimizer.h"
 
 
 namespace DSDTM

@@ -14,6 +14,7 @@ Tracking::Tracking(Camera *_cam, Map *_map):
     mState = Not_Init;
     mPyra_levels = Config::Get<int>("Camera.PyraLevels");
     mDepthScale = Config::Get<float>("Camera.depth_scale");
+    mMaxIters = Config::Get<int>("Optimization.MaxIter");
 
     mFeature_detector = new Feature_detector();
 }
@@ -25,7 +26,7 @@ Tracking::~Tracking()
 
 void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg)
 {
-    cv::Mat tDImg;
+    cv::Mat tDImg = depthImg;
     if(!colorImg.data || !depthImg.data)
     {
         std::cout<< "No images" <<std::endl;
@@ -33,9 +34,8 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
         mState = No_Images;
         return;
     }
-
     //! Be sure the depth image should be sacled
-    depthImg.convertTo(tDImg, CV_32F, 1.0f/mDepthScale);
+    tDImg.convertTo(tDImg, CV_32F, 1.0f/mDepthScale);
     mCurrentFrame = Frame(mCam, colorImg, ctimestamp, tDImg);
 
     if(mState==Not_Init)

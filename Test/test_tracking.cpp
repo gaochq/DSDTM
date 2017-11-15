@@ -35,9 +35,6 @@ void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageF
             ss >> t;
             ss >> sD;
             vstrImageFilenamesD.push_back(sD);
-            std::vector<double> a;
-            cv::Mat mat, mat2;
-            mat.col(1) = mat2;
         }
     }
 }

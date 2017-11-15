@@ -41,11 +41,12 @@ add_library(${PROJECT_NAME} SHARED
 	src/Rarsac_base.cpp
 	src/MapPoint.cpp
 	src/Map.cpp
-	src/Keyframe.cpp)
+	src/Keyframe.cpp
+	src/Optimizer.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
-		${Ceres_LIBS}
+		${CERES_LIBRARIES}
 		${Sophus_LIBRARIES}
 		${PROJECT_SOURCE_DIR}/Thirdparty/fast/lib/libfast.so)
 

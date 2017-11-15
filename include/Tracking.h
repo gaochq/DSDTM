@@ -10,6 +10,7 @@
 #include "Rarsac_base.h"
 #include "Keyframe.h"
 #include "Map.h"
+#include "Optimizer.h"
 
 namespace DSDTM
 {
@@ -64,7 +65,7 @@ private:
                         std::vector<cv::Point2f> *_BadPoints = nullptr);
 
     //! Solve the pose of cunrrent with last keyframe
-    void TrackWithReferenceFrame((Frame &tFRame));
+    void TrackWithReferenceFrame(Frame &tFRame);
 
 public:
     Camera                  *mCam;               //! Camera
@@ -72,6 +73,7 @@ public:
 
 protected:
     float                   mDepthScale;
+    int                     mMaxIters;
 
     Rarsac_base             mRarsac_base;
     Feature_detector        *mFeature_detector;
@@ -81,6 +83,7 @@ protected:
     Frame                   mLastFrame;
     Frame                   mCurrentFrame;
     Frame                   mInitFrame;
+    KeyFrame*               mpReferenceKF;
 
     Map                     *mMap;
 
