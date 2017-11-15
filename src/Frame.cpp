@@ -89,17 +89,17 @@ namespace DSDTM
 
     float Frame::Get_FeatureDetph(const Feature feature)
     {
-        //uchar *data = mDepthImg.data;
-        //float z = *(data + static_cast<int>(feature.mpx.x*mDepthImg.step[0]
-        //                                 + feature.mpx.y));
         float p = mDepthImg.at<float>(feature.mpx.y, feature.mpx.x);
         return p;
     }
 
-    void Frame::Add_MapPoint(MapPoint *_Point)
+    void Frame::Add_MapPoint(MapPoint *tPoint, size_t tFid)
     {
-        mvMapPoints.push_back(_Point);
+        mvMapPoints.push_back(tPoint);
+
+        mpObservation.insert(std::pair<size_t, MapPoint* >(tFid, tPoint));
     }
+
 
     void Frame::Reset_Gridproba()
     {

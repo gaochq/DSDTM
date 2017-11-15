@@ -26,13 +26,16 @@ public:
     Map();
     ~Map();
 
+    //! Add keyfram and mapPoint
     void AddKeyFrame(KeyFrame *_frame);
     void AddMapPoint(MapPoint *_point);
 
-public:
+    KeyFrame *Get_InitialKFrame();
+
+
+protected:
     std::set<KeyFrame*>     msKeyFrames;
     std::set<MapPoint*>     msMapPoints;
-    std::set<int>           mtest;
 
 };
 

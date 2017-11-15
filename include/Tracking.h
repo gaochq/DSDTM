@@ -65,7 +65,13 @@ private:
                         std::vector<cv::Point2f> *_BadPoints = nullptr);
 
     //! Solve the pose of cunrrent with last keyframe
-    void TrackWithReferenceFrame(Frame &tFRame);
+    void TrackWithReferenceFrame();
+
+    //! Add new features into the frame refer to the detection Grid
+    void AddNewFeatures(std::vector<cv::Point2f> tCur_pts);
+
+    //! Reset mvcStatus
+    void Reset_Status();
 
 public:
     Camera                  *mCam;               //! Camera
@@ -86,6 +92,7 @@ protected:
     KeyFrame*               mpReferenceKF;
 
     Map                     *mMap;
+    std::vector<size_t>      mvcStatus;          //! The features status when tracking between adjacent frames
 
 };
 

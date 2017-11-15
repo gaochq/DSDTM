@@ -20,6 +20,8 @@ public:
     KeyFrame(Frame &_frame);
     ~KeyFrame();
 
+    void Add_MapPoint(MapPoint *tMPoint);
+
 public:
     unsigned long           mlId;
     static unsigned long    mlNextId;

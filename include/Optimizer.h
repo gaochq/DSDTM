@@ -21,7 +21,7 @@ public:
     Optimizer();
     ~Optimizer();
 
-    static void PoseSolver(Frame &tRefFrame, Frame &tCurFrame, int nIterations=5);
+    static void PoseSolver(Frame &tCurFrame, int tIterations = 5);
     static double *se3ToDouble(Eigen::Matrix<double, 6, 1> tso3);
 
 
@@ -33,10 +33,13 @@ class PoseGraph_Problem: public ceres::SizedCostFunction<2, 6>
 {
 public:
     PoseGraph_Problem(const Eigen::Vector3d &tMapPoint, const Eigen::Vector2d &tObservation,
-                      const Eigen::Matrix3d &tIntrinsic, const Eigen::Vector2d &tReference):
-            mMapPoint(tMapPoint), mObservation(tObservation), mIntrinsic(tIntrinsic), mReference(tReference)
+                      const Eigen::Matrix3d &tIntrinsic):
+            mMapPoint(tMapPoint), mObservation(tObservation), mIntrinsic(tIntrinsic)
     {
-
+        mfx = mIntrinsic(0, 0);
+        mfy = mIntrinsic(1, 1);
+        mcx = mIntrinsic(0, 2);
+        mcy = mIntrinsic(1, 2);
     }
 
     virtual bool Evaluate(double const* const* parameters, double* residuals, double **jacobians) const
@@ -119,7 +122,6 @@ protected:
     Eigen::Matrix3d     mSqrt_Info;
     Eigen::Matrix3d     mIntrinsic;
 
-    Eigen::Vector2d     mReference;
 
     double              mfx;
     double              mfy;

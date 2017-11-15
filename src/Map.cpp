@@ -27,4 +27,9 @@ namespace DSDTM
     {
         msMapPoints.insert(_point);
     }
+
+    KeyFrame* Map::Get_InitialKFrame()
+    {
+        return *msKeyFrames.begin();
+    }
 }

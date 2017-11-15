@@ -18,11 +18,12 @@ namespace DSDTM
 struct Feature;
 class Frame;
 class Feature_detector;
+class Map;
 
 class Initializer
 {
 public:
-    Initializer(Frame &frame, Camera* camera);
+    Initializer(Frame &frame, Camera* camera, Map *map);
     ~Initializer();
 
     //! Initalize the RGBD camera
@@ -46,6 +47,7 @@ protected:
     Feature_detector        *mFeature_detector;
 
     bool            mbInitSuccess;
+    Map                     *mMap;
 };
 }
 

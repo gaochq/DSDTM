@@ -51,8 +51,8 @@ public:
     //! Get the feature depth from depth image
     float Get_FeatureDetph(const Feature feature);
 
-    //! Add mappoint into frame
-    void Add_MapPoint(MapPoint *_Point);
+    //! Add mappoint and observation into frame
+    void Add_MapPoint(MapPoint *tPoint, size_t tFid);
 
 public:
     typedef std::shared_ptr<Frame> FramePtr;
@@ -69,6 +69,7 @@ public:
     cv::Mat                 mDepthImg;
     Camera*                 mCamera;
 
+    std::map<size_t, MapPoint*>  mpObservation;
     std::vector<MapPoint*>  mvMapPoints;
 
     Sophus::SE3             mT_c2w;

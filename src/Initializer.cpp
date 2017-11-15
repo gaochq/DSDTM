@@ -3,12 +3,13 @@
 //
 
 #include "Initializer.h"
+#include "Map.h"
 
 namespace DSDTM
 {
 
-    Initializer::Initializer(Frame &frame, Camera* camera):
-            mCam(camera), mbInitSuccess(false)
+    Initializer::Initializer(Frame &frame, Camera* camera, Map *map):
+            mCam(camera), mbInitSuccess(false), mMap(map)
     {
 
     }
@@ -110,19 +111,28 @@ namespace DSDTM
             }
             else
             {
+                KeyFrame *tKFrame = new KeyFrame(mReferFrame);
+                mMap->AddKeyFrame(tKFrame);
+
                 mReferFrame.Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
 
                 for (int i = 0; i < mReferFrame.mvFeatures.size(); ++i)
                 {
                     float z = mReferFrame.Get_FeatureDetph(mReferFrame.mvFeatures[i]);
-                    Eigen::Vector3d tPose = mCam->Pixel2Camera(mReferFrame.mvFeatures[i].mpx, z);
-                    MapPoint *tNewPoint = new MapPoint(tPose, &frame);
-                    if(z>0)
+                    if (z>0)
                     {
-                        mReferFrame.Add_MapPoint(tNewPoint);
+                        Eigen::Vector3d tPose = mCam->Pixel2Camera(mReferFrame.mvFeatures[i].mpx, z);
+                        MapPoint *tMPoint = new MapPoint(tPose, &frame);
+
+                        tMPoint->Add_Observation(tKFrame, i);
+                        tKFrame->Add_MapPoint(tMPoint);
+
+                        mReferFrame.Add_MapPoint(tMPoint, i);
+                        frame.Add_MapPoint(tMPoint, i);
+                        mMap->AddMapPoint(tMPoint);
                     }
                 }
-                Optimizer::PoseSolver(mReferFrame, frame);
+                Optimizer::PoseSolver(frame, mReferFrame);
                 std::cout << "Initalize RGBD Camera successfully ! " << std::endl;
                 return true;
             }

@@ -20,5 +20,25 @@ MapPoint::MapPoint(Eigen::Vector3d &_pose, Frame *_frame):
     mlID = mlNextId++;
 }
 
+void MapPoint::Set_Pose(Eigen::Vector3d tPose)
+{
+    mPose = tPose;
+}
+
+Eigen::Vector3d MapPoint::Get_Pose()
+{
+    return mPose;
+}
+
+void MapPoint::Add_Observation(KeyFrame *tKFrame, size_t tFID)
+{
+    if(mObservations.count(tKFrame))
+        return;
+    else
+        mObservations[tKFrame] = tFID;
+
+    mObserveNum++;
+}
+
 
 } // namespace DSDTM

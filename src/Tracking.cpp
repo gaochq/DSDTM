@@ -41,7 +41,7 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
     if(mState==Not_Init)
     {
         if(!mInitializer)
-            mInitializer = new Initializer(mCurrentFrame, mCam);
+            mInitializer = new Initializer(mCurrentFrame, mCam, mMap);
 
         if(mInitializer->Init_RGBDCam(mCurrentFrame))
         {
@@ -49,16 +49,23 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
             mCurrentFrame.Reset_Gridproba();
             mInitFrame = Frame(mInitializer->mReferFrame);
 
-            KeyFrame *tKeyframe = new KeyFrame(mInitializer->mReferFrame);
-            mMap->AddKeyFrame(tKeyframe);
+            mpReferenceKF = mMap->Get_InitialKFrame();
         }
     }
-    else
+    else 
+    {
         Track();
+        
+        if(mState==OK)
+        {
+            TrackWithReferenceFrame();
+        }
+    }
 
     mLastFrame.ResetFrame();
     mLastFrame = Frame(mCurrentFrame);
     mCurrentFrame.ResetFrame();
+    Reset_Status();
 }
 
 void Tracking::Track()
@@ -76,14 +83,12 @@ void Tracking::Track()
     std::cout << " --- " << tCur_Pts.size() << std::endl;
     if (tCur_Pts.size() < 20)
     {
+        mState = Lost;
         std::cout << "Too few features: " << tCur_Pts.size() << " after rarsac" << std::endl;
         return;
     }
 
-    mCurrentFrame.SetFeatures(tCur_Pts);
-    mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
-    mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
-    mFeature_detector->detect(&mCurrentFrame, 10);
+    AddNewFeatures(tCur_Pts);
     mCurrentFrame.Get_Features(tPts_tmp);
     std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
     std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
@@ -136,9 +141,19 @@ void Tracking::Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::P
     ReduceFeatures(_last_Pts, status);
 }
 
-void Tracking::TrackWithReferenceFrame(Frame &tFrame)
+void Tracking::AddNewFeatures(std::vector<cv::Point2f> tCur_Pts)
 {
-    tFrame.Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
+    std::vector<cv::Point2f>tPts_tmp, tBad_Pts;
+
+    mCurrentFrame.SetFeatures(tCur_Pts);
+    mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
+    mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
+    mFeature_detector->detect(&mCurrentFrame, 10);
+}
+
+void Tracking::TrackWithReferenceFrame()
+{
+    mCurrentFrame.Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
 
 
 }
@@ -176,8 +191,13 @@ void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vect
     {
         int j = 0;
         for (int i = 0; i < int(_Points.size()); i++)
+        {
             if (_Status[i])
                 _Points[j++] = _Points[i];
+
+            //else
+                //mvcStatus[i]
+        }
         _Points.resize(j);
     }
     else
@@ -194,4 +214,15 @@ void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vect
     }
 }
 
-}
+    void Tracking::Reset_Status()
+    {
+        mvcStatus.clear();
+        for (size_t i = 0; i < mLastFrame.mvFeatures.size(); ++i)
+        {
+            mvcStatus.push_back(i);
+        }
+    }
+
+
+
+} //namespace DSDTM

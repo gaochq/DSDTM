@@ -16,4 +16,11 @@ namespace DSDTM
     {
 
     }
+
+    void KeyFrame::Add_MapPoint(MapPoint *tMPoint)
+    {
+        mvMapPoints.push_back(tMPoint);
+    }
+
+
 } //namesapce DSDTM
