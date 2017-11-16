@@ -18,12 +18,14 @@ struct Feature
     cv::Point2f         mpx;
     int                 mlevel;
     Eigen::Vector2d     mgrad;
+    long int   mlId;
 
-    Feature(Frame* _frame, const cv::Point2f& _px, int _level):
+    Feature(Frame* _frame, const cv::Point2f& _px, int _level, long int tlId = -1):
             mframe(_frame),
             mpx(_px),
             mlevel(_level),
-            mgrad(0.0, 0.0)
+            mgrad(0.0, 0.0),
+            mlId(tlId)
     {}
 };
 typedef std::vector<Feature> Features;

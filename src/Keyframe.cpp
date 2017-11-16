@@ -20,6 +20,12 @@ namespace DSDTM
     void KeyFrame::Add_MapPoint(MapPoint *tMPoint)
     {
         mvMapPoints.push_back(tMPoint);
+
+    }
+
+    void KeyFrame::Add_Observations(long int tId, MapPoint *tMPoint)
+    {
+        mpObservation.insert(std::pair<long int, MapPoint*>(tId, tMPoint));
     }
 
 

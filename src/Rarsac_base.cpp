@@ -112,7 +112,7 @@ double Rarsac_base::Sampson_Distance(cv::Point2f PointA, cv::Point2f PointB, cv:
 }
 
 //! Get the inliners and calculate the inliner probability
-void Rarsac_base::Get_Inliers(const cv::Mat _F, std::vector<bool> &_status)
+void Rarsac_base::Get_Inliers(const cv::Mat _F, std::vector<uchar> &_status)
 {
     double start = static_cast<double>(cvGetTickCount());
     _status.resize(mvCur_pts.size(), false);
@@ -143,7 +143,7 @@ void Rarsac_base::Get_Inliers(const cv::Mat _F, std::vector<bool> &_status)
 
 }
 
-std::vector<bool> Rarsac_base::RejectFundamental()
+std::vector<uchar> Rarsac_base::RejectFundamental()
 {
     std::pair<cv::Point2f, cv::Point2f> tFeature_pair;
     std::vector< std::pair<int, double> > tv8binINdex;
@@ -194,14 +194,14 @@ std::vector<bool> Rarsac_base::RejectFundamental()
             //! The main part of rarsac
             else
             {
-                std::vector<bool> tvStatus;
+                std::vector<uchar> tvStatus;
                 //! Compute the F matrix and get inliers
                 //! Too slow
                 //F_Mat = cv::findFundamentalMat(Fcur_pts, Fprev_pts, CV_FM_RANSAC, 1.0);
                 //F_Mat = cv::findFundamentalMat(Fcur_pts, Fprev_pts, CV_FM_8POINT);
 
                 F_Mat = ComputeF21(Fcur_pts, Fprev_pts);
-                CheckFundamental(F_Mat, tvStatus, 1.0);
+                CheckFundamental(F_Mat, tvStatus, 1);
 
                 //! It cost almost 800us per time
                 //Get_Inliers(F_Mat, tvStatus);
@@ -277,7 +277,7 @@ std::vector<bool> Rarsac_base::RejectFundamental()
     return mvStatus;
 }
 
-float Rarsac_base::CheckFundamental(const cv::Mat &F21, std::vector<bool> &_status, float sigma)
+float Rarsac_base::CheckFundamental(const cv::Mat &F21, std::vector<uchar> &_status, float sigma)
 {
     double start = static_cast<double>(cvGetTickCount());
     int a[100] = {0};

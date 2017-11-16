@@ -19,7 +19,8 @@ namespace DSDTM
             mCamera(frame.mCamera), mlId(frame.mlId), mdCloTimestamp(frame.mdCloTimestamp),
             mT_c2w(frame.mT_c2w), mColorImg(frame.mColorImg), mvImg_Pyr(frame.mvImg_Pyr),
             mDepthImg(frame.mDepthImg), mvFeatures(frame.mvFeatures), mPyra_levels(frame.mPyra_levels),
-            mvGrid_probability(frame.mvGrid_probability)
+            mvGrid_probability(frame.mvGrid_probability), mvMapPoints(frame.mvMapPoints),
+            mpObservation(frame.mpObservation)
     {
 
     }
@@ -80,10 +81,17 @@ namespace DSDTM
 
     void Frame::SetFeatures(const std::vector<cv::Point2f> &_features)
     {
-        mvFeatures.clear();
         for (int i = 0; i < _features.size(); ++i)
         {
             mvFeatures.push_back(Feature(this, _features[i], 0));
+        }
+    }
+
+    void Frame::SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<long int> tStatus)
+    {
+        for (int i = 0; i < _features.size(); ++i)
+        {
+            mvFeatures.push_back(Feature(this, _features[i], 0, tStatus[i]));
         }
     }
 
@@ -97,7 +105,20 @@ namespace DSDTM
     {
         mvMapPoints.push_back(tPoint);
 
-        mpObservation.insert(std::pair<size_t, MapPoint* >(tFid, tPoint));
+        mpObservation.insert(std::pair<long int, MapPoint* >(tFid, tPoint));
+    }
+
+    void Frame::Add_Observations(const KeyFrame &tKframe)
+    {
+        std::map<long int, MapPoint*> tObservations = tKframe.Get_Observations();
+
+        std::map<long int, MapPoint*>::iterator it;
+        for (int i = 0; i < mvFeatures.size(); ++i)
+        {
+            it = tObservations.find(mvFeatures[i].mlId);
+            if(it != tObservations.end())
+                Add_MapPoint(it->second, it->first);
+        }
     }
 
 

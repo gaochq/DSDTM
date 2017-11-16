@@ -14,6 +14,7 @@ namespace DSDTM
 
 class MapPoint;
 class Camera;
+class KeyFrame;
 
 class Frame
 {
@@ -34,7 +35,8 @@ public:
     void Get_Features(std::vector<cv::Point2f> &KeyPoints);
 
     //! Return keypoints from features
-    void SetFeatures(const std::vector<cv::Point2f> &KeyPoints);
+    void SetFeatures(const std::vector<cv::Point2f> &_features);
+    void SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<long int> tStatus);
 
     //! Clear all the members in frame
     void ResetFrame();
@@ -45,14 +47,21 @@ public:
     //! Return Features size
     const int Get_FeatureSize(){ return mvFeatures.size(); }
 
-    //! Set frame pose
+    //! Set and get frame pose
     void Set_Pose(Sophus::SE3 _pose) { mT_c2w = _pose;}
+    Sophus::SE3 Get_Pose() { return  mT_c2w;}
 
     //! Get the feature depth from depth image
     float Get_FeatureDetph(const Feature feature);
 
     //! Add mappoint and observation into frame
     void Add_MapPoint(MapPoint *tPoint, size_t tFid);
+
+    //! Add Feature-Mappoint observations
+    void Add_Observations(const KeyFrame &tKframe);
+
+    //! Return Observations
+    std::map<long int, MapPoint*> Get_Observations() const { return mpObservation;};
 
 public:
     typedef std::shared_ptr<Frame> FramePtr;
@@ -69,14 +78,14 @@ public:
     cv::Mat                 mDepthImg;
     Camera*                 mCamera;
 
-    std::map<size_t, MapPoint*>  mpObservation;
-    std::vector<MapPoint*>  mvMapPoints;
-
-    Sophus::SE3             mT_c2w;
 
 protected:
 
     int                     mPyra_levels;
+    std::map<long int, MapPoint*>  mpObservation;
+    std::vector<MapPoint*>  mvMapPoints;
+
+    Sophus::SE3             mT_c2w;
 
 };
 }// namespace DSDTM

@@ -25,10 +25,11 @@ namespace DSDTM
 
         ceres::Problem problem;
         ceres::LossFunction *loss_function;
-        double *mTransform = se3ToDouble(tCurFrame.mT_c2w.log());
-
         loss_function = new ceres::CauchyLoss(1.0);
-        for (auto iter = tCurFrame.mpObservation.begin(); iter!=tCurFrame.mpObservation.end(); ++iter)
+        double *mTransform = se3ToDouble(tCurFrame.Get_Pose().log());
+
+        std::map<long int, MapPoint*> tObservations = tCurFrame.Get_Observations();
+        for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter)
         {
             Eigen::Vector3d tPoint(iter->second->Get_Pose());
             int tIndex = iter->first;

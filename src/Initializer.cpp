@@ -94,6 +94,10 @@ namespace DSDTM
             cv::findFundamentalMat(tCur_Pts, tLast_Pts, cv::FM_RANSAC, 1.0, 0.99, tvStatus);
             ReduceFeatures(tCur_Pts, tvStatus);
             ReduceFeatures(tLast_Pts, tvStatus);
+
+
+            //! The initial two frames have sanme features
+            mReferFrame.ResetFrame();
             mReferFrame.SetFeatures(tLast_Pts);
             frame.SetFeatures(tCur_Pts);
 
@@ -118,6 +122,9 @@ namespace DSDTM
 
                 for (int i = 0; i < mReferFrame.mvFeatures.size(); ++i)
                 {
+                    mReferFrame.mvFeatures[i].mlId = i;
+                    frame.mvFeatures[i].mlId = i;
+
                     float z = mReferFrame.Get_FeatureDetph(mReferFrame.mvFeatures[i]);
                     if (z>0)
                     {
@@ -126,13 +133,15 @@ namespace DSDTM
 
                         tMPoint->Add_Observation(tKFrame, i);
                         tKFrame->Add_MapPoint(tMPoint);
+                        tKFrame->Add_Observations(i, tMPoint);
 
                         mReferFrame.Add_MapPoint(tMPoint, i);
                         frame.Add_MapPoint(tMPoint, i);
                         mMap->AddMapPoint(tMPoint);
+
                     }
                 }
-                Optimizer::PoseSolver(frame, mReferFrame);
+                Optimizer::PoseSolver(frame);
                 std::cout << "Initalize RGBD Camera successfully ! " << std::endl;
                 return true;
             }

@@ -19,7 +19,7 @@ public:
     ~Rarsac_base();
 
     //! Calculate the F matrix using Rarsac algorithm and delete outliers
-    std::vector<bool> RejectFundamental();
+    std::vector<uchar> RejectFundamental();
 
     //! Get the bin index of the feature
     int Get_GridIndex(cv::Point2f _pt);
@@ -36,7 +36,7 @@ protected:
     double Sampson_Distance(cv::Point2f PointA, cv::Point2f PointB, cv::Mat _F);
 
     //! Get inliers from the Sampson Distance
-    void Get_Inliers(const cv::Mat _F, std::vector<bool> &_status);
+    void Get_Inliers(const cv::Mat _F, std::vector<uchar> &_status);
 
     //! Compare two mvBinIdexProba from max to min
     static bool CompareBin(const std::pair<int, double> &a, const std::pair<int, double> &b)
@@ -45,7 +45,7 @@ protected:
     }
 
     //! Get inliners refer to Fundamental matrix
-    float CheckFundamental(const cv::Mat &F21, std::vector<bool> &_status, float sigma);
+    float CheckFundamental(const cv::Mat &F21, std::vector<uchar> &_status, float sigma);
 
     //! Normalize corners to calculate faundamental matrix
     cv::Mat Normalize_Points(std::vector <cv::Point2f> Points, std::vector <cv::Point2f> &Norm_Points);
@@ -63,7 +63,7 @@ protected:
     double                  mdOutlierThreshold;
     double                  mdTerminThreshold;
 
-    std::vector<bool>       mvStatus;
+    std::vector<uchar>       mvStatus;
     int                     mHalf_GridWidth;
     int                     mHalf_GridHeight;
     std::vector<bool>       mvGrid_occupancy;

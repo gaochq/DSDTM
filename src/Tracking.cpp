@@ -8,6 +8,9 @@
 
 namespace DSDTM
 {
+
+long int Tracking::mlNextID = 0;
+
 Tracking::Tracking(Camera *_cam, Map *_map):
         mCam(_cam), mInitializer(static_cast<Initializer*>(NULL)), mMap(_map)
 {
@@ -50,16 +53,22 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
             mInitFrame = Frame(mInitializer->mReferFrame);
 
             mpReferenceKF = mMap->Get_InitialKFrame();
+            mlNextID = mInitFrame.mvFeatures.size();
         }
     }
     else 
     {
         Track();
-        
+
+
         if(mState==OK)
         {
             TrackWithReferenceFrame();
+
+            //if(NeedKeyframe())
+            //    return;
         }
+
     }
 
     mLastFrame.ResetFrame();
@@ -115,13 +124,13 @@ void Tracking::LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Poi
 
     ReduceFeatures(_cur_Pts, tvStatus);
     ReduceFeatures(_last_Pts, tvStatus);
-//        ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
+    ReduceStatus(mvcStatus, tvStatus);
 }
 
 void Tracking::Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
                         std::vector<cv::Point2f> &_bad_Pts)
 {
-    std::vector<bool> tvStatus;
+    std::vector<uchar> tvStatus;
     mCurrentFrame.mvGrid_probability = mLastFrame.mvGrid_probability;
     mRarsac_base = Rarsac_base(&mCurrentFrame, _cur_Pts, _last_Pts);
     tvStatus = mRarsac_base.RejectFundamental();
@@ -129,6 +138,7 @@ void Tracking::Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Poin
     //ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
     ReduceFeatures(_cur_Pts, tvStatus, &_bad_Pts);
     ReduceFeatures(_last_Pts, tvStatus);
+    ReduceStatus(mvcStatus, tvStatus);
 }
 
 void Tracking::Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
@@ -139,13 +149,16 @@ void Tracking::Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::P
 
     ReduceFeatures(_cur_Pts, status, &_bad_Pts);
     ReduceFeatures(_last_Pts, status);
+    ReduceStatus(mvcStatus, status);
 }
 
 void Tracking::AddNewFeatures(std::vector<cv::Point2f> tCur_Pts)
 {
     std::vector<cv::Point2f>tPts_tmp, tBad_Pts;
 
-    mCurrentFrame.SetFeatures(tCur_Pts);
+    mCurrentFrame.SetFeatures(tCur_Pts, mvcStatus);
+    UpdateID(mCurrentFrame.mvFeatures);
+
     mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
     mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
     mFeature_detector->detect(&mCurrentFrame, 10);
@@ -153,36 +166,17 @@ void Tracking::AddNewFeatures(std::vector<cv::Point2f> tCur_Pts)
 
 void Tracking::TrackWithReferenceFrame()
 {
-    mCurrentFrame.Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
+    mCurrentFrame.Set_Pose(mLastFrame.Get_Pose());
+    mCurrentFrame.Add_Observations(*mpReferenceKF);
 
-
+    Optimizer::PoseSolver(mCurrentFrame);
 }
 
-void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<bool> _Status,
-                              std::vector<cv::Point2f> *_BadPoints)
+bool Tracking::NeedKeyframe()
 {
-    if(!_BadPoints)
-    {
-        int j = 0;
-        for (int i = 0; i < int(_Points.size()); i++)
-            if (_Status[i])
-                _Points[j++] = _Points[i];
-        _Points.resize(j);
-    }
-    else
-    {
-        int j = 0;
-        for (int i = 0; i < int(_Points.size()); i++)
-        {
-            if (_Status[i])
-                _Points[j++] = _Points[i];
-            else
-                _BadPoints->push_back(_Points[i]);
-        }
-        _Points.resize(j);
-    }
 
 }
+
 
 void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status,
                               std::vector<cv::Point2f> *_BadPoints)
@@ -214,14 +208,35 @@ void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vect
     }
 }
 
-    void Tracking::Reset_Status()
+void Tracking::ReduceStatus(std::vector<long int> &tStatus, const std::vector<uchar> _Status)
+{
+    int j = 0;
+    for (int i = 0; i < int(tStatus.size()); i++)
     {
-        mvcStatus.clear();
-        for (size_t i = 0; i < mLastFrame.mvFeatures.size(); ++i)
-        {
-            mvcStatus.push_back(i);
-        }
+        if (_Status[i])
+            tStatus[j++] = tStatus[i];
     }
+    tStatus.resize(j);
+}
+
+
+void Tracking::Reset_Status()
+{
+    mvcStatus.clear();
+    for (size_t i = 0; i < mLastFrame.mvFeatures.size(); ++i)
+    {
+        mvcStatus.push_back(mLastFrame.mvFeatures[i].mlId);
+    }
+}
+
+void Tracking::UpdateID(Features &features)
+{
+    for (int i = 0; i < features.size(); ++i)
+    {
+        if(features[i].mlId==-1)
+            features[i].mlId = mlNextID++;
+    }
+}
 
 
 

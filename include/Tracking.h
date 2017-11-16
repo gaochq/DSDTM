@@ -59,10 +59,9 @@ private:
                      std::vector<cv::Point2f> &_bad_Pts);
 
     //! Delete outliers according to lkt and fundamental status
-    void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<bool> _Status,
-                        std::vector<cv::Point2f> *_BadPoints = nullptr);
     void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status,
                         std::vector<cv::Point2f> *_BadPoints = nullptr);
+    void ReduceStatus(std::vector<long int> &tStatus, const std::vector<uchar> _Status);
 
     //! Solve the pose of cunrrent with last keyframe
     void TrackWithReferenceFrame();
@@ -73,9 +72,16 @@ private:
     //! Reset mvcStatus
     void Reset_Status();
 
+    //! Check whether tracking need keyframe
+    bool NeedKeyframe();
+
+    //! Update the ID of features
+    void UpdateID(Features &features);
+
 public:
     Camera                  *mCam;               //! Camera
     int                     mPyra_levels;
+    static long int       mlNextID;
 
 protected:
     float                   mDepthScale;
@@ -92,7 +98,7 @@ protected:
     KeyFrame*               mpReferenceKF;
 
     Map                     *mMap;
-    std::vector<size_t>      mvcStatus;          //! The features status when tracking between adjacent frames
+    std::vector<long int>     mvcStatus;          //! The features status when tracking between adjacent frames
 
 };
 
