@@ -74,17 +74,13 @@ namespace DSDTM
             cv::calcOpticalFlowPyrLK(mReferFrame.mColorImg, frame.mColorImg,
                                      tLast_Pts, tCur_Pts, tvStatus, tPyrLK_error,
                                      cv::Size(21, 21), 5);
+
             for (int i = 0; i < tCur_Pts.size(); ++i)
             {
-                if (mCam->IsInImage(tCur_Pts[i]))
-                    continue;
-                else
+                if (tvStatus[i] && !mCam->IsInImage(tCur_Pts[i]))
                 {
-                    tCur_Pts.erase(tCur_Pts.begin() + i);
-                    tLast_Pts.erase(tLast_Pts.begin() + i);
-                    i--;
+                    tvStatus[i] = 0;
                 }
-
             }
             ReduceFeatures(tCur_Pts, tvStatus);
             ReduceFeatures(tLast_Pts, tvStatus);

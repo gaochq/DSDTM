@@ -27,6 +27,10 @@ include_directories(${Sophus_INCLUDE_DIRS})
 # Eigen
 include_directories("/usr/include/eigen3")
 
+#glog
+find_package(Glog REQUIRED)
+include_directories(${GLOG_INCLUDE_DIRS})
+
 include_directories(
 	${PROJECT_SOURCE_DIR}/include
 	${PROJECT_SOURCE_DIR}/Thirdparty/fast/include)
@@ -48,7 +52,8 @@ target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
 		${CERES_LIBRARIES}
 		${Sophus_LIBRARIES}
-		${PROJECT_SOURCE_DIR}/Thirdparty/fast/lib/libfast.so)
+		${PROJECT_SOURCE_DIR}/Thirdparty/fast/lib/libfast.so
+		${GLOG_LIBARIES})
 
 # Test the feature detection
 add_executable(test_Feature_detection Test/test_Feature_detection.cpp)
@@ -63,5 +68,9 @@ add_executable(test_combination Test/test_combination.cpp)
 target_link_libraries(test_combination ${PROJECT_NAME})
 
 # Test the tracking process
-add_executable(test Test/test.cpp)
-target_link_libraries(test ${PROJECT_NAME})
+add_executable(test_jotting Test/test_jotting.cpp)
+target_link_libraries(test_jotting ${PROJECT_NAME})
+
+# Test the initial pose solver
+add_executable(test_Optimizer Test/test_Optimizer.cpp)
+target_link_libraries(test_Optimizer ${PROJECT_NAME})

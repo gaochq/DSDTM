@@ -177,6 +177,11 @@ bool Tracking::NeedKeyframe()
 
 }
 
+void Tracking::Update_LastFrame()
+{
+
+}
+
 
 void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status,
                               std::vector<cv::Point2f> *_BadPoints)

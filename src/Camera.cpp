@@ -40,6 +40,57 @@ namespace DSDTM
         mheight = Config::Get<int>("Camera.height");
     }
 
+    void Camera::LiftProjective(const Feature &feature, Eigen::Vector3d P, bool tUnDistort)
+    {
+        double tmx_d, tmy_d, tmx_u, tmy_u;
+
+        double inv_fx = 1.0/mfx;
+        double inv_fy = 1.0/mfy;
+        double inv_cx = -mcx*inv_fx;
+        double inv_cy = -mcy*inv_fy;
+
+        tmx_d = feature.mpx.x*inv_fx + inv_cx;
+        tmy_d = feature.mpx.y*inv_fy + inv_cy;
+
+        if(!tUnDistort)
+        {
+            P << tmx_d, tmy_d, 1;
+        }
+        //! Using Recursive distortion model
+        else
+        {
+            int n = 8;
+            Eigen::Vector2d tDisPt;
+            Distortion(Eigen::Vector2d(tmx_d, tmy_d), tDisPt);
+
+            tmx_u = tmx_d - tDisPt(0);
+            tmy_u = tmy_d - tDisPt(1);
+
+            for (int i = 0; i < n; ++i)
+            {
+                Distortion(Eigen::Vector2d(tmx_u, tmy_u), tDisPt);
+                tmx_u = tmx_d - tDisPt(0);
+                tmy_u = tmy_d - tDisPt(1);
+            }
+
+            P << tmx_u, tmy_u, 1;
+        }
+    }
+
+    void Camera::Distortion(const Eigen::Vector2d tPt, Eigen::Vector2d tvPt)
+    {
+        double tPt_2x = tPt(0)*tPt(0);
+        double tPt_2y = tPt(1)*tPt(1);
+        double tpt_xy = tPt(0)*tPt(1);
+        double tPt_r = tPt_2x + tPt_2y;
+
+        double Radial_dist = mk1*tPt_r + mk2*tPt_r*tPt_r;
+
+        tvPt(0) = tPt(0)*Radial_dist + 2*mp1*tpt_xy + mp2*(tPt_r + 2*tPt_2x);
+        tvPt(1) = tPt(1)*Radial_dist + 2*mp2*tpt_xy + mp1*(tPt_r + 2*tPt_2y);
+    }
+
+
     Eigen::Vector2f Camera::Keypoint2Vector(const cv::KeyPoint &point)
     {
         return Eigen::Vector2f(point.pt.x, point.pt.y);

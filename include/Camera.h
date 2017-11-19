@@ -24,6 +24,8 @@
 
 #include <sophus/se3.h>
 
+#include <glog/logging.h>
+
 #include "Config.h"
 #include "Frame.h"
 #include "Feature.h"
@@ -45,6 +47,12 @@ public:
     Camera(const std::string &Paramfile, const Camera_Model model);
     Camera(Camera_Model model, float _fx, float _fy, float _cx, float _cy);
     ~Camera();
+
+    //! Distortion correction for Feature in normalized plane
+    void LiftProjective(const Feature &feature, Eigen::Vector3d P, bool tUnDistort = true);
+
+    //! Calculate the distortion vary in normalized
+    void Distortion(const Eigen::Vector2d tPt, Eigen::Vector2d tvPt);
 
     //! keypoint to vector
     Eigen::Vector2f Keypoint2Vector(const cv::KeyPoint &point);

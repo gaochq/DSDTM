@@ -45,6 +45,11 @@ public:
     //! Tracking on the
     void Track_Monocular(const cv::Mat &Image, const double TimeStamp);
 
+    //! Delete outliers according to lkt and fundamental status
+    static void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status,
+                        std::vector<cv::Point2f> *_BadPoints = nullptr);
+    void ReduceStatus(std::vector<long int> &tStatus, const std::vector<uchar> _Status);
+
 private:
     //! The main tracking function
     void Track();
@@ -57,11 +62,6 @@ private:
                   std::vector<cv::Point2f> &_bad_Pts);
     void Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
                      std::vector<cv::Point2f> &_bad_Pts);
-
-    //! Delete outliers according to lkt and fundamental status
-    void ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status,
-                        std::vector<cv::Point2f> *_BadPoints = nullptr);
-    void ReduceStatus(std::vector<long int> &tStatus, const std::vector<uchar> _Status);
 
     //! Solve the pose of cunrrent with last keyframe
     void TrackWithReferenceFrame();
@@ -77,6 +77,9 @@ private:
 
     //! Update the ID of features
     void UpdateID(Features &features);
+
+    //! Update Last frame
+    void Update_LastFrame();
 
 public:
     Camera                  *mCam;               //! Camera

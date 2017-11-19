@@ -41,8 +41,10 @@ namespace DSDTM
         }
 
         ceres::Solver::Options options;
-        options.linear_solver_type = ceres::DENSE_SCHUR;
-        //options.minimizer_progress_to_stdout =true;
+        //options.linear_solver_type = ceres::DENSE_SCHUR;
+#ifndef NDEBUG
+        options.minimizer_progress_to_stdout =true;
+#endif
         options.trust_region_strategy_type = ceres::DOGLEG;
         options.max_num_iterations = tIterations;
 
@@ -52,16 +54,19 @@ namespace DSDTM
 
 
         double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
-        std::cout <<"Cost "<< time << " us" << std::endl;
+
+        DLOG(INFO) <<"Cost "<< time << " us";
+        /*
         for (int j = 0; j < 6; ++j)
         {
             std::cout << mTransform[j]<< std::endl;
         }
+         */
         Eigen::Map< Eigen::Matrix<double, 6, 1> > tFinalPose(mTransform);
         tCurFrame.Set_Pose(Sophus::SE3::exp(tFinalPose));
 
-        std::cout << summary.FullReport() << std::endl;
-        std::cout << std::sqrt(summary.final_cost / summary.num_residuals) << std::endl;
+        DLOG(INFO)<< "Residual: "<<std::sqrt(summary.final_cost / summary.num_residuals);
+        DLOG(INFO)<< summary.FullReport() << std::endl;
     }
 
     double *Optimizer::se3ToDouble(Eigen::Matrix<double, 6, 1> tse3)
