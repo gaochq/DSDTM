@@ -21,7 +21,7 @@ class MapPoint
 {
 public:
     MapPoint();
-    MapPoint(Eigen::Vector3d& _pose, Frame *_frame);
+    MapPoint(Eigen::Vector3d& _pose, KeyFrame *_frame);
 
     //! Set and Get the world position of mappoint
     void Set_Pose(Eigen::Vector3d tPose);
@@ -46,8 +46,9 @@ protected:
     unsigned long           mFirstFrame;
 
     //! Observation
-    std::map<KeyFrame*, size_t>         mObservations;
     size_t                  mObserveNum;
+    std::map<KeyFrame*, size_t>         mObservations;
+
 };
 
 

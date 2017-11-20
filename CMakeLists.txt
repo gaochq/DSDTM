@@ -46,7 +46,8 @@ add_library(${PROJECT_NAME} SHARED
 	src/MapPoint.cpp
 	src/Map.cpp
 	src/Keyframe.cpp
-	src/Optimizer.cpp)
+	src/Optimizer.cpp
+	src/LocalMapping.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
@@ -74,3 +75,7 @@ target_link_libraries(test_jotting ${PROJECT_NAME})
 # Test the initial pose solver
 add_executable(test_Optimizer Test/test_Optimizer.cpp)
 target_link_libraries(test_Optimizer ${PROJECT_NAME})
+
+#Test Keyframe creating
+add_executable(KFrame_Creating Test/test_KFrame_Creating.cpp)
+target_link_libraries(KFrame_Creating ${PROJECT_NAME})

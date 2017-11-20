@@ -6,8 +6,9 @@
 
 namespace DSDTM
 {
-    KeyFrame::KeyFrame(Frame &_frame):
-            mFrame(&_frame)
+    KeyFrame::KeyFrame(Frame &tframe):
+            mFrame(&tframe), mT_c2w(tframe.Get_Pose()), mvMapPoints(tframe.mvMapPoints),
+            mvFeatures(tframe.mvFeatures), mpObservation(tframe.mpObservation)
     {
 
     }
@@ -27,6 +28,8 @@ namespace DSDTM
     {
         mpObservation.insert(std::pair<long int, MapPoint*>(tId, tMPoint));
     }
+
+
 
 
 } //namesapce DSDTM

@@ -14,7 +14,7 @@ MapPoint::MapPoint()
 
 }
 
-MapPoint::MapPoint(Eigen::Vector3d &_pose, Frame *_frame):
+MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame):
         mPose(_pose), mFirstFrame(_frame->mlId)
 {
     mlID = mlNextId++;

@@ -63,10 +63,16 @@ public:
     //! Return Observations
     std::map<long int, MapPoint*> Get_Observations() const { return mpObservation;};
 
+    //! Get scene depth
+    void Get_SceneDepth(double tMinDepth, double tMeanDepth);
+
+    //! Check whether the feature int observations
+    bool Find_Observations(long int tID);
+
 public:
     typedef std::shared_ptr<Frame> FramePtr;
 
-    Features               mvFeatures;
+    Features                mvFeatures;
     unsigned long           mlId;
     static unsigned long    mlNextId;
 
@@ -78,14 +84,18 @@ public:
     cv::Mat                 mDepthImg;
     Camera*                 mCamera;
 
+    std::vector<MapPoint*>  mvMapPoints;
+    std::map<long int, MapPoint*>  mpObservation;
+
 
 protected:
 
     int                     mPyra_levels;
-    std::map<long int, MapPoint*>  mpObservation;
-    std::vector<MapPoint*>  mvMapPoints;
 
     Sophus::SE3             mT_c2w;
+
+    double                  mMinDepth;
+    double                  mMeanDepth;
 
 };
 }// namespace DSDTM

@@ -11,6 +11,7 @@
 #include "Keyframe.h"
 #include "Map.h"
 #include "Optimizer.h"
+#include "LocalMapping.h"
 
 namespace DSDTM
 {
@@ -22,6 +23,7 @@ class Rarsac_base;
 class Feature_detector;
 class Initializer;
 class KeyFrame;
+class LocalMapping;
 
 class Tracking
 {
@@ -36,7 +38,7 @@ private:
     };
 
 public:
-    Tracking(Camera *_cam, Map *_map);
+    Tracking(Camera *_cam, Map *_map, LocalMapping *tLocalMapping= nullptr);
     ~Tracking();
 
     //! Tracking on the rgbd camera
@@ -81,6 +83,9 @@ private:
     //! Update Last frame
     void Update_LastFrame();
 
+    //! Create new Keyframe
+    void CraeteKeyframe();
+
 public:
     Camera                  *mCam;               //! Camera
     int                     mPyra_levels;
@@ -102,6 +107,13 @@ protected:
 
     Map                     *mMap;
     std::vector<long int>     mvcStatus;          //! The features status when tracking between adjacent frames
+
+    size_t                  mProcessedFrames;       //! the number of processed frames after last keyframe inseration
+    double                  mdMinRotParallax;
+    double                  mdMinTransParallax;
+    int                     mMinFeatures;
+
+    LocalMapping            *mLocalMapping;
 
 };
 

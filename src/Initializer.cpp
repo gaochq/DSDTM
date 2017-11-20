@@ -125,7 +125,7 @@ namespace DSDTM
                     if (z>0)
                     {
                         Eigen::Vector3d tPose = mCam->Pixel2Camera(mReferFrame.mvFeatures[i].mpx, z);
-                        MapPoint *tMPoint = new MapPoint(tPose, &frame);
+                        MapPoint *tMPoint = new MapPoint(tPose, tKFrame);
 
                         tMPoint->Add_Observation(tKFrame, i);
                         tKFrame->Add_MapPoint(tMPoint);

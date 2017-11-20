@@ -11,13 +11,18 @@ namespace DSDTM
 
 long int Tracking::mlNextID = 0;
 
-Tracking::Tracking(Camera *_cam, Map *_map):
-        mCam(_cam), mInitializer(static_cast<Initializer*>(NULL)), mMap(_map)
+Tracking::Tracking(Camera *_cam, Map *_map, LocalMapping *tLocalMapping):
+        mCam(_cam), mInitializer(static_cast<Initializer*>(NULL)), mMap(_map),
+        mLocalMapping(tLocalMapping) ,mProcessedFrames(0)
 {
     mState = Not_Init;
+
     mPyra_levels = Config::Get<int>("Camera.PyraLevels");
     mDepthScale = Config::Get<float>("Camera.depth_scale");
     mMaxIters = Config::Get<int>("Optimization.MaxIter");
+    mdMinRotParallax = Config::Get<double>("KeyFrame.min_rot");
+    mdMinTransParallax = Config::Get<double>("KeyFrame.min_trans");
+    mMinFeatures = Config::Get<int>("KeyFrame.min_features");
 
     mFeature_detector = new Feature_detector();
 }
@@ -65,8 +70,10 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
         {
             TrackWithReferenceFrame();
 
-            //if(NeedKeyframe())
-            //    return;
+            if(NeedKeyframe())
+
+
+            mProcessedFrames++;
         }
 
     }
@@ -170,10 +177,52 @@ void Tracking::TrackWithReferenceFrame()
     mCurrentFrame.Add_Observations(*mpReferenceKF);
 
     Optimizer::PoseSolver(mCurrentFrame);
+    mCurrentFrame.Set_Pose(mpReferenceKF->Get_Pose()*mCurrentFrame.Get_Pose());
 }
 
 bool Tracking::NeedKeyframe()
 {
+    double tMinDepth, tMeanDepth;
+    //mCurrentFrame.Get_SceneDepth(tMinDepth, tMeanDepth);
+    if(mCurrentFrame.mvFeatures.size() < 30)
+        return true;
+
+    if(mProcessedFrames<10)
+        return false;
+
+    Sophus::SE3 tDeltaPose = mpReferenceKF->Get_Pose().inverse()*mCurrentFrame.Get_Pose();
+    double tRotNorm = tDeltaPose.so3().log().norm();
+    double tTransNorm = tDeltaPose.translation().norm();
+
+    if(tRotNorm < mdMinRotParallax && tTransNorm < mdMinTransParallax)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void Tracking::CraeteKeyframe()
+{
+    KeyFrame *tKFrame = new KeyFrame(mCurrentFrame);
+    mpReferenceKF = tKFrame;
+
+    for(auto it = mCurrentFrame.mvFeatures.begin(); it!=mCurrentFrame.mvFeatures.end();it++)
+    {
+        float z = mCurrentFrame.Get_FeatureDetph(*it);
+        if (z<=0 && mCurrentFrame.Find_Observations(it->mlId))
+            continue;
+
+        Eigen::Vector3d tPose = mCam->Pixel2Camera(it->mpx, z);
+        MapPoint *tMPoint = new MapPoint(tPose, tKFrame);
+
+        tMPoint->Add_Observation(tKFrame, it->mlId);
+        tKFrame->Add_MapPoint(tMPoint);
+        tKFrame->Add_Observations(it->mlId, tMPoint);
+
+        mMap->AddMapPoint(tMPoint);
+    }
+
 
 }
 

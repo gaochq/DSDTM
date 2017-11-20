@@ -27,14 +27,23 @@ public:
     //! Return Observations
     std::map<long int, MapPoint*> Get_Observations() const { return mpObservation;};
 
+    //! Get and Set Keyframe pose
+    Sophus::SE3 Get_Pose() { return mT_c2w; }
+    void Set_Pose(Sophus::SE3 tPose) { mT_c2w = tPose; }
+
+
 public:
     unsigned long           mlId;
     static unsigned long    mlNextId;
 
-protected:
-    Frame                   *mFrame;
+    Features                mvFeatures;
     std::vector<MapPoint*>  mvMapPoints;
     std::map<long int, MapPoint*>  mpObservation;
+
+protected:
+    Frame                   *mFrame;
+
+    Sophus::SE3             mT_c2w;
 
 };
 
