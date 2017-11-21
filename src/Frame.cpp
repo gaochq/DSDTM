@@ -110,9 +110,9 @@ void Frame::Add_MapPoint(MapPoint *tPoint, size_t tFid)
 
 void Frame::Add_Observations(const KeyFrame &tKframe)
 {
-    std::map<size_t, MapPoint*> tObservations = tKframe.Get_Observations();
+    std::map<long int, MapPoint*> tObservations = tKframe.Get_Observations();
 
-    std::map<size_t, MapPoint*>::iterator it;
+    std::map<long int, MapPoint*>::iterator it;
     for (int i = 0; i < mvFeatures.size(); ++i)
     {
         it = tObservations.find(mvFeatures[i].mlId);
@@ -150,7 +150,7 @@ void Frame::Get_SceneDepth(double tMinDepth, double tMeanDepth)
     tMeanDepth = mMeanDepth;
 }
 
-bool Frame::Find_Observations(long int tID)
+bool Frame::Find_Observations(size_t tID)
 {
     std::map<size_t , MapPoint*>::iterator it;
 

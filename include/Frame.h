@@ -69,7 +69,7 @@ public:
     void Get_SceneDepth(double tMinDepth, double tMeanDepth);
 
     //! Check whether the feature int observations
-    bool Find_Observations(long int tID);
+    bool Find_Observations(size_t tID);
 
 
 

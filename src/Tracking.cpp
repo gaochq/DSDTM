@@ -210,20 +210,22 @@ void Tracking::CraeteKeyframe()
     KeyFrame *tKFrame = new KeyFrame(mCurrentFrame);
     mpReferenceKF = tKFrame;
 
+    size_t tFeature_Num = 0;
     for(auto it = mCurrentFrame.mvFeatures.begin(); it!=mCurrentFrame.mvFeatures.end();it++)
     {
         float z = mCurrentFrame.Get_FeatureDetph(*it);
-        if (z<=0 && mCurrentFrame.Find_Observations(it->mlId))
+        if (z<=0 && mCurrentFrame.Find_Observations(tFeature_Num))
             continue;
 
         Eigen::Vector3d tPose = mCam->Pixel2Camera(it->mpx, z);
         MapPoint *tMPoint = new MapPoint(tPose, tKFrame);
 
-        tMPoint->Add_Observation(tKFrame, it->mlId);
+        tMPoint->Add_Observation(tKFrame, tFeature_Num);
         tKFrame->Add_MapPoint(tMPoint);
-        tKFrame->Add_Observations(it->mlId, tMPoint);
+        tKFrame->Add_Observations(tFeature_Num, tMPoint);
 
         mMap->AddMapPoint(tMPoint);
+        tFeature_Num++;
     }
     mLocalMapper->InsertKeyFrame(tKFrame);
 

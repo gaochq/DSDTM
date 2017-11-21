@@ -48,6 +48,7 @@ namespace DSDTM
 
         size_t tEdgeNum = 0;
         //TODO Add mutex_lock for Mappoint
+
         for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter)
         {
             MapPoint* tMPoint = iter->second;
@@ -81,7 +82,7 @@ namespace DSDTM
         }
 
         //! Start solver
-        mOptimizer.initializeOptimization();
+        mOptimizer.initializeOptimization(0);
         mOptimizer.optimize(tIterations);
 
         //! Update frame pose

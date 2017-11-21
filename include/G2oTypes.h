@@ -235,7 +235,9 @@ namespace g2o {
             if(abs(_error(0))>5 || abs(_error(1))>5)
             {
                 DLOG(ERROR)<< "Wrong error";
+                _error<< 0 ,0;
             }
+            _error = obs-cam_project(v1->estimate().map(Xw));
         }
 
         bool isDepthPositive() {
