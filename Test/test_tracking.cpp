@@ -47,6 +47,10 @@ int main(int argc, char **argv)
         cout << "Usage: Test_Feature_detection Path_To_ParamFile" <<endl;
         return 0;
     }
+
+    google::InitGoogleLogging(argv[0]);
+    FLAGS_logtostderr = true;
+
     DSDTM::Map *mMap = new DSDTM::Map();
     DSDTM::Config::setParameterFile(argv[1]);
     DSDTM::Camera::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));

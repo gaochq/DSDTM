@@ -21,7 +21,7 @@ public:
     Optimizer();
     ~Optimizer();
 
-    static void PoseSolver(Frame &tCurFrame, int tIterations = 5);
+    static void PoseSolver(Frame &tCurFrame, int tIterations = 10);
     static double *se3ToDouble(Eigen::Matrix<double, 6, 1> tso3);
 
 

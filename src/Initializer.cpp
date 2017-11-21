@@ -131,8 +131,8 @@ namespace DSDTM
                         tKFrame->Add_MapPoint(tMPoint);
                         tKFrame->Add_Observations(i, tMPoint);
 
-                        mReferFrame.Add_MapPoint(tMPoint, i);
-                        frame.Add_MapPoint(tMPoint, i);
+                        mReferFrame.Add_MapPoint(i, tMPoint);
+                        frame.Add_MapPoint(i, tMPoint);
                         mMap->AddMapPoint(tMPoint);
 
                     }

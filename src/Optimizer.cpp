@@ -28,7 +28,7 @@ namespace DSDTM
         loss_function = new ceres::CauchyLoss(1.0);
         double *mTransform = se3ToDouble(tCurFrame.Get_Pose().log());
 
-        std::map<long int, MapPoint*> tObservations = tCurFrame.Get_Observations();
+        std::map<size_t, MapPoint*> tObservations = tCurFrame.Get_Observations();
         for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter)
         {
             Eigen::Vector3d tPoint(iter->second->Get_Pose());
@@ -65,8 +65,8 @@ namespace DSDTM
         Eigen::Map< Eigen::Matrix<double, 6, 1> > tFinalPose(mTransform);
         tCurFrame.Set_Pose(Sophus::SE3::exp(tFinalPose));
 
-        DLOG(INFO)<< "Residual: "<<std::sqrt(summary.final_cost / summary.num_residuals);
         DLOG(INFO)<< summary.FullReport() << std::endl;
+        DLOG(INFO)<< "Residual: "<<std::sqrt(summary.final_cost / summary.num_residuals);
     }
 
     double *Optimizer::se3ToDouble(Eigen::Matrix<double, 6, 1> tse3)

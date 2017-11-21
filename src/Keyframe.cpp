@@ -24,9 +24,9 @@ namespace DSDTM
 
     }
 
-    void KeyFrame::Add_Observations(long int tId, MapPoint *tMPoint)
+    void KeyFrame::Add_Observations(size_t tId, MapPoint *tMPoint)
     {
-        mpObservation.insert(std::pair<long int, MapPoint*>(tId, tMPoint));
+        mpObservation.insert(std::pair<size_t, MapPoint*>(tId, tMPoint));
     }
 
 

@@ -55,19 +55,19 @@ public:
     float Get_FeatureDetph(const Feature feature);
 
     //! Add mappoint and observation into frame
-    void Add_MapPoint(MapPoint *tPoint, size_t tFid);
+    void Add_MapPoint(size_t tFid, MapPoint *tPoint);
 
     //! Add Feature-Mappoint observations
     void Add_Observations(const KeyFrame &tKframe);
 
     //! Return Observations
-    std::map<long int, MapPoint*> Get_Observations() const { return mpObservation;};
+    std::map<size_t, MapPoint*> Get_Observations() const { return mpObservation;};
 
     //! Get scene depth
     void Get_SceneDepth(double tMinDepth, double tMeanDepth);
 
     //! Check whether the feature int observations
-    bool Find_Observations(long int tID);
+    bool Find_Observations(size_t tID);
 
 public:
     typedef std::shared_ptr<Frame> FramePtr;
@@ -85,7 +85,7 @@ public:
     Camera*                 mCamera;
 
     std::vector<MapPoint*>  mvMapPoints;
-    std::map<long int, MapPoint*>  mpObservation;
+    std::map<size_t, MapPoint*>  mpObservation;
 
 
 protected:

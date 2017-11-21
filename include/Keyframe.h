@@ -22,10 +22,10 @@ public:
 
     //! Add MapPoint and the observation between mappoint and features
     void Add_MapPoint(MapPoint *tMPoint);
-    void Add_Observations(long int tId, MapPoint *tMPoint);
+    void Add_Observations(size_t tId, MapPoint *tMPoint);
 
     //! Return Observations
-    std::map<long int, MapPoint*> Get_Observations() const { return mpObservation;};
+    std::map<size_t , MapPoint*> Get_Observations() const { return mpObservation;};
 
     //! Get and Set Keyframe pose
     Sophus::SE3 Get_Pose() { return mT_c2w; }
@@ -38,7 +38,7 @@ public:
 
     Features                mvFeatures;
     std::vector<MapPoint*>  mvMapPoints;
-    std::map<long int, MapPoint*>  mpObservation;
+    std::map<size_t, MapPoint*>  mpObservation;
 
 protected:
     Frame                   *mFrame;
