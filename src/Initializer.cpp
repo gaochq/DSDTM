@@ -120,6 +120,7 @@ namespace DSDTM
                 {
                     mReferFrame.mvFeatures[i].mlId = i;
                     frame.mvFeatures[i].mlId = i;
+                    tKFrame->mvFeatures[i].mlId = i;
 
                     float z = mReferFrame.Get_FeatureDetph(mReferFrame.mvFeatures[i]);
                     if (z>0)

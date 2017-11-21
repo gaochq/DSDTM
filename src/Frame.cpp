@@ -110,9 +110,9 @@ void Frame::Add_MapPoint(size_t tFid, MapPoint *tPoint)
 
 void Frame::Add_Observations(const KeyFrame &tKframe)
 {
-    std::map<size_t, MapPoint*> tObservations = tKframe.Get_Observations();
+    std::map<long int, MapPoint*> tObservations = tKframe.Get_Observations();
 
-    std::map<size_t, MapPoint*>::iterator it;
+    std::map<long int, MapPoint*>::iterator it;
     for (int i = 0; i < mvFeatures.size(); ++i)
     {
         it = tObservations.find(mvFeatures[i].mlId);
