@@ -9,6 +9,8 @@
 #include "Feature.h"
 #include "MapPoint.h"
 
+#include"g2o/types/sba/types_six_dof_expmap.h"
+
 namespace DSDTM
 {
 
@@ -47,7 +49,7 @@ public:
     //! Return Features size
     const int Get_FeatureSize(){ return mvFeatures.size(); }
 
-    //! Set and get frame pose
+    //! Set and get frame pose in sophus and g2o Type
     void Set_Pose(Sophus::SE3 _pose) { mT_c2w = _pose;}
     Sophus::SE3 Get_Pose() { return  mT_c2w;}
 
@@ -61,13 +63,17 @@ public:
     void Add_Observations(const KeyFrame &tKframe);
 
     //! Return Observations
-    std::map<long int, MapPoint*> Get_Observations() const { return mpObservation;};
+    std::map<size_t , MapPoint*> Get_Observations() const { return mpObservation;};
 
     //! Get scene depth
     void Get_SceneDepth(double tMinDepth, double tMeanDepth);
 
     //! Check whether the feature int observations
     bool Find_Observations(long int tID);
+
+
+
+
 
 public:
     typedef std::shared_ptr<Frame> FramePtr;
@@ -85,14 +91,14 @@ public:
     Camera*                 mCamera;
 
     std::vector<MapPoint*>  mvMapPoints;
-    std::map<long int, MapPoint*>  mpObservation;
+    std::map<size_t , MapPoint*>  mpObservation;
 
-
+    Sophus::SE3             mT_c2w;
 protected:
 
     int                     mPyra_levels;
 
-    Sophus::SE3             mT_c2w;
+
 
     double                  mMinDepth;
     double                  mMeanDepth;

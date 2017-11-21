@@ -27,9 +27,14 @@ include_directories(${Sophus_INCLUDE_DIRS})
 # Eigen
 include_directories("/usr/include/eigen3")
 
-#glog
+# glog
 find_package(Glog REQUIRED)
 include_directories(${GLOG_INCLUDE_DIRS})
+
+# G2O
+find_package(G2O REQUIRED)
+include_directories(${G2O_INCLUDE_DIR}
+                    ${G2O_INCLUDE_DIR}/include)
 
 include_directories(
 	${PROJECT_SOURCE_DIR}/include
@@ -47,14 +52,20 @@ add_library(${PROJECT_NAME} SHARED
 	src/Map.cpp
 	src/Keyframe.cpp
 	src/Optimizer.cpp
-	src/LocalMapping.cpp)
+	src/LocalMapping.cpp
+	src/G2oTypes.cpp)
+
+set(G2O_LIBRARIES
+        ${G2O_CORE_LIBRARY} ${G2O_TYPES_SLAM3D} ${G2O_SOLVER_CSPARSE}
+        ${G2O_STUFF_LIBRARY} ${G2O_SOLVER_CSPARSE_EXTENSION} ${G2O_TYPES_SBA})
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
 		${CERES_LIBRARIES}
 		${Sophus_LIBRARIES}
 		${PROJECT_SOURCE_DIR}/Thirdparty/fast/lib/libfast.so
-		${GLOG_LIBARIES})
+		${GLOG_LIBARIES}
+        ${G2O_LIBRARIES})
 
 # Test the feature detection
 add_executable(test_Feature_detection Test/test_Feature_detection.cpp)

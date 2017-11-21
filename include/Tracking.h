@@ -113,7 +113,7 @@ protected:
     double                  mdMinTransParallax;
     int                     mMinFeatures;
 
-    LocalMapping            *mLocalMapping;
+    LocalMapping            *mLocalMapper;
 
 };
 

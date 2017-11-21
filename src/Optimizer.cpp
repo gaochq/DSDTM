@@ -19,54 +19,75 @@ namespace DSDTM
 
     void Optimizer::PoseSolver(Frame &tCurFrame, int tIterations)
     {
-        double start = static_cast<double>(cvGetTickCount());
-        Eigen::Matrix3d tIntrinsic;
-        tIntrinsic = tCurFrame.mCamera->Return_Intrinsic();
+        //! Create solver
+        g2o::SparseOptimizer mOptimizer;
 
-        ceres::Problem problem;
-        ceres::LossFunction *loss_function;
-        loss_function = new ceres::CauchyLoss(1.0);
-        double *mTransform = se3ToDouble(tCurFrame.Get_Pose().log());
+        //! Set Solver Options <6 dims pose and 3 dims landmark>
+        g2o::BlockSolver_6_3::LinearSolverType *LinearSolver;
+        LinearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
+        g2o::BlockSolver_6_3 *Block_Solver = new g2o::BlockSolver_6_3(LinearSolver);
 
-        std::map<long int, MapPoint*> tObservations = tCurFrame.Get_Observations();
+        //! Set LM
+        g2o::OptimizationAlgorithmLevenberg *Solver = new g2o::OptimizationAlgorithmLevenberg(Block_Solver);
+        mOptimizer.setAlgorithm(Solver);
+        mOptimizer.setVerbose(true);
+
+        //! Add vertex
+        g2o::VertexSE3Expmap *mVertex = new g2o::VertexSE3Expmap;
+        mVertex->setEstimate(g2o::SE3Quat(tCurFrame.mT_c2w.so3().matrix(), tCurFrame.mT_c2w.translation()));
+        mVertex->setId(0);
+        mVertex->setFixed(false);
+
+        mOptimizer.addVertex(mVertex);
+
+        //! Add edge
+        std::map<size_t, MapPoint*> tObservations = tCurFrame.Get_Observations();
+        int N = tObservations.size();
+        std::vector<g2o::EdgeSE3ProjectXYZOnlyPose*> mvEdges;
+        mvEdges.reserve(N);
+
+        size_t tEdgeNum = 0;
+        //TODO Add mutex_lock for Mappoint
         for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter)
         {
-            Eigen::Vector3d tPoint(iter->second->Get_Pose());
-            int tIndex = iter->first;
-            Eigen::Vector2d tObserves(tCurFrame.mvFeatures[tIndex].mpx.x,
-                                      tCurFrame.mvFeatures[tIndex].mpx.y);
+            MapPoint* tMPoint = iter->second;
 
-            PoseGraph_Problem* p = new PoseGraph_Problem(tPoint, tObserves, tIntrinsic);
-            problem.AddResidualBlock(p, loss_function, mTransform);
+            if(tMPoint)
+            {
+                Eigen::Vector2d tObs;
+                tObs << tCurFrame.mvFeatures[iter->first].mpx.x,
+                        tCurFrame.mvFeatures[iter->first].mpx.y;
+
+                g2o::EdgeSE3ProjectXYZOnlyPose *tEdge = new g2o::EdgeSE3ProjectXYZOnlyPose;
+                tEdge->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(mOptimizer.vertex(0)));
+                tEdge->setMeasurement(tObs);
+
+                //! Add Kernel function
+                //g2o::RobustKernelHuber *mRkHuber = new g2o::RobustKernelHuber;
+                //tEdge->setRobustKernel(mRkHuber);
+                //mRkHuber->setDelta(5.991);          //from ORB-SLAM
+
+                tEdge->fx = tCurFrame.mCamera->mfx;
+                tEdge->fy = tCurFrame.mCamera->mfy;
+                tEdge->cx = tCurFrame.mCamera->mcx;
+                tEdge->cy = tCurFrame.mCamera->mcy;
+
+                tEdge->Xw = tMPoint->Get_Pose();
+
+                mOptimizer.addEdge(tEdge);
+                mvEdges.push_back(tEdge);
+                tEdgeNum++;
+            }
         }
 
-        ceres::Solver::Options options;
-        //options.linear_solver_type = ceres::DENSE_SCHUR;
-#ifndef NDEBUG
-        options.minimizer_progress_to_stdout =true;
-#endif
-        options.trust_region_strategy_type = ceres::DOGLEG;
-        options.max_num_iterations = tIterations;
+        //! Start solver
+        mOptimizer.initializeOptimization();
+        mOptimizer.optimize(tIterations);
 
-        ceres::Solver::Summary summary;
-        ceres::Solve(options, &problem, &summary);
-
-
-
-        double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
-
-        DLOG(INFO) <<"Cost "<< time << " us";
-        /*
-        for (int j = 0; j < 6; ++j)
-        {
-            std::cout << mTransform[j]<< std::endl;
-        }
-         */
-        Eigen::Map< Eigen::Matrix<double, 6, 1> > tFinalPose(mTransform);
-        tCurFrame.Set_Pose(Sophus::SE3::exp(tFinalPose));
-
-        DLOG(INFO)<< "Residual: "<<std::sqrt(summary.final_cost / summary.num_residuals);
-        DLOG(INFO)<< summary.FullReport() << std::endl;
+        //! Update frame pose
+        g2o::VertexSE3Expmap *tSE3_Recov = static_cast<g2o::VertexSE3Expmap*>(mOptimizer.vertex(0));
+        g2o::SE3Quat tPose_Recov = tSE3_Recov->estimate();
+        tCurFrame.Set_Pose(Sophus::SE3(tPose_Recov.rotation(), tPose_Recov.translation()));
     }
 
     double *Optimizer::se3ToDouble(Eigen::Matrix<double, 6, 1> tse3)

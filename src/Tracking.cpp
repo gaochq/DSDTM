@@ -13,7 +13,7 @@ long int Tracking::mlNextID = 0;
 
 Tracking::Tracking(Camera *_cam, Map *_map, LocalMapping *tLocalMapping):
         mCam(_cam), mInitializer(static_cast<Initializer*>(NULL)), mMap(_map),
-        mLocalMapping(tLocalMapping) ,mProcessedFrames(0)
+        mLocalMapper(tLocalMapping) ,mProcessedFrames(0)
 {
     mState = Not_Init;
 
@@ -71,7 +71,7 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
             TrackWithReferenceFrame();
 
             if(NeedKeyframe())
-
+                CraeteKeyframe();
 
             mProcessedFrames++;
         }
@@ -105,6 +105,8 @@ void Tracking::Track()
     }
 
     AddNewFeatures(tCur_Pts);
+
+    //! Shoe Features
     mCurrentFrame.Get_Features(tPts_tmp);
     std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
     std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
@@ -139,6 +141,7 @@ void Tracking::Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Poin
 {
     std::vector<uchar> tvStatus;
     mCurrentFrame.mvGrid_probability = mLastFrame.mvGrid_probability;
+
     mRarsac_base = Rarsac_base(&mCurrentFrame, _cur_Pts, _last_Pts);
     tvStatus = mRarsac_base.RejectFundamental();
 
@@ -222,7 +225,7 @@ void Tracking::CraeteKeyframe()
 
         mMap->AddMapPoint(tMPoint);
     }
-
+    mLocalMapper->InsertKeyFrame(tKFrame);
 
 }
 
