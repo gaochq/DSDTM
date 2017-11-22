@@ -69,6 +69,9 @@ public:
     //! Check whether the feature int observations
     bool Find_Observations(size_t tID);
 
+    //! Unproject pixel into world
+    Eigen::Vector3d UnProject(const cv::Point2f tPixel, const float d);
+
 public:
     typedef std::shared_ptr<Frame> FramePtr;
 

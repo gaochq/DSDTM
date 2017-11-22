@@ -118,7 +118,7 @@ namespace DSDTM
                                 mfy*Point[1]/Point[2] + mcy);
     }
 
-    Eigen::Vector3d Camera::Pixel2Camera(const cv::Point2f &point, float &depth)
+    Eigen::Vector3d Camera::Pixel2Camera(const cv::Point2f &point, const float &depth)
     {
         return Eigen::Vector3d( depth*(point.x - mcx)/mfx,
                                 depth*(point.y - mcy)/mfy,

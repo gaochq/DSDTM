@@ -71,6 +71,7 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
             TrackWithReferenceFrame();
 
             if(NeedKeyframe())
+                CraeteKeyframe();
 
 
             mProcessedFrames++;
@@ -207,14 +208,14 @@ void Tracking::CraeteKeyframe()
     KeyFrame *tKFrame = new KeyFrame(mCurrentFrame);
     mpReferenceKF = tKFrame;
 
-    size_t tFeature_Num;
+    size_t tFeature_Num = 0;
     for(auto it = mCurrentFrame.mvFeatures.begin(); it!=mCurrentFrame.mvFeatures.end();it++)
     {
         float z = mCurrentFrame.Get_FeatureDetph(*it);
         if (z<=0 && mCurrentFrame.Find_Observations(tFeature_Num))
             continue;
 
-        Eigen::Vector3d tPose = mCam->Pixel2Camera(it->mpx, z);
+        Eigen::Vector3d tPose = mCurrentFrame.UnProject(it->mpx, z);
         MapPoint *tMPoint = new MapPoint(tPose, tKFrame);
 
         tMPoint->Add_Observation(tKFrame, tFeature_Num);

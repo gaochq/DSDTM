@@ -6,10 +6,12 @@
 
 namespace DSDTM
 {
+    long unsigned int KeyFrame::mlNextId=0;
     KeyFrame::KeyFrame(Frame &tframe):
             mFrame(&tframe), mT_c2w(tframe.Get_Pose()), mvMapPoints(tframe.mvMapPoints),
             mvFeatures(tframe.mvFeatures)
     {
+        mlId = mlNextId++;
 
         std::for_each(tframe.mpObservation.begin(), tframe.mpObservation.end(), [&](std::pair<size_t , MapPoint*> tObs)
         {

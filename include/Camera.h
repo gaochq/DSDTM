@@ -70,7 +70,7 @@ public:
     Eigen::Vector2d Camera2Pixel(const Eigen::Vector3d &Point);
 
     //! Pixel to Camera
-    Eigen::Vector3d Pixel2Camera(const cv::Point2f &point, float &depth);
+    Eigen::Vector3d Pixel2Camera(const cv::Point2f &point, const float &depth);
 
     //! Initalize the camera parameters
     void Init_CamParam(const std::string &Paramfile);

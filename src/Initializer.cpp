@@ -135,9 +135,22 @@ namespace DSDTM
                         mReferFrame.Add_MapPoint(i, tMPoint);
                         frame.Add_MapPoint(i, tMPoint);
                         mMap->AddMapPoint(tMPoint);
-
                     }
                 }
+
+                std::map<long int, MapPoint*> tpObservations = tKFrame->Get_Observations();
+                std::map<long int, size_t> tpFFObservations = tKFrame->mpFFObservation;
+
+                /*
+                for (auto iter = tpObservations.begin();iter!=tpObservations.end();iter++)
+                {
+                    long int index = iter->first;
+                    std::map<long int, size_t>::iterator it = tpFFObservations.find(index);
+                    if(it!=tpFFObservations.end())
+                        DLOG(INFO)<< "--" << iter->first << "--" << tKFrame->mvFeatures[it->second].mpx << "--" << iter->second;
+                }
+                */
+
                 Optimizer::PoseSolver(frame);
                 std::cout << "Initalize RGBD Camera successfully ! " << std::endl;
                 return true;

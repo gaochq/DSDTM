@@ -49,7 +49,8 @@ int main(int argc, char **argv)
     }
 
     google::InitGoogleLogging(argv[0]);
-    FLAGS_logtostderr = true;
+    //FLAGS_stderrthreshold = 0;
+    FLAGS_log_dir = "./log";
 
     DSDTM::Map *mMap = new DSDTM::Map();
     DSDTM::Config::setParameterFile(argv[1]);

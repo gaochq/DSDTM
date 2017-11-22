@@ -152,13 +152,16 @@ void Frame::Get_SceneDepth(double tMinDepth, double tMeanDepth)
 
 bool Frame::Find_Observations(size_t tID)
 {
-    std::map<size_t , MapPoint*>::iterator it;
-
-    it = mpObservation.find(tID);
-    if(it!=mpObservation.end())
+    if(mpObservation.count(tID) > 0)
         return true;
+    else
+        return false;
+}
 
-    return false;
+Eigen::Vector3d Frame::UnProject(const cv::Point2f tPixel, const float d)
+{
+    Eigen::Vector3d tPoint = mCamera->Pixel2Camera(tPixel, d);
+    return mT_c2w*tPoint;
 }
 
 void Frame::Reset_Gridproba()

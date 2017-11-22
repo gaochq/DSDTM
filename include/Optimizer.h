@@ -7,6 +7,7 @@
 
 #include "Camera.h"
 #include "Frame.h"
+
 #include "ceres/ceres.h"
 
 namespace DSDTM
@@ -23,7 +24,7 @@ public:
 
     static void PoseSolver(Frame &tCurFrame, int tIterations = 10);
     static double *se3ToDouble(Eigen::Matrix<double, 6, 1> tso3);
-
+    static std::vector<double> GetReprojectReidual(const ceres::Problem &problem);
 
 };
 

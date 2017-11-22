@@ -37,6 +37,6 @@ Rarsac.Terminate_threshold: 0.0001
 Optimization.MaxIter: 8
 
 #Insert KeyFrame
-KeyFrame.min_rot: 0.1
-KeyFrame.min_trans: 0.1
+KeyFrame.min_rot: 0.04
+KeyFrame.min_trans: 0.04
 KeyFrame.min_features: 25
