@@ -25,7 +25,10 @@ public:
     void Add_Observations(size_t tId, MapPoint *tMPoint);
 
     //! Return Observations
-    std::map<long int, MapPoint*> Get_Observations() const { return mpObservation;};
+    std::map<long int, MapPoint*> Get_Observations() const { return mpObservation;}
+
+    //! Return Outlier flags
+    std::vector<bool> Get_Outliers() const {return mvbOutliers;}
 
     //! Get and Set Keyframe pose
     Sophus::SE3 Get_Pose() { return mT_c2w; }
@@ -38,8 +41,10 @@ public:
 
     Features                mvFeatures;
     std::vector<MapPoint*>  mvMapPoints;
-    std::map<long int, MapPoint*>  mpObservation;     //Feaure_id ---> Mappoint
-    std::map<long int, size_t>   mpFFObservation;   //Feature_id ---> feature order in mvFeatures
+
+    std::vector<bool>       mvbOutliers;
+    std::map<long int, MapPoint*>   mpObservation;     //Feaure_id ---> Mappoint
+    std::map<long int, size_t>      mpFFObservation;   //Feature_id ---> feature order in mvFeatures
 
 protected:
     Frame                   *mFrame;

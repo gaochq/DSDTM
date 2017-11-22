@@ -20,7 +20,7 @@ Frame::Frame(Frame &frame):
         mT_c2w(frame.mT_c2w), mColorImg(frame.mColorImg), mvImg_Pyr(frame.mvImg_Pyr),
         mDepthImg(frame.mDepthImg), mvFeatures(frame.mvFeatures), mPyra_levels(frame.mPyra_levels),
         mvGrid_probability(frame.mvGrid_probability), mvMapPoints(frame.mvMapPoints),
-        mpObservation(frame.mpObservation)
+        mpObservation(frame.mpObservation), mvbOutliers(frame.mvbOutliers)
 {
 
 }
@@ -111,13 +111,19 @@ void Frame::Add_MapPoint(MapPoint *tPoint, size_t tFid)
 void Frame::Add_Observations(const KeyFrame &tKframe)
 {
     std::map<long int, MapPoint*> tObservations = tKframe.Get_Observations();
+    std::vector<bool> tvbOutiers = tKframe.Get_Outliers();
 
     std::map<long int, MapPoint*>::iterator it;
     for (int i = 0; i < mvFeatures.size(); ++i)
     {
         it = tObservations.find(mvFeatures[i].mlId);
         if(it != tObservations.end())
+        {
             Add_MapPoint(it->second, i);
+
+            int index = std::distance( tObservations.begin(), it );
+            mvbOutliers.push_back(tvbOutiers[index]);
+        }
     }
 }
 

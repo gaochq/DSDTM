@@ -232,12 +232,13 @@ namespace g2o {
             Vector2d obs(_measurement);
             _error = obs-cam_project(v1->estimate().map(Xw));
 
-            if(abs(_error(0))>5 || abs(_error(1))>5)
+            /*
+            if(!(abs(_error(0))<2) || !(abs(_error(1))<2))
             {
                 DLOG(ERROR)<< "Wrong error";
                 _error<< 0 ,0;
             }
-            _error = obs-cam_project(v1->estimate().map(Xw));
+             */
         }
 
         bool isDepthPositive() {

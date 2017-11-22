@@ -138,13 +138,12 @@ namespace DSDTM
 
                     }
                 }
-                Optimizer::PoseSolver(frame);
                 std::cout << "Initalize RGBD Camera successfully ! " << std::endl;
+                KeyFrame *tTest = mMap->Get_InitialKFrame();
+                Optimizer::PoseSolver(frame);
                 return true;
             }
         }
-
-
     }
 
     bool Initializer::Init_MonocularCam(Frame &lastFrame, Frame &currentFrame)

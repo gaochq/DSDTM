@@ -92,6 +92,7 @@ public:
 
     std::vector<MapPoint*>  mvMapPoints;
     std::map<size_t , MapPoint*>  mpObservation;
+    std::vector<bool>       mvbOutliers;
 
     Sophus::SE3             mT_c2w;
 protected:

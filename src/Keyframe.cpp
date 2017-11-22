@@ -10,8 +10,6 @@ namespace DSDTM
             mFrame(&tframe), mT_c2w(tframe.Get_Pose()), mvMapPoints(tframe.mvMapPoints),
             mvFeatures(tframe.mvFeatures)
     {
-
-
         std::for_each(tframe.mpObservation.begin(), tframe.mpObservation.end(), [&](std::pair<size_t , MapPoint*> tObs)
         {
            Add_Observations(tObs.first, tObs.second);
@@ -33,6 +31,7 @@ namespace DSDTM
     {
         mpFFObservation.insert(std::pair<long int, size_t>(mvFeatures[tId].mlId, tId));
         mpObservation.insert(std::pair<long int, MapPoint*>(tId, tMPoint));
+        mvbOutliers.push_back(true);
     }
 
 
