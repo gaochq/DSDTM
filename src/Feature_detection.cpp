@@ -142,7 +142,7 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold,con
             int Index = static_cast<int>(tCorner.y/mCell_size)*mGrid_cols + static_cast<int>(tCorner.x/mCell_size);
             if(mvGrid_occupy[Index])
                 continue;
-            frame->mvFeatures.push_back(Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level));
+            frame->Add_Feature(Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level));
             //if(tFirst)
                 Set_CellIndexOccupy(cv::Point2f(tCorner.x, tCorner.y));
         }

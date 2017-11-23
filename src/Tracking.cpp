@@ -65,7 +65,7 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
     {
         Track();
 
-
+        /*
         if(mState==OK)
         {
             TrackWithReferenceFrame();
@@ -76,6 +76,7 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
 
             mProcessedFrames++;
         }
+         */
 
     }
 
@@ -115,12 +116,17 @@ void Tracking::Track()
 
 void Tracking::LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts)
 {
+    cv::TermCriteria termcrit (
+            cv::TermCriteria::COUNT+cv::TermCriteria::EPS,
+            30,
+            0.001
+    );
     std::vector<uchar> tvStatus;
     std::vector<float> tPyrLK_error;
 
     cv::calcOpticalFlowPyrLK(mLastFrame.mColorImg, mCurrentFrame.mColorImg,
                              _last_Pts, _cur_Pts, tvStatus, tPyrLK_error,
-                             cv::Size(21, 21), mPyra_levels);
+                             cv::Size(21, 21), mPyra_levels, termcrit);
 
     for (int i = 0; i < _cur_Pts.size(); ++i)
     {
@@ -177,7 +183,7 @@ void Tracking::TrackWithReferenceFrame()
     mCurrentFrame.Set_Pose(mLastFrame.Get_Pose());
     mCurrentFrame.Add_Observations(*mpReferenceKF);
 
-    Optimizer::PoseSolver(mCurrentFrame);
+    Optimizer::PoseOptimization(mCurrentFrame);
     mCurrentFrame.Set_Pose(mpReferenceKF->Get_Pose()*mCurrentFrame.Get_Pose());
 }
 

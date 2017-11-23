@@ -151,7 +151,7 @@ namespace DSDTM
                 }
                 */
 
-                Optimizer::PoseSolver(frame);
+                Optimizer::PoseOptimization(frame);
                 std::cout << "Initalize RGBD Camera successfully ! " << std::endl;
                 return true;
             }

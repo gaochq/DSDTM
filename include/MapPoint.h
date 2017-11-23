@@ -30,6 +30,9 @@ public:
     //! Add Mappoint observation
     void Add_Observation(KeyFrame *tKFrame, size_t tfID);
 
+    //! Set mappoint bad
+    void SetBadFlag();
+
 
 protected:
 
@@ -37,6 +40,7 @@ public:
     unsigned long           mlID;
     static unsigned long    mlNextId;
 
+    bool                    mbOutlier;
 
 protected:
 

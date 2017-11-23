@@ -201,7 +201,7 @@ std::vector<uchar> Rarsac_base::RejectFundamental()
                 //F_Mat = cv::findFundamentalMat(Fcur_pts, Fprev_pts, CV_FM_8POINT);
 
                 F_Mat = ComputeF21(Fcur_pts, Fprev_pts);
-                CheckFundamental(F_Mat, tvStatus, 1);
+                CheckFundamental(F_Mat, tvStatus, 0.5);
 
                 //! It cost almost 800us per time
                 //Get_Inliers(F_Mat, tvStatus);

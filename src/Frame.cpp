@@ -83,7 +83,7 @@ void Frame::SetFeatures(const std::vector<cv::Point2f> &_features)
 {
     for (int i = 0; i < _features.size(); ++i)
     {
-        mvFeatures.push_back(Feature(this, _features[i], 0));
+        Add_Feature(Feature(this, _features[i], 0));
     }
 }
 
@@ -91,7 +91,7 @@ void Frame::SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<l
 {
     for (int i = 0; i < _features.size(); ++i)
     {
-        mvFeatures.push_back(Feature(this, _features[i], 0, tStatus[i]));
+        Add_Feature(Feature(this, _features[i], 0, tStatus[i]));
     }
 }
 
@@ -119,6 +119,14 @@ void Frame::Add_Observations(const KeyFrame &tKframe)
         if(it != tObservations.end())
             Add_MapPoint(i, it->second);
     }
+}
+
+void Frame::Add_Feature(Feature tfeature)
+{
+    mvFeatures.push_back(tfeature);
+
+    cv::Point2f tUndistPt = mCamera->Undistort(tfeature);
+    mvFeaturesUn.push_back(tUndistPt);
 }
 
 void Frame::Get_SceneDepth(double tMinDepth, double tMeanDepth)

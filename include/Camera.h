@@ -54,6 +54,9 @@ public:
     //! Calculate the distortion vary in normalized
     void Distortion(const Eigen::Vector2d tPt, Eigen::Vector2d tvPt);
 
+    //! Undistort Features
+    cv::Point2f Undistort(const Feature tfeature);
+
     //! keypoint to vector
     Eigen::Vector2f Keypoint2Vector(const cv::KeyPoint &point);
 
@@ -91,13 +94,14 @@ public:
                        const std::vector<cv::Point2f> _features2, const std::vector<cv::Point2f> _features3);
 
     //! Return Intrinsic matrix
-    Eigen::Matrix3d Return_Intrinsic() const
+    Eigen::Matrix<double, 4, 4, Eigen::RowMajor> Return_Intrinsic() const
     {
-        Eigen::Matrix3d tIntrinsic;
-        tIntrinsic << mfx, 0, mcx,
-                      0, mfy, mcy,
-                      0,  0,    1;
-
+        //Eigen::Matrix4d tIntrinsic;
+        Eigen::Matrix<double, 4, 4, Eigen::RowMajor> tIntrinsic;
+        tIntrinsic << mfx, 0, mcx, mk1,
+                      0, mfy, mcy, mk2,
+                      0,   0,   1, mk3,
+                    mp1, mp2,   0,   0;
         return tIntrinsic;
     }
 
@@ -109,6 +113,11 @@ public:
     float           mfy;
     float           mcx;
     float           mcy;
+
+    double          minv_fx;
+    double          minv_fy;
+    double          minv_cx;
+    double          minv_cy;
 
     float           mk1;
     float           mk2;

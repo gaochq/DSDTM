@@ -36,21 +36,27 @@ namespace DSDTM
         mcx = Config::Get<float>("Camera.cx");
         mcy = Config::Get<float>("Camera.cy");
 
+        mk1 = Config::Get<float>("Camera.k1");
+        mk2 = Config::Get<float>("Camera.k2");
+        mp1 = Config::Get<float>("Camera.p1");
+        mp2 = Config::Get<float>("Camera.p2");
+        mk3 = Config::Get<float>("Camera.k3");
+
         mwidth = Config::Get<int>("Camera.width");
         mheight = Config::Get<int>("Camera.height");
+
+        minv_fx = 1.0/mfx;
+        minv_fy = 1.0/mfy;
+        minv_cx = -mcx*minv_fx;
+        minv_cy = -mcy*minv_fy;
     }
 
     void Camera::LiftProjective(const Feature &feature, Eigen::Vector3d P, bool tUnDistort)
     {
         double tmx_d, tmy_d, tmx_u, tmy_u;
 
-        double inv_fx = 1.0/mfx;
-        double inv_fy = 1.0/mfy;
-        double inv_cx = -mcx*inv_fx;
-        double inv_cy = -mcy*inv_fy;
-
-        tmx_d = feature.mpx.x*inv_fx + inv_cx;
-        tmy_d = feature.mpx.y*inv_fy + inv_cy;
+        tmx_d = feature.mpx.x*minv_fx + minv_cx;
+        tmy_d = feature.mpx.y*minv_fy + minv_cy;
 
         if(!tUnDistort)
         {
@@ -90,6 +96,19 @@ namespace DSDTM
         tvPt(1) = tPt(1)*Radial_dist + 2*mp2*tpt_xy + mp1*(tPt_r + 2*tPt_2y);
     }
 
+    cv::Point2f Camera::Undistort(const Feature tfeature)
+    {
+        double tmx_d, tmy_d, tmp2;
+
+        tmx_d = tfeature.mpx.x*minv_fx + minv_cx;
+        tmy_d = tfeature.mpx.y*minv_fy + minv_cy;
+        tmp2 = tmx_d*tmx_d + tmy_d*+tmy_d;
+
+        double distortion = 1.0 + tmp2*(mk1 + tmp2*mk2);
+
+        return cv::Point2f(mfx*tmx_d*distortion + mcx,
+                               mfy*tmy_d*distortion + mcy);
+    }
 
     Eigen::Vector2f Camera::Keypoint2Vector(const cv::KeyPoint &point)
     {

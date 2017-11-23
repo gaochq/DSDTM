@@ -60,6 +60,9 @@ public:
     //! Add Feature-Mappoint observations
     void Add_Observations(const KeyFrame &tKframe);
 
+    //! Add Feature
+    void Add_Feature(Feature tfeature);
+
     //! Return Observations
     std::map<size_t, MapPoint*> Get_Observations() const { return mpObservation;};
 
@@ -72,10 +75,13 @@ public:
     //! Unproject pixel into world
     Eigen::Vector3d UnProject(const cv::Point2f tPixel, const float d);
 
+
 public:
     typedef std::shared_ptr<Frame> FramePtr;
 
-    Features                mvFeatures;
+    Features                    mvFeatures;
+    std::vector<cv::Point2f>    mvFeaturesUn;           //Features undistorted
+
     unsigned long           mlId;
     static unsigned long    mlNextId;
 

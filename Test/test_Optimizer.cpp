@@ -125,7 +125,7 @@ int main(int argc, char **argv)
         }
     }
 
-    DSDTM::Optimizer::PoseSolver(*mFrames[1]);
+    DSDTM::Optimizer::PoseOptimization(*mFrames[1]);
 
     return  0;
 }
