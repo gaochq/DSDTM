@@ -49,8 +49,9 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
     if(mState==Not_Init)
     {
         if(!mInitializer)
+        {
             mInitializer = new Initializer(mCurrentFrame, mCam, mMap);
-
+        }
         if(mInitializer->Init_RGBDCam(mCurrentFrame))
         {
             mState = OK;
@@ -76,7 +77,7 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
 
             mProcessedFrames++;
         }
-         */
+        */
 
     }
 
@@ -88,71 +89,76 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
 
 void Tracking::Track()
 {
-    std::vector<cv::Point2f> tCur_Pts, tLast_Pts, tPts_tmp, tBad_Pts;
+    std::vector<cv::Point2f> tCur_Pts, tLast_Pts, tPts_tmp, tBad_Pts, tPts_new;
     mLastFrame.Get_Features(tLast_Pts);
 
-    //Show_Features(Last_Pts);
-    LKT_Track(tCur_Pts, tLast_Pts);
-    //std::cout << "  " << tCur_Pts.size();
-    Rarsac_F(tCur_Pts, tLast_Pts, tBad_Pts);
-    //Reject_FMat(tCur_Pts, tLast_Pts, tBad_Pts);
-
-    //TODO: show image and deal with features
-    std::cout << " --- " << tCur_Pts.size() << std::endl;
-    if (tCur_Pts.size() < 20)
+    if(tLast_Pts.size()>0)
     {
-        mState = Lost;
-        std::cout << "Too few features: " << tCur_Pts.size() << " after rarsac" << std::endl;
-        return;
-    }
+        //Show_Features(Last_Pts);
+        LKT_Track(tLast_Pts, tCur_Pts);
+        //std::cout << "  " << tCur_Pts.size();
+        Rarsac_F(tCur_Pts, tLast_Pts, tBad_Pts);
+        //Reject_FMat(tLast_Pts, tCur_Pts, tBad_Pts);
 
-    AddNewFeatures(tCur_Pts);
+        //TODO: show image and deal with features
+
+        if (tCur_Pts.size() < 20)
+        {
+            mState = Lost;
+            std::cout << "Too few features: " << tCur_Pts.size() << " after rarsac" << std::endl;
+            //return;
+        }
+    }
+    AddNewFeatures(tCur_Pts, tPts_new);
     mCurrentFrame.Get_Features(tPts_tmp);
-    std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
+    std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tPts_new.size(), tPts_tmp.end());
     std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
     mCam->Show_Features(mCurrentFrame.mColorImg, tBad_Pts, tvGoodFeatures, tvNewFeatures);
     //std::cout<< mCurrentFrame.mvFeatures.size() << std::endl;
+    std::cout << " --- " << tPts_tmp.size() << std::endl;
 }
 
-void Tracking::LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts)
+void Tracking::LKT_Track(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Point2f> &_cur_Pts)
 {
     cv::TermCriteria termcrit (
             cv::TermCriteria::COUNT+cv::TermCriteria::EPS,
             30,
             0.001
     );
-    std::vector<uchar> tvStatus;
+    std::vector<uchar> status;
     std::vector<float> tPyrLK_error;
 
     cv::calcOpticalFlowPyrLK(mLastFrame.mColorImg, mCurrentFrame.mColorImg,
-                             _last_Pts, _cur_Pts, tvStatus, tPyrLK_error,
-                             cv::Size(21, 21), mPyra_levels, termcrit);
+                             _last_Pts, _cur_Pts, status, tPyrLK_error,
+                             cv::Size(21, 21), mPyra_levels);
 
     for (int i = 0; i < _cur_Pts.size(); ++i)
     {
-        if (tvStatus[i] && !mCam->IsInImage(_cur_Pts[i]))
+        if (status[i] && !mCam->IsInImage(_cur_Pts[i]))
         {
-            tvStatus[i] = 0;
+            status[i] = 0;
         }
     }
 
-    ReduceFeatures(_cur_Pts, tvStatus);
-    ReduceFeatures(_last_Pts, tvStatus);
-    ReduceStatus(mvcStatus, tvStatus);
+    ReduceFeatures(_cur_Pts, status);
+    ReduceFeatures(_last_Pts, status);
+    ReduceStatus(mvcStatus, status);
+    ReduceStatus(mvsTrack_cnt, status);
 }
 
-void Tracking::Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
+void Tracking::Rarsac_F(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Point2f> &_cur_Pts,
                         std::vector<cv::Point2f> &_bad_Pts)
 {
-    std::vector<uchar> tvStatus;
+    std::vector<uchar> status;
     mCurrentFrame.mvGrid_probability = mLastFrame.mvGrid_probability;
     mRarsac_base = Rarsac_base(&mCurrentFrame, _cur_Pts, _last_Pts);
-    tvStatus = mRarsac_base.RejectFundamental();
+    status = mRarsac_base.RejectFundamental();
 
     //ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
-    ReduceFeatures(_cur_Pts, tvStatus, &_bad_Pts);
-    ReduceFeatures(_last_Pts, tvStatus);
-    ReduceStatus(mvcStatus, tvStatus);
+    ReduceFeatures(_cur_Pts, status, &_bad_Pts);
+    ReduceFeatures(_last_Pts, status);
+    ReduceStatus(mvcStatus, status);
+    ReduceStatus(mvsTrack_cnt, status);
 }
 
 void Tracking::Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
@@ -164,17 +170,19 @@ void Tracking::Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::P
     ReduceFeatures(_cur_Pts, status, &_bad_Pts);
     ReduceFeatures(_last_Pts, status);
     ReduceStatus(mvcStatus, status);
+    ReduceStatus(mvsTrack_cnt, status);
 }
 
-void Tracking::AddNewFeatures(std::vector<cv::Point2f> tCur_Pts)
+void Tracking::AddNewFeatures(std::vector<cv::Point2f> tCur_Pts, std::vector<cv::Point2f> &tPts_new)
 {
     std::vector<cv::Point2f>tPts_tmp, tBad_Pts;
 
-    mCurrentFrame.SetFeatures(tCur_Pts, mvcStatus);
+    mCurrentFrame.SetFeatures(tCur_Pts, mvcStatus, mvsTrack_cnt);
     UpdateID(mCurrentFrame.mvFeatures);
-
-    mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
-    mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
+    mCurrentFrame.Set_Mask(mvcStatus, mvsTrack_cnt);
+    mCurrentFrame.Get_Features(tPts_new);
+    //mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
+    //mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
     mFeature_detector->detect(&mCurrentFrame, 10);
 }
 
@@ -289,9 +297,11 @@ void Tracking::ReduceStatus(std::vector<long int> &tStatus, const std::vector<uc
 void Tracking::Reset_Status()
 {
     mvcStatus.clear();
+    mvsTrack_cnt.clear();
     for (size_t i = 0; i < mLastFrame.mvFeatures.size(); ++i)
     {
         mvcStatus.push_back(mLastFrame.mvFeatures[i].mlId);
+        mvsTrack_cnt.push_back(mLastFrame.mvFeatures[i].mTrack_cnt);
     }
 }
 
@@ -301,6 +311,8 @@ void Tracking::UpdateID(Features &features)
     {
         if(features[i].mlId==-1)
             features[i].mlId = mlNextID++;
+
+        features[i].mTrack_cnt++;
     }
 }
 

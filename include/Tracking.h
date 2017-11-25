@@ -57,10 +57,10 @@ private:
     void Track();
 
     //! Tracking with lkt algorithm
-    void LKT_Track(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts);
+    void LKT_Track(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Point2f> &_cur_Pts);
 
     //! Reject outliers with RARSAC algorithm
-    void Rarsac_F(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
+    void Rarsac_F(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Point2f> &_cur_Pts,
                   std::vector<cv::Point2f> &_bad_Pts);
     void Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
                      std::vector<cv::Point2f> &_bad_Pts);
@@ -69,7 +69,7 @@ private:
     void TrackWithReferenceFrame();
 
     //! Add new features into the frame refer to the detection Grid
-    void AddNewFeatures(std::vector<cv::Point2f> tCur_pts);
+    void AddNewFeatures(std::vector<cv::Point2f> tCur_Pts, std::vector<cv::Point2f> &tPts_new);
 
     //! Reset mvcStatus
     void Reset_Status();
@@ -106,7 +106,8 @@ protected:
     KeyFrame*               mpReferenceKF;
 
     Map                     *mMap;
-    std::vector<long int>     mvcStatus;          //! The features status when tracking between adjacent frames
+    std::vector<long int>   mvcStatus;          //! The features status when tracking between adjacent frames
+    std::vector<long int >  mvsTrack_cnt;
 
     size_t                  mProcessedFrames;       //! the number of processed frames after last keyframe inseration
     double                  mdMinRotParallax;

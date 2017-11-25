@@ -2,7 +2,7 @@
 # data
 # walking people: rgbd_dataset_freiburg3_walking_xyz
 # sitting people: rgbd_dataset_freiburg3_sitting_static
-dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_sitting_static
+dataset_dir: /home/buyi/Datasets/longhouse
 
 # camera intrinsics
 # fr1
@@ -31,7 +31,8 @@ Camera.depth_scale: 5000
 # VO Parameters
 Camera.PyraLevels: 4
 Camera.CellSize: 30
-Camera.Max_fts: 200
+Camera.Max_fts: 150
+Camera.Min_dist: 30
 
 
 #Rarsac algorithm

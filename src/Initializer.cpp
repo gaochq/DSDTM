@@ -73,7 +73,7 @@ namespace DSDTM
             mReferFrame.Get_Features(tLast_Pts);
             cv::calcOpticalFlowPyrLK(mReferFrame.mColorImg, frame.mColorImg,
                                      tLast_Pts, tCur_Pts, tvStatus, tPyrLK_error,
-                                     cv::Size(21, 21), 5);
+                                     cv::Size(21, 21), 3);
 
             for (int i = 0; i < tCur_Pts.size(); ++i)
             {
@@ -97,12 +97,18 @@ namespace DSDTM
             mReferFrame.SetFeatures(tLast_Pts);
             frame.SetFeatures(tCur_Pts);
 
+            for (auto &feature : frame.mvFeatures)
+            {
+                feature.mTrack_cnt++;
+            }
+
             //! Show first frame
             cv::Mat tFeatureImg(frame.mColorImg);
             mCam->Draw_Lines(tFeatureImg, frame.mvFeatures, mReferFrame.mvFeatures);
             mCam->Draw_Features(tFeatureImg, frame.mvFeatures, cv::Scalar(0, 255, 0));
             cv::imshow("Feature_Detect", tFeatureImg);
             cv::waitKey(1);
+
 
             if (tCur_Pts.size()<50)
             {
@@ -122,6 +128,7 @@ namespace DSDTM
                     frame.mvFeatures[i].mlId = i;
                     tKFrame->mvFeatures[i].mlId = i;
 
+                    /*
                     float z = mReferFrame.Get_FeatureDetph(mReferFrame.mvFeatures[i]);
                     if (z>0)
                     {
@@ -136,10 +143,11 @@ namespace DSDTM
                         frame.Add_MapPoint(i, tMPoint);
                         mMap->AddMapPoint(tMPoint);
                     }
+                     */
                 }
 
-                std::map<long int, MapPoint*> tpObservations = tKFrame->Get_Observations();
-                std::map<long int, size_t> tpFFObservations = tKFrame->mpFFObservation;
+                //std::map<long int, MapPoint*> tpObservations = tKFrame->Get_Observations();
+                //std::map<long int, size_t> tpFFObservations = tKFrame->mpFFObservation;
 
                 /*
                 for (auto iter = tpObservations.begin();iter!=tpObservations.end();iter++)
@@ -151,7 +159,7 @@ namespace DSDTM
                 }
                 */
 
-                Optimizer::PoseOptimization(frame);
+                //Optimizer::PoseOptimization(frame);
                 std::cout << "Initalize RGBD Camera successfully ! " << std::endl;
                 return true;
             }

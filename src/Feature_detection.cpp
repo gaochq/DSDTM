@@ -38,27 +38,6 @@ void Feature_detector::Set_CellIndexOccupy(const cv::Point2f px)
 {
     int Index = static_cast<int>(px.y/mCell_size)*mGrid_cols + static_cast<int>(px.x/mCell_size);
     mvGrid_occupy[Index] = true;
-
-
-    if(Index+1>=0 && Index+1<mvGrid_occupy.size())
-        mvGrid_occupy[Index+1] = true;
-    if(Index-1>=0 && Index-1<mvGrid_occupy.size())
-        mvGrid_occupy[Index-1] = true;
-
-    if(Index+mGrid_cols>=0 && Index+mGrid_cols<mvGrid_occupy.size())
-        mvGrid_occupy[Index+mGrid_cols] = true;
-    if(Index+mGrid_cols-1>=0 && Index+mGrid_cols-1<mvGrid_occupy.size())
-        mvGrid_occupy[Index+mGrid_cols-1] = true;
-    if(Index+mGrid_cols+1>=0 && Index+mGrid_cols+1<mvGrid_occupy.size())
-        mvGrid_occupy[Index+mGrid_cols+1] = true;
-
-    if(Index-mGrid_cols>=0 && Index-mGrid_cols<mvGrid_occupy.size())
-        mvGrid_occupy[Index-mGrid_cols] = true;
-    if(Index-mGrid_cols+1>=0 && Index-mGrid_cols+1<mvGrid_occupy.size())
-        mvGrid_occupy[Index-mGrid_cols+1] = true;
-    if(Index-mGrid_cols-1>=0 && Index-mGrid_cols-1<mvGrid_occupy.size())
-        mvGrid_occupy[Index-mGrid_cols-1] = true;
-
 }
 
 void Feature_detector::Set_ExistingFeatures(const Features &features)
@@ -87,7 +66,7 @@ void Feature_detector::ResetGrid()
     std::fill(mvGrid_occupy.begin(), mvGrid_occupy.end(), false);
 }
 
-void Feature_detector::detect(Frame* frame, const double detection_threshold,const bool tFirst)
+void Feature_detector::detect(Frame* frame, const double detection_threshold, const bool tFirst)
 {
     if(frame->mvFeatures.size()>=mMax_fts)
         return;
@@ -134,23 +113,40 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold,con
             frame->mvFeatures.push_back(Feature(frame, cv::Point2f(c.x, c.y), c.level));
     });
      */
+
     for (int iter = 0; iter < corners.size(); ++iter)
     {
         Corner tCorner = corners[iter];
         if(tCorner.score > 20)
         {
+            if(frame->mImgMask.at<uchar>(cv::Point2f(tCorner.x, tCorner.y))!=255)
+                continue;
             int Index = static_cast<int>(tCorner.y/mCell_size)*mGrid_cols + static_cast<int>(tCorner.x/mCell_size);
             if(mvGrid_occupy[Index])
                 continue;
             frame->Add_Feature(Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level));
-            //if(tFirst)
-                Set_CellIndexOccupy(cv::Point2f(tCorner.x, tCorner.y));
+            //Set_CellIndexOccupy(cv::Point2f(tCorner.x, tCorner.y));
+            cv::circle(frame->mImgMask, cv::Point2f(tCorner.x, tCorner.y), mCell_size, 0, -1);
         }
         if(frame->mvFeatures.size()>=mMax_fts)
             break;
     }
 
     ResetGrid();
+    frame->mImgMask.release();
+    /*
+    std::vector<cv::Point2f> kps;
+    cv::Mat Tset_img = frame->mColorImg;
+
+    int tPts_Num = mMax_fts-frame->mvFeatures.size();
+    if(tPts_Num>0)
+    {
+        cv::goodFeaturesToTrack(Tset_img, kps, mMax_fts - frame->mvFeatures.size(), 0.1, 30, frame->mImgMask);
+        std::for_each(kps.begin(), kps.end(), [&](cv::Point2f tPoint) {
+            frame->Add_Feature(Feature(frame, cv::Point2f(tPoint.x, tPoint.y), 1));
+        });
+    }
+     */
 }
 
 //! http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_shi_tomasi/py_shi_tomasi.html

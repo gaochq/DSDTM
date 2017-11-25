@@ -21,6 +21,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/eigen.hpp>
+#include <opencv2/core/eigen.hpp>
 
 #include <sophus/se3.h>
 
@@ -129,6 +130,9 @@ public:
     int             mwidth;
 
     int             mPyra_levels;
+
+    cv::Mat         mInstrinsicMat;
+    cv::Mat         mDistortionMat;
 
 };
 

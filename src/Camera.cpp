@@ -49,6 +49,18 @@ namespace DSDTM
         minv_fy = 1.0/mfy;
         minv_cx = -mcx*minv_fx;
         minv_cy = -mcy*minv_fy;
+
+        Eigen::Matrix<double, 3, 3, Eigen::RowMajor>tInstrinsicMat;
+        Eigen::Matrix<double, 1, 5, Eigen::RowMajor>tDistortionMat;
+        tInstrinsicMat << mfx, 0.0, mcx, 0.0, mfy, mcy, 0, 0, 1;
+        tDistortionMat << mk1, mk2, mp1, mp1, 0.0;
+
+        mInstrinsicMat = cv::Mat(3, 3, CV_32FC1);
+        mDistortionMat = cv::Mat(1, 5, CV_32FC1);
+        cv::eigen2cv(tInstrinsicMat, mInstrinsicMat);
+        cv::eigen2cv(tDistortionMat, mDistortionMat);
+
+        std::cout<< mInstrinsicMat << std::endl << mDistortionMat <<std::endl;
     }
 
     void Camera::LiftProjective(const Feature &feature, Eigen::Vector3d P, bool tUnDistort)

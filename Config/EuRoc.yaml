@@ -13,19 +13,30 @@ Camera.width: 752
 Camera.height: 480
 
 # fr2
-#camera.fx: 520.9
-#camera.fy: 521.0
-#camera.cx: 325.1
-#camera.cy: 249.7
+Camera.k1: -0.28368365
+Camera.k2: 0.07451284
+Camera.p1: -0.00010473
+Camera.p2: -3.55590700e-05
+Camera.k3: 0.0
 
 camera.depth_scale: 5000
 
-# VO Parameters
-Camera.PyraLevels: 5
+# Feature Detection
+Camera.PyraLevels: 3
 Camera.CellSize: 30
-Camera.Max_fts: 200
+Camera.Max_fts: 150
+Camera.Min_dist: 30
 
 
 #Rarsac algorithm
-Rarsac.Threshold: 1.25
+Rarsac.Sampson_Dist_threshold: 1.25
 Rarsac.MaxIterators: 1000
+Rarsac.Terminate_threshold: 0.0001
+
+#Ceres optimization
+Optimization.MaxIter: 8
+
+#Insert KeyFrame
+KeyFrame.min_rot: 0.04
+KeyFrame.min_trans: 0.04
+KeyFrame.min_features: 25

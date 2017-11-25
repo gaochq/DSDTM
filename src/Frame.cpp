@@ -51,9 +51,16 @@ void Frame::InitFrame()
 {
     ResetFrame();
     mPyra_levels = Config::Get<int>("Camera.PyraLevels");
-    mvImg_Pyr.resize(mPyra_levels);
+    mMin_Dist = Config::Get<int>("Camera.Min_dist");
 
+    mvImg_Pyr.resize(mPyra_levels);
     ComputeImagePyramid(mColorImg, mvImg_Pyr);
+
+    //cv::Mat tColorImg(mColorImg);
+    //mColorImg.release();
+    //cv::undistort(tColorImg, mColorImg, mCamera->mInstrinsicMat, mCamera->mDistortionMat);
+
+    mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(255));
 }
 
 void Frame::ResetFrame()
@@ -87,11 +94,12 @@ void Frame::SetFeatures(const std::vector<cv::Point2f> &_features)
     }
 }
 
-void Frame::SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<long int> tStatus)
+void Frame::SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<long int> tStatus,
+                        std::vector<long int> tTrack_cnt)
 {
     for (int i = 0; i < _features.size(); ++i)
     {
-        Add_Feature(Feature(this, _features[i], 0, tStatus[i]));
+        Add_Feature(Feature(this, _features[i], 0, tStatus[i], tTrack_cnt[i]));
     }
 }
 
@@ -170,6 +178,28 @@ Eigen::Vector3d Frame::UnProject(const cv::Point2f tPixel, const float d)
 {
     Eigen::Vector3d tPoint = mCamera->Pixel2Camera(tPixel, d);
     return mT_c2w*tPoint;
+}
+
+void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt)
+{
+    tlId.clear();
+    tTrackCnt.clear();
+    mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(255));
+
+    std::sort(mvFeatures.begin(), mvFeatures.end());
+
+    int j = 0;
+    for (int i = 0; i < mvFeatures.size(); ++i)
+    {
+        if(mImgMask.at<uchar>(mvFeatures[i].mpx)==255)
+        {
+            mvFeatures[j++] = mvFeatures[i];
+            tlId.push_back(mvFeatures[i].mlId);
+            tTrackCnt.push_back(mvFeatures[i].mTrack_cnt);
+            cv::circle(mImgMask, mvFeatures[i].mpx, mMin_Dist, 0, -1);
+        }
+    }
+    mvFeatures.resize(j);
 }
 
 void Frame::Reset_Gridproba()

@@ -64,6 +64,10 @@ target_link_libraries(test_Feature_detection ${PROJECT_NAME})
 add_executable(test_tracking Test/test_tracking.cpp)
 target_link_libraries(test_tracking ${PROJECT_NAME})
 
+# Test the Euroc Datasets
+add_executable(Test_Euroc Test/Test_Euroc.cpp)
+target_link_libraries(Test_Euroc ${PROJECT_NAME})
+
 # Test the tracking process
 add_executable(test_combination Test/test_combination.cpp)
 target_link_libraries(test_combination ${PROJECT_NAME})
@@ -77,5 +81,5 @@ add_executable(test_Optimizer Test/test_Optimizer.cpp)
 target_link_libraries(test_Optimizer ${PROJECT_NAME})
 
 #Test Keyframe creating
-add_executable(KFrame_Creating Test/test_KFrame_Creating.cpp)
-target_link_libraries(KFrame_Creating ${PROJECT_NAME})
+#add_executable(KFrame_Creating Test/test_KFrame_Creating.cpp)
+#target_link_libraries(KFrame_Creating ${PROJECT_NAME})

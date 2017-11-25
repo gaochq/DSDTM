@@ -18,15 +18,24 @@ struct Feature
     cv::Point2f         mpx;
     int                 mlevel;
     Eigen::Vector2d     mgrad;
-    long int   mlId;
+    long int            mlId;
+    long int            mTrack_cnt;
 
-    Feature(Frame* _frame, const cv::Point2f& _px, int _level, long int tlId = -1):
+    Feature(Frame* _frame, const cv::Point2f& _px, int _level, long int tlId = -1, long int tTrack_cnt = 1):
             mframe(_frame),
             mpx(_px),
             mlevel(_level),
             mgrad(0.0, 0.0),
-            mlId(tlId)
+            mlId(tlId),
+            mTrack_cnt(tTrack_cnt)
+
     {}
+    Feature(){};
+
+    bool operator < (const Feature& _f1) const
+    {
+        return (_f1.mTrack_cnt < mTrack_cnt);
+    }
 };
 typedef std::vector<Feature> Features;
 

@@ -36,13 +36,11 @@ public:
 
     //! Return keypoints from features
     void SetFeatures(const std::vector<cv::Point2f> &_features);
-    void SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<long int> tStatus);
+    void SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<long int> tStatus,
+                     std::vector<long int> tTrack_cnt);
 
     //! Clear all the members in frame
     void ResetFrame();
-
-    //! Reset the probability of rarsac grid
-    void Reset_Gridproba();
 
     //! Return Features size
     const int Get_FeatureSize(){ return mvFeatures.size(); }
@@ -75,6 +73,12 @@ public:
     //! Unproject pixel into world
     Eigen::Vector3d UnProject(const cv::Point2f tPixel, const float d);
 
+    //! Set the image mask for feature extraction and filter
+    void Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt);
+
+    //! Reset the probability of rarsac grid
+    void Reset_Gridproba();
+
 
 public:
     typedef std::shared_ptr<Frame> FramePtr;
@@ -93,6 +97,8 @@ public:
     cv::Mat                 mDepthImg;
     Camera*                 mCamera;
 
+    cv::Mat                 mImgMask;
+
     std::vector<MapPoint*>  mvMapPoints;
     std::map<size_t, MapPoint*>  mpObservation;
 
@@ -100,6 +106,7 @@ public:
 protected:
 
     int                     mPyra_levels;
+    int                     mMin_Dist;
 
     Sophus::SE3             mT_c2w;
 

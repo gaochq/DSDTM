@@ -121,7 +121,7 @@ int main(int argc, char **argv)
             Eigen::Vector3d tPose = camera->Pixel2Camera(mFrames[0]->mvFeatures[i].mpx, z);
             DSDTM::MapPoint *tMPoint = new DSDTM::MapPoint(tPose, KFrame);
 
-            mFrames[1]->Add_MapPoint(tMPoint, i);
+            mFrames[1]->Add_MapPoint(i, tMPoint);
         }
     }
 
