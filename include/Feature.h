@@ -20,6 +20,7 @@ struct Feature
     Eigen::Vector2d     mgrad;
     long int            mlId;
     long int            mTrack_cnt;
+    cv::Point2f         mLpx;
 
     Feature(Frame* _frame, const cv::Point2f& _px, int _level, long int tlId = -1, long int tTrack_cnt = 1):
             mframe(_frame),

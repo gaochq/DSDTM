@@ -2,7 +2,8 @@
 # data
 # walking people: rgbd_dataset_freiburg3_walking_xyz
 # sitting people: rgbd_dataset_freiburg3_sitting_static
-dataset_dir: /home/buyi/Datasets/longhouse
+#rgbd_dataset_freiburg2_desk_with_person
+dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_walking_xyz
 
 # camera intrinsics
 # fr1
@@ -31,14 +32,14 @@ Camera.depth_scale: 5000
 # VO Parameters
 Camera.PyraLevels: 4
 Camera.CellSize: 30
-Camera.Max_fts: 150
+Camera.Max_fts: 200
 Camera.Min_dist: 30
 
 
 #Rarsac algorithm
 Rarsac.Sampson_Dist_threshold: 1.25
-Rarsac.MaxIterators: 1000
-Rarsac.Terminate_threshold: 0.0001
+Rarsac.MaxIterators: 2000
+Rarsac.Terminate_threshold: 0.001
 
 #Ceres optimization
 Optimization.MaxIter: 8

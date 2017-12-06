@@ -12,9 +12,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  ${PROJECT_SOURCE_DIR}/lib)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 
-# Opencv 
-find_package(OpenCV 2.4.13 REQUIRED)
+# Opencv
+#set(OpenCV_DIR "/home/buyi/Software/Opencv/opencv-3.2.0/build")
+find_package(OpenCV REQUIRED)
 include_directories(${Opencv_INCLUDE_DIRS})
+message(STATUS "    version: ${OpenCV_VERSION}")
 
 # Ceres
 find_package(Ceres REQUIRED)
@@ -33,7 +35,8 @@ include_directories(${GLOG_INCLUDE_DIRS})
 
 include_directories(
 	${PROJECT_SOURCE_DIR}/include
-	${PROJECT_SOURCE_DIR}/Thirdparty/fast/include)
+	${PROJECT_SOURCE_DIR}/Thirdparty/fast/include
+	${PROJECT_SOURCE_DIR}/Thirdparty/fastMCD/include)
 
 add_library(${PROJECT_NAME} SHARED
     src/Frame.cpp
@@ -53,8 +56,9 @@ target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
 		${CERES_LIBRARIES}
 		${Sophus_LIBRARIES}
+		${GLOG_LIBARIES}
 		${PROJECT_SOURCE_DIR}/Thirdparty/fast/lib/libfast.so
-		${GLOG_LIBARIES})
+		${PROJECT_SOURCE_DIR}/Thirdparty/fastMCD/lib/libfastMCD.so)
 
 # Test the feature detection
 add_executable(test_Feature_detection Test/test_Feature_detection.cpp)

@@ -12,6 +12,7 @@
 #include "Map.h"
 #include "Optimizer.h"
 #include "LocalMapping.h"
+#include "Moving_Detection.h"
 
 namespace DSDTM
 {
@@ -24,6 +25,7 @@ class Feature_detector;
 class Initializer;
 class KeyFrame;
 class LocalMapping;
+class Moving_Detecter;
 
 class Tracking
 {
@@ -52,6 +54,9 @@ public:
                         std::vector<cv::Point2f> *_BadPoints = nullptr);
     void ReduceStatus(std::vector<long int> &tStatus, const std::vector<uchar> _Status);
 
+    //! Found the most large bin
+    void ComputeMaxBin(std::vector<int>* histo, const int L, std::vector<int> &tLktSets);
+
 private:
     //! The main tracking function
     void Track();
@@ -62,14 +67,14 @@ private:
     //! Reject outliers with RARSAC algorithm
     void Rarsac_F(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Point2f> &_cur_Pts,
                   std::vector<cv::Point2f> &_bad_Pts);
-    void Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
+    cv::Mat Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
                      std::vector<cv::Point2f> &_bad_Pts);
 
     //! Solve the pose of cunrrent with last keyframe
     void TrackWithReferenceFrame();
 
     //! Add new features into the frame refer to the detection Grid
-    void AddNewFeatures(std::vector<cv::Point2f> tCur_Pts, std::vector<cv::Point2f> &tPts_new);
+    void AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv::Point2f> &tLast_Pts);
 
     //! Reset mvcStatus
     void Reset_Status();
@@ -85,6 +90,10 @@ private:
 
     //! Create new Keyframe
     void CraeteKeyframe();
+
+    //! Delete Features whose optical orientation far from average
+    void LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv::Point2f> &tFeaturesB,
+                     std::vector<cv::Point2f> &tBadPtsA, std::vector<cv::Point2f> &tBadPtsB, const cv::Mat F);
 
 public:
     Camera                  *mCam;               //! Camera
@@ -115,6 +124,7 @@ protected:
     int                     mMinFeatures;
 
     LocalMapping            *mLocalMapping;
+    Moving_Detecter         *mMoving_detecter;
 
 };
 

@@ -62,10 +62,10 @@ int main(int argc, char **argv)
         // Read image
         color = cv::imread(vstrImageFilenames[ni], CV_LOAD_IMAGE_UNCHANGED);
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
-        clahe->apply(color, color);
+        clahe->apply(color, last_color);
 
-        tracking.Track_RGBDCam(color, 0, color);
-
+        tracking.Track_RGBDCam(last_color, 0, color);
+        last_color.release();
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time << " us" << endl;

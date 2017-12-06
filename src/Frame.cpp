@@ -109,6 +109,12 @@ float Frame::Get_FeatureDetph(const Feature feature)
     return p;
 }
 
+float Frame::Get_FeatureDetph(const cv::Point2f feature)
+{
+    float p = mDepthImg.at<float>(feature);
+    return p;
+}
+
 void Frame::Add_MapPoint(size_t tFid, MapPoint *tPoint)
 {
     mvMapPoints.push_back(tPoint);
@@ -180,7 +186,8 @@ Eigen::Vector3d Frame::UnProject(const cv::Point2f tPixel, const float d)
     return mT_c2w*tPoint;
 }
 
-void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt)
+void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt,
+                     cv::vector<cv::Point2f> tBadPts)
 {
     tlId.clear();
     tTrackCnt.clear();
@@ -196,8 +203,14 @@ void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackC
             mvFeatures[j++] = mvFeatures[i];
             tlId.push_back(mvFeatures[i].mlId);
             tTrackCnt.push_back(mvFeatures[i].mTrack_cnt);
+
             cv::circle(mImgMask, mvFeatures[i].mpx, mMin_Dist, 0, -1);
         }
+    }
+
+    for (int k = 0; k < tBadPts.size(); ++k)
+    {
+        cv::circle(mImgMask, tBadPts[k], mMin_Dist, 0, -1);
     }
     mvFeatures.resize(j);
 }

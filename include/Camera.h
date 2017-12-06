@@ -11,6 +11,8 @@
 #include <list>
 #include <memory>
 #include "math.h"
+#include <fstream>
+#include<iterator>
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -22,6 +24,10 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/core/eigen.hpp>
+
+
+
+
 
 #include <sophus/se3.h>
 
@@ -87,12 +93,16 @@ public:
     void Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, cv::Scalar _color);
 
     //! Draw lines in image (mainly in the initialization)
-    void Draw_Lines(cv::Mat &_image, const Features _featuresA, const Features _featuresB);
+    void Draw_Lines(cv::Mat _image, const Features _featuresA, const Features _featuresB);
+    void Draw_Lines(cv::Mat _image, const std::vector<cv::Point2f> _featuresA,
+                    std::vector<cv::Point2f> _featuresB, const std::vector<cv::Point2f> _tBadA,
+                    std::vector<cv::Point2f> _tBadB);
 
     //! Draw features in current image
     void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, int _color);
     void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features1,
                        const std::vector<cv::Point2f> _features2, const std::vector<cv::Point2f> _features3);
+    void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, const std::vector<uchar> lables);
 
     //! Return Intrinsic matrix
     Eigen::Matrix<double, 4, 4, Eigen::RowMajor> Return_Intrinsic() const
@@ -133,6 +143,8 @@ public:
 
     cv::Mat         mInstrinsicMat;
     cv::Mat         mDistortionMat;
+
+    cv::vector<Eigen::Vector2d> mvGridBinPose;
 
 };
 

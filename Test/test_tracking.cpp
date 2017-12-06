@@ -79,12 +79,13 @@ int main(int argc, char **argv)
         DepthIMage = cv::imread(Depthimg_path.c_str(), CV_LOAD_IMAGE_UNCHANGED);
 
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
-        clahe->apply(ColorImage, ColorImage);
+        clahe->apply(ColorImage, Image_tmp);
         double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
 //        cout << time << "us" << endl;
 
-        tracking.Track_RGBDCam(ColorImage, vTimestamps[i], DepthIMage);
+        tracking.Track_RGBDCam(Image_tmp, vTimestamps[i], DepthIMage);
 
+        Image_tmp.release();
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time << " us" << endl;

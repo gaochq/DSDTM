@@ -23,6 +23,8 @@ Rarsac_base::Rarsac_base(Frame *_frame, std::vector<cv::Point2f> &_pts1, std::ve
     mMaxIteators = Config::Get<int>("Rarsac.MaxIterators");
     mdTerminThreshold = Config::Get<double>("Rarsac.Terminate_threshold");
 
+    mvGridBinPose = mFrame->mCamera->mvGridBinPose;
+
     //! compute the inlier probability of each bin
     mvBin_probability.resize(10*10, 0.0);
     double Proba_Sum = std::accumulate(mFrame->mvGrid_probability.begin(), mFrame->mvGrid_probability.end(), 0.0);
@@ -87,8 +89,8 @@ void Rarsac_base::Set_GridOccupied(cv::Point2f _pt)
 
 int Rarsac_base::Get_GridIndex(cv::Point2f _pt)
 {
-    return static_cast<int>(_pt.y/mGridSize_Col-1)*10
-           + static_cast<int>(_pt.x/mGridSize_Row+1);
+    return static_cast<int>(_pt.y/mGridSize_Col)*10
+           + static_cast<int>(_pt.x/mGridSize_Row);
 }
 
 double Rarsac_base::Sampson_Distance(cv::Point2f PointA, cv::Point2f PointB, cv::Mat _F)
@@ -175,7 +177,7 @@ std::vector<uchar> Rarsac_base::RejectFundamental()
 
         while (Erase_flag_left>=0)
         {
-            if(tIterator_Num>=1000)
+            if(tIterator_Num>=mMaxIteators)
                 break;
 
             if(Erase_flag_right==100)
@@ -218,8 +220,7 @@ std::vector<uchar> Rarsac_base::RejectFundamental()
                 {
                     Proba_Sum += mvGrid_probability[v];
                     ProbaSqure_Sum += mvGrid_probability[v]*mvGrid_probability[v];
-                    Wighted_pos += mvGrid_probability[v]*Eigen::Vector2d(mGridSize_Row*v/10 + mHalf_GridHeight,
-                                                                         mGridSize_Col*v%10 + mHalf_GridWidth);
+                    Wighted_pos += mvGrid_probability[v]*mvGridBinPose[v];
                 }
                 WightedMean_pos = Wighted_pos/Proba_Sum;
 
@@ -227,8 +228,7 @@ std::vector<uchar> Rarsac_base::RejectFundamental()
                 for (int l = 0; l < 100; ++l)
                 {
                     Eigen::Vector2d Position_tmp;
-                    Position_tmp = Eigen::Vector2d(mGridSize_Row*l/10 + mHalf_GridHeight,
-                                                   mGridSize_Col*l%10 + mHalf_GridWidth)- WightedMean_pos;
+                    Position_tmp = mvGridBinPose[l]- WightedMean_pos;
                     Cov_Matrix += mvGrid_probability[l]*Position_tmp*Position_tmp.transpose();
                 }
                 Cov_Matrix = Cov_Matrix*Proba_Sum/(Proba_Sum*Proba_Sum - ProbaSqure_Sum);
@@ -246,22 +246,20 @@ std::vector<uchar> Rarsac_base::RejectFundamental()
                     {
                         tInlier_Proba += mvGrid_probability[m]*mvBin_probability[m];
                     }
-                    tInlier_Proba = pow(tInlier_Proba, 8);
+                    tInlier_Proba = 1 - pow(tInlier_Proba, 8);
                     mFrame->mvGrid_probability = mvGrid_probability;
                 }
 
                 tIterator_Num++;
                 tBest_Iterators++;
-                tError = pow((1-tInlier_Proba), tBest_Iterators);
+                tError = pow(tInlier_Proba, tBest_Iterators);
                 if(tError < mdTerminThreshold)
                 {
-                    //std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
+                    std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
                     //std::cout << tError <<"--"<< mScore <<std::endl;
-                    double Proba_Sum = std::accumulate(mFrame->mvGrid_probability.begin(), mFrame->mvGrid_probability.end(), 0.0);
+                    //double Proba_Sum = std::accumulate(mFrame->mvGrid_probability.begin(), mFrame->mvGrid_probability.end(), 0.0);
                     return mvStatus;
                 }
-
-                tIterator_Num++;
             }
             if(Get_Features(mvBinIndexProba[Erase_flag_right].first, tFeature_pair))
             {
@@ -271,9 +269,9 @@ std::vector<uchar> Rarsac_base::RejectFundamental()
             Erase_flag_right++;
         }
     }
-    //std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
+    std::cout << tIterator_Num << "--" << tBest_Iterators << std::endl;
     //std::cout << tError <<"--"<< mScore <<std::endl;
-    double Proba_Sum = std::accumulate(mFrame->mvGrid_probability.begin(), mFrame->mvGrid_probability.end(), 0.0);
+   //double Proba_Sum = std::accumulate(mFrame->mvGrid_probability.begin(), mFrame->mvGrid_probability.end(), 0.0);
     return mvStatus;
 }
 

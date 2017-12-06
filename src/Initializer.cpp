@@ -92,7 +92,7 @@ namespace DSDTM
             ReduceFeatures(tLast_Pts, tvStatus);
 
 
-            //! The initial two frames have sanme features
+            //! The initial two frames have same features
             mReferFrame.ResetFrame();
             mReferFrame.SetFeatures(tLast_Pts);
             frame.SetFeatures(tCur_Pts);

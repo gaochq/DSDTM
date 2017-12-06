@@ -51,6 +51,7 @@ public:
 
     //! Get the feature depth from depth image
     float Get_FeatureDetph(const Feature feature);
+    float Get_FeatureDetph(const cv::Point2f feature);
 
     //! Add mappoint and observation into frame
     void Add_MapPoint(size_t tFid, MapPoint *tPoint);
@@ -74,7 +75,8 @@ public:
     Eigen::Vector3d UnProject(const cv::Point2f tPixel, const float d);
 
     //! Set the image mask for feature extraction and filter
-    void Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt);
+    void Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt,
+                  cv::vector<cv::Point2f> tBadPts);
 
     //! Reset the probability of rarsac grid
     void Reset_Gridproba();
