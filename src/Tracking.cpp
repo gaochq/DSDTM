@@ -143,10 +143,10 @@ void Tracking::Track()
     //mCam->Draw_Lines(mCurrentFrame.mColorImg, tCur_Pts, tLast_Pts, tBad_PtsA, tBad_PtsB);
 
     AddNewFeatures(tCur_Pts, tBad_PtsA);
-    //mCurrentFrame.Get_Features(tPts_tmp);
-    //std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
-    //std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
-    //mCam->Show_Features(mCurrentFrame.mColorImg, tBad_PtsA, tvGoodFeatures, tvNewFeatures);
+    mCurrentFrame.Get_Features(tPts_tmp);
+    std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
+    std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
+    mCam->Show_Features(mCurrentFrame.mColorImg, tBad_PtsA, tvGoodFeatures, tvNewFeatures);
     //std::cout<< mCurrentFrame.mvFeatures.size() << std::endl;
     //std::cout << " --- " << tPts_tmp.size() << std::endl;
 }
@@ -292,6 +292,7 @@ void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv:
     cv::imshow("Depth", tTestIMg);
     cv::waitKey(1);
 
+    /**
     cv::Mat H = cv::findHomography(tFeaturesB, tFeaturesA, CV_RANSAC);
     std::vector<cv::Point2f> tCompensate;
     double *h = H.ptr<double>(0);
@@ -308,7 +309,7 @@ void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv:
     std::vector<uchar> tvStatus;
     double tDistAve, tOrientAve;
     Eigen::Vector2d tOrient;
-
+    /**
     std::vector<double> tvdDists, tOrients, tTanSets, tAngleSets, tvdFDists, tvdVectorx, tvdVectory;
     std::vector<Eigen::Vector2d> tvdOrients, tvLKTVectors;
 
@@ -376,9 +377,9 @@ void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv:
         //tTanSets.push_back(tLKTVector(1)/tLKTVector(0));
          */
 
-    }
+    //}
+    /**
 
-    
     double start = static_cast<double>(cvGetTickCount());
     //cv::namedWindow("Depth");
     //cv::imshow("Depth", tDepthdiff);
@@ -477,11 +478,11 @@ void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv:
 
 
     //mCam->Show_Features(mCurrentFrame.mColorImg, tFeaturesA, tBadPtsA, tBadPtsA);
-    mCam->Show_Features(mCurrentFrame.mColorImg, tFeaturesA, labels, flag);
-    std::ofstream outputFilex ("angles.txt");
-    outputFilex << " ";
-    std::copy(tAngleSets.begin(), tAngleSets.end(), std::ostream_iterator<double>(outputFilex, " "));
-    outputFilex << " " << std::endl;
+    //mCam->Show_Features(mCurrentFrame.mColorImg, tFeaturesA, labels, flag);
+    //std::ofstream outputFilex ("angles.txt");
+    //outputFilex << " ";
+    //std::copy(tAngleSets.begin(), tAngleSets.end(), std::ostream_iterator<double>(outputFilex, " "));
+    //outputFilex << " " << std::endl;
     //mCam->Draw_Lines(mCurrentFrame.mColorImg, tFeaturesA, tCompensate, tBadPtsA, tBadPtsB);
 
 }

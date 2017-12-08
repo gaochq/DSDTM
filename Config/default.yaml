@@ -4,7 +4,7 @@
 # sitting people: rgbd_dataset_freiburg3_sitting_static
 #rgbd_dataset_freiburg2_desk_with_person
 #rgbd_dataset_freiburg3_walking_static
-dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_walking_static
+dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_walking_xyz
 
 # camera intrinsics
 # fr1
