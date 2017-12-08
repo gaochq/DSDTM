@@ -3,7 +3,8 @@
 # walking people: rgbd_dataset_freiburg3_walking_xyz
 # sitting people: rgbd_dataset_freiburg3_sitting_static
 #rgbd_dataset_freiburg2_desk_with_person
-dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_walking_xyz
+#rgbd_dataset_freiburg3_walking_static
+dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_walking_static
 
 # camera intrinsics
 # fr1
@@ -38,7 +39,7 @@ Camera.Min_dist: 30
 
 #Rarsac algorithm
 Rarsac.Sampson_Dist_threshold: 1.25
-Rarsac.MaxIterators: 2000
+Rarsac.MaxIterators: 1000
 Rarsac.Terminate_threshold: 0.001
 
 #Ceres optimization

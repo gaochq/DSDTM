@@ -100,6 +100,7 @@ public:
     Camera*                 mCamera;
 
     cv::Mat                 mImgMask;
+    cv::Mat                 mDynamicMask;
 
     std::vector<MapPoint*>  mvMapPoints;
     std::map<size_t, MapPoint*>  mpObservation;
@@ -110,7 +111,7 @@ protected:
     int                     mPyra_levels;
     int                     mMin_Dist;
 
-    Sophus::SE3             mT_c2w;
+    Sophus::SE3             mT_c2w;                 // pose from world to camera
 
     double                  mMinDepth;
     double                  mMeanDepth;

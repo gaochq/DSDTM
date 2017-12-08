@@ -84,6 +84,10 @@ target_link_libraries(test_jotting ${PROJECT_NAME})
 add_executable(test_Optimizer Test/test_Optimizer.cpp)
 target_link_libraries(test_Optimizer ${PROJECT_NAME})
 
+#Test Motion Dection
+add_executable(MotionDection Test/Test_MotionDetection.cpp)
+target_link_libraries(MotionDection ${PROJECT_NAME})
+
 #Test Keyframe creating
 #add_executable(KFrame_Creating Test/test_KFrame_Creating.cpp)
 #target_link_libraries(KFrame_Creating ${PROJECT_NAME})

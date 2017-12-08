@@ -85,7 +85,7 @@ public:
     ~MCDWrapper();
 
     void Init();
-    void Run(cv::Mat ColorImg, double *H);
+    cv::Mat Run(cv::Mat ColorImg, double *H, cv::Mat tMask);
 
 };
 

@@ -65,9 +65,7 @@ int main(int argc, char **argv)
     LoadImages(strAssociationFilename, vstrImageFilenamesRGB, vstrImageFilenamesD, vTimestamps);
 
     int nImages = vstrImageFilenamesRGB.size();
-
     cv::Mat ColorImage, Image_tmp, DepthIMage;
-
     double start = static_cast<double>(cvGetTickCount());
     for (int i = 0; i < nImages; ++i)
     {
@@ -77,6 +75,7 @@ int main(int argc, char **argv)
         string Depthimg_path = Datasets_Dir + "/" + vstrImageFilenamesD[i];
         ColorImage = cv::imread(Colorimg_path.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
         DepthIMage = cv::imread(Depthimg_path.c_str(), CV_LOAD_IMAGE_UNCHANGED);
+
 
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
         clahe->apply(ColorImage, Image_tmp);

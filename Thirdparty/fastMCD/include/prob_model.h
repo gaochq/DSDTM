@@ -45,6 +45,8 @@ class ProbModel
 public:
 
     IplImage * m_Cur;
+    cv::Mat mMask;
+
     float *m_DistImg;
 
     float *m_Mean[NUM_MODELS];
@@ -171,7 +173,6 @@ public:
 
     void motionCompensate(double *h)
     {
-
         int curModelWidth = modelWidth;
         int curModelHeight = modelHeight;
 
@@ -180,15 +181,18 @@ public:
         int obsWidthStep = m_Cur->widthStep;
 
         // compensate models for the current view
-        for (int j = 0; j < curModelHeight; ++j) {
-            for (int i = 0; i < curModelWidth; ++i) {
-
+        for (int j = 0; j < curModelHeight; ++j)
+        {
+            for (int i = 0; i < curModelWidth; ++i)
+            {
                 // x and y coordinates for current model
                 float X, Y;
                 float W = 1.0;
                 X = BLOCK_SIZE * i + BLOCK_SIZE / 2.0;
                 Y = BLOCK_SIZE * j + BLOCK_SIZE / 2.0;
 
+                //if(mMask.at<uchar>(X, Y)!=255)
+                //    continue;
                 // transformed coordinates with h
                 cv::Point3f tPoint(X, Y, 1);
 
@@ -223,11 +227,13 @@ public:
                     memset(temp_age, 0, sizeof(float) * 4 * NUM_MODELS);
 #ifdef WARP_MIX
                     // Horizontal Neighbor
-                    if (di != 0) {
+                    if (di != 0)
+                    {
                         int idx_new_i = idxNewI;
                         int idx_new_j = idxNewJ;
                         idx_new_i += di > 0 ? 1 : -1;
-                        if (idx_new_i >= 0 && idx_new_i < curModelWidth && idx_new_j >= 0 && idx_new_j < curModelHeight) {
+                        if (idx_new_i >= 0 && idx_new_i < curModelWidth && idx_new_j >= 0 && idx_new_j < curModelHeight)
+                        {
                             w_H = fabs(di) * (1.0 - fabs(dj));
                             sumW += w_H;
                             int idxNew = idx_new_i + idx_new_j * modelWidth;
@@ -408,6 +414,9 @@ public:
                 idx_base_i = ((float)bIdx_i) * BLOCK_SIZE;
                 idx_base_j = ((float)bIdx_j) * BLOCK_SIZE;
 
+                //if(mMask.at<uchar>(idx_base_i, idx_base_j)!=255)
+                //    continue;
+
                 float cur_mean = 0;
                 float elem_cnt = 0;
                 for (int jj = 0; jj < BLOCK_SIZE; ++jj)
@@ -484,6 +493,9 @@ public:
                 idx_base_i = ((float)bIdx_i) * BLOCK_SIZE;
                 idx_base_j = ((float)bIdx_j) * BLOCK_SIZE;
 
+                //if(mMask.at<uchar>(idx_base_i, idx_base_j)!=255)
+                //    continue;
+
                 int nMatchIdx = m_ModelIdx[bIdx_i + bIdx_j * modelWidth];
 
                 // obtain observation mean
@@ -544,6 +556,9 @@ public:
                 idx_base_i = ((float)bIdx_i) * BLOCK_SIZE;
                 idx_base_j = ((float)bIdx_j) * BLOCK_SIZE;
 
+                //if(mMask.at<uchar>(idx_base_i, idx_base_j)!=255)
+                //    continue;
+
                 int nMatchIdx = m_ModelIdx[bIdx_i + bIdx_j * modelWidth];
 
                 // obtain observation variance
@@ -568,6 +583,12 @@ public:
                         float fDiff = pCur[idx_i + idx_j * obsWidthStep] - m_Mean[nMatchIdx][bIdx_i + bIdx_j * modelWidth];
                         pixelDist += pow(fDiff, (int)2);
 
+                        //! 观测方差
+                        obs_var[nMatchIdx] = MAX(obs_var[nMatchIdx], pixelDist);
+
+                        //if(mMask.at<uchar>(idx_j, idx_i)!=255)
+                        //    continue;
+
                         m_DistImg[idx_i + idx_j * obsWidthStep] = pow(pCur[idx_i + idx_j * obsWidthStep] - m_Mean[0][bIdx_i + bIdx_j * modelWidth], (int)2);
 
                         if (pOutputImg != NULL && m_Age_Temp[0][bIdx_i + bIdx_j * modelWidth] > 1)
@@ -579,8 +600,6 @@ public:
 
                         }
 
-                        //! 观测方差
-                        obs_var[nMatchIdx] = MAX(obs_var[nMatchIdx], pixelDist);
                     }
                 }
 

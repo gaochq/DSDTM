@@ -98,18 +98,41 @@ void Tracking::Track()
         //Show_Features(Last_Pts);
         LKT_Track(tLast_Pts, tCur_Pts);
 
-
         //Rarsac_F(tCur_Pts, tLast_Pts, tBad_PtsA);
+
         cv::Mat F = Reject_FMat(tLast_Pts, tCur_Pts, tBad_PtsA);
 
-        tBad_PtsA.clear(); tBad_PtsB.clear();
-        //LKT_outlier(tCur_Pts, tLast_Pts, tBad_PtsA, tBad_PtsB, F);
+        //tBad_PtsA.clear();  tBad_PtsB.clear();
+        LKT_outlier(tCur_Pts, tLast_Pts, tBad_PtsA, tBad_PtsB, F);
 
-        cv::Mat H = cv::findHomography(tCur_Pts, tLast_Pts, CV_RANSAC);
-        mMoving_detecter->Run(mCurrentFrame.mColorImg, H.ptr<double>(0));
+        {
+
+            std::vector<uchar> tHstatus;
+            std::vector<cv::Point2f> tLastPoints;
+            mLastFrame.Get_Features(tLastPoints);
+            cv::Mat tMask(mCurrentFrame.mColorImg.size(), CV_8UC1, cv::Scalar::all(0));
+            for (int j = 0; j < tCur_Pts.size(); ++j)
+            {
+                tMask.at<uchar>(tCur_Pts[j].y, tCur_Pts[j].x) = 255;
+            }
+
+            for (int i = 0; i < tLastPoints.size(); ++i)
+            {
+                tMask.at<uchar>(tLastPoints[i].y, tLastPoints[i].x) = 255;
+            }
+            cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15));
+            cv::dilate(tMask, tMask, element);
+
+            //cv::Mat H = cv::findHomography(tCur_Pts, tLast_Pts, CV_RANSAC, 3, tHstatus);
+            //mCurrentFrame.mDynamicMask = mMoving_detecter->Run(mCurrentFrame.mColorImg, H.ptr<double>(0), tMask);
+            //cv::namedWindow("tMask");
+            //cv::imshow("tMask", tMask);
+            //cv::waitKey(1);
+            //mMoving_detecter->Mod_Detection(mCurrentFrame.mColorImg, tCur_Pts, tLast_Pts);
+        }// moving detection
+
 
         std::cout << " --- " << tCur_Pts.size() << std::endl;
-
         if (tCur_Pts.size() < 20)
         {
             mState = Lost;
@@ -120,10 +143,10 @@ void Tracking::Track()
     //mCam->Draw_Lines(mCurrentFrame.mColorImg, tCur_Pts, tLast_Pts, tBad_PtsA, tBad_PtsB);
 
     AddNewFeatures(tCur_Pts, tBad_PtsA);
-    mCurrentFrame.Get_Features(tPts_tmp);
-    std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
-    std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
-    mCam->Show_Features(mCurrentFrame.mColorImg, tBad_PtsA, tvGoodFeatures, tvNewFeatures);
+    //mCurrentFrame.Get_Features(tPts_tmp);
+    //std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
+    //std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
+    //mCam->Show_Features(mCurrentFrame.mColorImg, tBad_PtsA, tvGoodFeatures, tvNewFeatures);
     //std::cout<< mCurrentFrame.mvFeatures.size() << std::endl;
     //std::cout << " --- " << tPts_tmp.size() << std::endl;
 }
@@ -180,13 +203,13 @@ cv::Mat Tracking::Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv
     return F;
 }
 
-void Tracking::AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv::Point2f> &tLast_Pts)
+void Tracking::AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv::Point2f> &tBadPts)
 {
     std::vector<cv::Point2f>tPts_tmp, tBad_Pts;
 
     mCurrentFrame.SetFeatures(tCur_Pts, mvcStatus, mvsTrack_cnt);
     UpdateID(mCurrentFrame.mvFeatures);
-    mCurrentFrame.Set_Mask(mvcStatus, mvsTrack_cnt, tLast_Pts);
+    mCurrentFrame.Set_Mask(mvcStatus, mvsTrack_cnt, tBadPts);
 
     tCur_Pts.clear();
     mCurrentFrame.Get_Features(tCur_Pts);
@@ -258,6 +281,17 @@ void Tracking::CraeteKeyframe()
 void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv::Point2f> &tFeaturesB,
                            std::vector<cv::Point2f> &tBadPtsA, std::vector<cv::Point2f> &tBadPtsB, const cv::Mat F)
 {
+    cv::Mat tTestIMg;
+    cv::Mat tAffine = cv::findHomography(tFeaturesB, tFeaturesA, CV_RANSAC);
+    cv::warpPerspective(mLastFrame.mColorImg, tTestIMg, tAffine, tTestIMg.size());
+    tTestIMg = mCurrentFrame.mColorImg - tTestIMg;
+    cv::threshold(tTestIMg, tTestIMg, 30, 200.0, CV_THRESH_BINARY);
+    cv::Mat element = getStructuringElement(MORPH_RECT, Size(5, 5));
+    cv::morphologyEx(tTestIMg, tTestIMg, MORPH_OPEN, element);
+    cv::namedWindow("Depth");
+    cv::imshow("Depth", tTestIMg);
+    cv::waitKey(1);
+
     cv::Mat H = cv::findHomography(tFeaturesB, tFeaturesA, CV_RANSAC);
     std::vector<cv::Point2f> tCompensate;
     double *h = H.ptr<double>(0);
@@ -284,7 +318,9 @@ void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv:
     const int HISTO_LENGTH = 6;
     const double factor = 1.0f/HISTO_LENGTH;
     std::vector<int> rotHist[HISTO_LENGTH], tvCommonVector;
+    cv::Mat tFeatures(N, 2, CV_32FC1, cv::Scalar::all(0.0)) ;
 
+    cv::Mat tDepthdiff(mCurrentFrame.mColorImg.size(), CV_8UC1, cv::Scalar::all(0));
     for (int i = 0; i < N; ++i)
     {
         Eigen::Vector2d tLKTVector;
@@ -293,23 +329,28 @@ void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv:
         tLKTVector << tFeaturesA[i].x - tCompensate[i].x,
                     tFeaturesA[i].y - tCompensate[i].y;
 
-        /*
+
         float z1 = mCurrentFrame.Get_FeatureDetph(tFeaturesA[i]);
-        tPoint = mCam->Pixel2Camera(tFeaturesA[i], z1);
-        float z2 = mLastFrame.Get_FeatureDetph(tFeaturesB[i]);
-        tPoint = tPoint- mCam->Pixel2Camera(tFeaturesB[i], z2);
-        */
+        float z2 = mCurrentFrame.Get_FeatureDetph(tCompensate[i]);
+        if(z1>0 && z2>0)
+        {
+            tvdFDists.push_back(z1 -z2);
+            tDepthdiff.at<uchar>(tFeaturesA[i]) = static_cast<uchar>(100*tvdFDists.back());
+            if(tvdFDists.back()>0.1)
+                tBadPtsA.push_back(tFeaturesA[i]);
+        }
 
         //tvLKTVectors.push_back(tLKTVector);
         //tvdDists.push_back(tLKTVector.norm());
         //tDistAve += tvdDists.back()/N;
-
+        double tDist = tLKTVector.norm();
         tLKTVector.normalize();
         tvdOrients.push_back(tLKTVector);
 
         double tAngle = atan(tLKTVector[1]/tLKTVector[0]);
 
-
+        tFeatures.at<float>(i, 0) = tAngle;
+        tFeatures.at<float>(i, 1) = tDist;
         //if(tAngle<0)
         //    tAngle = tAngle + 2*M_PI;
         tAngleSets.push_back(tAngle);
@@ -336,18 +377,40 @@ void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv:
          */
 
     }
+
+    
     double start = static_cast<double>(cvGetTickCount());
+    //cv::namedWindow("Depth");
+    //cv::imshow("Depth", tDepthdiff);
+    //cv::waitKey(1);
+
+
     std::vector<uchar> labels;
     cv::Mat mSamples(tAngleSets, false);
 
     cv::EM em_model;
-    em_model.set("nclusters", 4);
+    em_model.set("nclusters", 3);
     em_model.set("covMatType", EM::COV_MAT_SPHERICAL);
-    em_model.train(mSamples, noArray(), labels, noArray());
+    em_model.train(tFeatures, noArray(), labels, noArray());
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time/1000 << " ms" << endl;
     cv::Mat means = em_model.getMat("means");
+    vector<Mat> cov = em_model.getMatVector("covs");
     cout<< means<<endl;
+
+    double *tvmean = means.ptr<double>(0);
+    //double taverge = tvmean[0];
+    double taverge = tvmean[0];
+    uchar flag = 0;
+    for (int j = 1; j < 3; ++j)
+    {
+        if(taverge < tvmean[j])
+        {
+            taverge = tvmean[j];
+            flag = j;
+        }
+    }
+
     /*
     ComputeMaxBin(rotHist, HISTO_LENGTH, tvCommonVector);
     for (int k = 0; k < tvCommonVector.size(); ++k)
@@ -410,11 +473,17 @@ void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv:
         //return;
     }
      */
+
+
+
+    //mCam->Show_Features(mCurrentFrame.mColorImg, tFeaturesA, tBadPtsA, tBadPtsA);
+    mCam->Show_Features(mCurrentFrame.mColorImg, tFeaturesA, labels, flag);
     std::ofstream outputFilex ("angles.txt");
     outputFilex << " ";
     std::copy(tAngleSets.begin(), tAngleSets.end(), std::ostream_iterator<double>(outputFilex, " "));
     outputFilex << " " << std::endl;
-    mCam->Show_Features(mCurrentFrame.mColorImg, tFeaturesA, labels);
+    //mCam->Draw_Lines(mCurrentFrame.mColorImg, tFeaturesA, tCompensate, tBadPtsA, tBadPtsB);
+
 }
 
 void Tracking::Update_LastFrame()

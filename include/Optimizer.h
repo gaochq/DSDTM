@@ -142,7 +142,7 @@ public:
         //! Camera pose: Convert se3 into SE3
         Eigen::Matrix<double, 6, 1> tTransform;
         tTransform << parameters[0][0], parameters[0][1], parameters[0][2],
-                parameters[0][3], parameters[0][4], parameters[0][5];
+                    parameters[0][3], parameters[0][4], parameters[0][5];
         Sophus::SE3 mPose = Sophus::SE3::exp(tTransform);
 
         //! MapPoint

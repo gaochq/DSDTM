@@ -102,7 +102,7 @@ public:
     void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, int _color);
     void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features1,
                        const std::vector<cv::Point2f> _features2, const std::vector<cv::Point2f> _features3);
-    void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, const std::vector<uchar> lables);
+    void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, const std::vector<uchar> lables, uchar flag);
 
     //! Return Intrinsic matrix
     Eigen::Matrix<double, 4, 4, Eigen::RowMajor> Return_Intrinsic() const
