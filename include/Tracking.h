@@ -91,9 +91,6 @@ private:
     //! Create new Keyframe
     void CraeteKeyframe();
 
-    //! Delete Features whose optical orientation far from average
-    void LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv::Point2f> &tFeaturesB,
-                     std::vector<cv::Point2f> &tBadPtsA, std::vector<cv::Point2f> &tBadPtsB, const cv::Mat F);
 
 public:
     Camera                  *mCam;               //! Camera

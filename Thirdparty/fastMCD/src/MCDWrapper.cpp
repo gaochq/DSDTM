@@ -63,7 +63,7 @@ MCDWrapper::Init()
     BGModel.init(imgGray);
 }
 
-cv::Mat MCDWrapper::Run(cv::Mat ColorImg, double *H, cv::Mat tMask)
+cv::Mat MCDWrapper::Run(const cv::Mat ColorImg, double *H, cv::Mat tMask)
 {
     BGModel.mMask = tMask;
 
@@ -90,18 +90,17 @@ cv::Mat MCDWrapper::Run(cv::Mat ColorImg, double *H, cv::Mat tMask)
 
     BGModel.motionCompensate(H);
 
-    gettimeofday(&tic, NULL);
+    //gettimeofday(&tic, NULL);
     BGModel.update(detect_img);
-    gettimeofday(&toc, NULL);
-    rt_modelUpdate = (float)(toc.tv_usec - tic.tv_usec) / 1000.0;
-    std::cout<< rt_modelUpdate << "ms" << std::endl;
+    //gettimeofday(&toc, NULL);
+    //rt_modelUpdate = (float)(toc.tv_usec - tic.tv_usec) / 1000.0;
+    //std::cout<< rt_modelUpdate << "ms" << std::endl;
 
 
     cv::Mat matimg = cv::Mat(detect_img);
     cv::Mat element = getStructuringElement(MORPH_RECT, Size(15, 15));
     cv::morphologyEx(matimg, matimg, MORPH_OPEN, element);
 
-    matimg.convertTo(matimg, CV_8SC1);
     cv::namedWindow("Moving_Detect");
     cv::imshow("Moving_Detect", matimg);
     cv::waitKey(1);
@@ -110,10 +109,7 @@ cv::Mat MCDWrapper::Run(cv::Mat ColorImg, double *H, cv::Mat tMask)
 
     cvCopy(imgGray, imgGrayPrev);
 
-    cv::Mat tZero(matimg.size(), CV_8SC1, cv::Scalar::all(0));
-    tZero = tZero - matimg;
-    return tZero;
-
+    return matimg;
 }
 
 #endif				// _MCDWRAPPER_CPP

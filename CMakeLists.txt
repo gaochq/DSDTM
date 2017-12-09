@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(DSDTM)
 
-SET(CMAKE_BUILD_TYPE Release)
+#SET(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -o3")
 
 #添加sse指令支持
@@ -50,7 +50,8 @@ add_library(${PROJECT_NAME} SHARED
 	src/Map.cpp
 	src/Keyframe.cpp
 	src/Optimizer.cpp
-	src/LocalMapping.cpp)
+	src/LocalMapping.cpp
+	src/Moving_Detection.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}

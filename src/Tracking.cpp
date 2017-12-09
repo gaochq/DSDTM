@@ -95,42 +95,24 @@ void Tracking::Track()
 
     if(tLast_Pts.size()>0)
     {
-        //Show_Features(Last_Pts);
+        // LKT track features
         LKT_Track(tLast_Pts, tCur_Pts);
 
-        //Rarsac_F(tCur_Pts, tLast_Pts, tBad_PtsA);
-
+        // Remove outlines with fundamental matrix using ransac
         cv::Mat F = Reject_FMat(tLast_Pts, tCur_Pts, tBad_PtsA);
 
-        //tBad_PtsA.clear();  tBad_PtsB.clear();
-        LKT_outlier(tCur_Pts, tLast_Pts, tBad_PtsA, tBad_PtsB, F);
-
         {
+            // Motion outline remove, Method 1      Frame differ
+            //mCurrentFrame.mDynamicMask = mMoving_detecter->Mod_FrameDiff(mCurrentFrame.mColorImg, mLastFrame.mColorImg,
+                                                                         //tCur_Pts, tLast_Pts);
 
-            std::vector<uchar> tHstatus;
-            std::vector<cv::Point2f> tLastPoints;
-            mLastFrame.Get_Features(tLastPoints);
-            cv::Mat tMask(mCurrentFrame.mColorImg.size(), CV_8UC1, cv::Scalar::all(0));
-            for (int j = 0; j < tCur_Pts.size(); ++j)
-            {
-                tMask.at<uchar>(tCur_Pts[j].y, tCur_Pts[j].x) = 255;
-            }
+            // Motion outline remove, Method 2      Rarsac
+            //Rarsac_F(tCur_Pts, tLast_Pts, tBad_PtsA);
 
-            for (int i = 0; i < tLastPoints.size(); ++i)
-            {
-                tMask.at<uchar>(tLastPoints[i].y, tLastPoints[i].x) = 255;
-            }
-            cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15));
-            cv::dilate(tMask, tMask, element);
+            // Motion outline remove, Method 3      FastMCD
+            mCurrentFrame.mDynamicMask = mMoving_detecter->Mod_FastMCD(mCurrentFrame.mColorImg, tCur_Pts, tLast_Pts);
 
-            //cv::Mat H = cv::findHomography(tCur_Pts, tLast_Pts, CV_RANSAC, 3, tHstatus);
-            //mCurrentFrame.mDynamicMask = mMoving_detecter->Run(mCurrentFrame.mColorImg, H.ptr<double>(0), tMask);
-            //cv::namedWindow("tMask");
-            //cv::imshow("tMask", tMask);
-            //cv::waitKey(1);
-            //mMoving_detecter->Mod_Detection(mCurrentFrame.mColorImg, tCur_Pts, tLast_Pts);
         }// moving detection
-
 
         std::cout << " --- " << tCur_Pts.size() << std::endl;
         if (tCur_Pts.size() < 20)
@@ -147,8 +129,6 @@ void Tracking::Track()
     std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
     std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
     mCam->Show_Features(mCurrentFrame.mColorImg, tBad_PtsA, tvGoodFeatures, tvNewFeatures);
-    //std::cout<< mCurrentFrame.mvFeatures.size() << std::endl;
-    //std::cout << " --- " << tPts_tmp.size() << std::endl;
 }
 
 void Tracking::LKT_Track(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Point2f> &_cur_Pts)
@@ -278,214 +258,6 @@ void Tracking::CraeteKeyframe()
 
 }
 
-void Tracking::LKT_outlier(std::vector<cv::Point2f> &tFeaturesA, std::vector<cv::Point2f> &tFeaturesB,
-                           std::vector<cv::Point2f> &tBadPtsA, std::vector<cv::Point2f> &tBadPtsB, const cv::Mat F)
-{
-    cv::Mat tTestIMg;
-    cv::Mat tAffine = cv::findHomography(tFeaturesB, tFeaturesA, CV_RANSAC);
-    cv::warpPerspective(mLastFrame.mColorImg, tTestIMg, tAffine, tTestIMg.size());
-    tTestIMg = mCurrentFrame.mColorImg - tTestIMg;
-    cv::threshold(tTestIMg, tTestIMg, 30, 200.0, CV_THRESH_BINARY);
-    cv::Mat element = getStructuringElement(MORPH_RECT, Size(5, 5));
-    cv::morphologyEx(tTestIMg, tTestIMg, MORPH_OPEN, element);
-    cv::namedWindow("Depth");
-    cv::imshow("Depth", tTestIMg);
-    cv::waitKey(1);
-
-    /**
-    cv::Mat H = cv::findHomography(tFeaturesB, tFeaturesA, CV_RANSAC);
-    std::vector<cv::Point2f> tCompensate;
-    double *h = H.ptr<double>(0);
-    for (int m = 0; m < tFeaturesB.size(); ++m)
-    {
-        float newW = h[6] * tFeaturesB[m].x + h[7] * tFeaturesB[m].y + h[8];
-        float newX = (h[0] * tFeaturesB[m].x + h[1] * tFeaturesB[m].y + h[2]) / newW;
-        float newY = (h[3] * tFeaturesB[m].x + h[4] * tFeaturesB[m].y + h[5]) / newW;
-
-        tCompensate.push_back(cv::Point2f(newX, newY));
-    }
-
-
-    std::vector<uchar> tvStatus;
-    double tDistAve, tOrientAve;
-    Eigen::Vector2d tOrient;
-    /**
-    std::vector<double> tvdDists, tOrients, tTanSets, tAngleSets, tvdFDists, tvdVectorx, tvdVectory;
-    std::vector<Eigen::Vector2d> tvdOrients, tvLKTVectors;
-
-    size_t N = tFeaturesA.size();
-    tvStatus.resize(N, 1);
-
-    const int HISTO_LENGTH = 6;
-    const double factor = 1.0f/HISTO_LENGTH;
-    std::vector<int> rotHist[HISTO_LENGTH], tvCommonVector;
-    cv::Mat tFeatures(N, 2, CV_32FC1, cv::Scalar::all(0.0)) ;
-
-    cv::Mat tDepthdiff(mCurrentFrame.mColorImg.size(), CV_8UC1, cv::Scalar::all(0));
-    for (int i = 0; i < N; ++i)
-    {
-        Eigen::Vector2d tLKTVector;
-        Eigen::Vector3d tPoint;
-
-        tLKTVector << tFeaturesA[i].x - tCompensate[i].x,
-                    tFeaturesA[i].y - tCompensate[i].y;
-
-
-        float z1 = mCurrentFrame.Get_FeatureDetph(tFeaturesA[i]);
-        float z2 = mCurrentFrame.Get_FeatureDetph(tCompensate[i]);
-        if(z1>0 && z2>0)
-        {
-            tvdFDists.push_back(z1 -z2);
-            tDepthdiff.at<uchar>(tFeaturesA[i]) = static_cast<uchar>(100*tvdFDists.back());
-            if(tvdFDists.back()>0.1)
-                tBadPtsA.push_back(tFeaturesA[i]);
-        }
-
-        //tvLKTVectors.push_back(tLKTVector);
-        //tvdDists.push_back(tLKTVector.norm());
-        //tDistAve += tvdDists.back()/N;
-        double tDist = tLKTVector.norm();
-        tLKTVector.normalize();
-        tvdOrients.push_back(tLKTVector);
-
-        double tAngle = atan(tLKTVector[1]/tLKTVector[0]);
-
-        tFeatures.at<float>(i, 0) = tAngle;
-        tFeatures.at<float>(i, 1) = tDist;
-        //if(tAngle<0)
-        //    tAngle = tAngle + 2*M_PI;
-        tAngleSets.push_back(tAngle);
-        /*
-        int bin = round(tAngle);
-        if(bin == HISTO_LENGTH)
-            bin = 0;
-        assert(bin>=0 && bin<HISTO_LENGTH);
-        rotHist[bin].push_back(i);
-
-
-        tvdVectorx.push_back(tLKTVector[0]);
-        tvdVectory.push_back(tLKTVector[1]);
-
-
-        //tOrient +=  tLKTVector;
-
-        double A = F.at<double>(0, 0)*tFeaturesA[i].x + F.at<double>(0, 1)*tFeaturesA[i].y + F.at<double>(0, 2);
-        double B = F.at<double>(1, 0)*tFeaturesA[i].x + F.at<double>(1, 1)*tFeaturesA[i].y + F.at<double>(1, 2);
-        double C = F.at<double>(2, 0)*tFeaturesA[i].x + F.at<double>(2, 1)*tFeaturesA[i].y + F.at<double>(2, 2);
-        double dd = (A*tFeaturesB[i].x + B*tFeaturesB[i].y + C) / sqrt(A*A + B*B);
-        tvdFDists.push_back(dd);
-        //tTanSets.push_back(tLKTVector(1)/tLKTVector(0));
-         */
-
-    //}
-    /**
-
-    double start = static_cast<double>(cvGetTickCount());
-    //cv::namedWindow("Depth");
-    //cv::imshow("Depth", tDepthdiff);
-    //cv::waitKey(1);
-
-
-    std::vector<uchar> labels;
-    cv::Mat mSamples(tAngleSets, false);
-
-    cv::EM em_model;
-    em_model.set("nclusters", 3);
-    em_model.set("covMatType", EM::COV_MAT_SPHERICAL);
-    em_model.train(tFeatures, noArray(), labels, noArray());
-    double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
-    cout <<"Cost "<< time/1000 << " ms" << endl;
-    cv::Mat means = em_model.getMat("means");
-    vector<Mat> cov = em_model.getMatVector("covs");
-    cout<< means<<endl;
-
-    double *tvmean = means.ptr<double>(0);
-    //double taverge = tvmean[0];
-    double taverge = tvmean[0];
-    uchar flag = 0;
-    for (int j = 1; j < 3; ++j)
-    {
-        if(taverge < tvmean[j])
-        {
-            taverge = tvmean[j];
-            flag = j;
-        }
-    }
-
-    /*
-    ComputeMaxBin(rotHist, HISTO_LENGTH, tvCommonVector);
-    for (int k = 0; k < tvCommonVector.size(); ++k)
-    {
-        tOrient +=  tvdOrients[tvCommonVector[k]];
-
-    }
-    tOrient.normalize();
-
-    tvdVectorx.clear();
-    tvdVectory.clear();
-    for (int l = 0; l < N; ++l)
-    {
-        tvdOrients[l] -= tOrient;
-
-        tvdVectorx.push_back(tvdOrients[l][0]);
-        tvdVectory.push_back(tvdOrients[l][1]);
-    }
-
-
-    std::vector<int> tBinNum;
-    tBinNum.resize(21, 0);
-    double tTanAve = 0;
-
-    for (int j = 0; j < N; ++j)
-    {
-        double tOrientDiff = tOrient.dot(tvdOrients[j]);
-        tOrients.push_back(tOrientDiff);
-
-        //if(tOrientDiff < 0.90 && fabs(tvdFDists[j])>0.2)
-        //    tvStatus[j] = 0;
-
-        //tOrientAve += tOrientDiff/N;
-        //if(abs(tDistAve - tvdDists[j]) > 0.3)
-        //    tvStatus[j] = 0;
-        //tAngleSets.push_back(atan(tTanSets[j]));
-        //tTanAve = tAngleSets.back()/N;
-    }
-
-
-    std::ofstream outputFilex ("outputx.txt");
-    outputFilex << " ";
-    std::copy(tvdVectorx.begin(), tvdVectorx.end(), std::ostream_iterator<double>(outputFilex, " "));
-    outputFilex << " " << std::endl;
-    std::ofstream outputFiley ("outputxy.txt");
-    outputFiley << " ";
-    std::copy(tvdVectory.begin(), tvdVectory.end(), std::ostream_iterator<double>(outputFiley, " "));
-    outputFiley << " " << std::endl;
-
-
-    ReduceFeatures(tFeaturesA, tvStatus, &tBadPtsA);
-    ReduceFeatures(tFeaturesB, tvStatus, &tBadPtsB);
-
-    //mCam->Draw_Lines(mCurrentFrame.mColorImg, tFeaturesA, tFeaturesB, tBadPtsA, tBadPtsB);
-    mCam->Show_Features(mCurrentFrame.mColorImg, tFeaturesA, rotHist);
-    if (tFeaturesA.size() < 20)
-    {
-        mState = Lost;
-        std::cout << "Too few features: " << tFeaturesA.size() << " after rarsac" << std::endl;
-        //return;
-    }
-     */
-
-
-
-    //mCam->Show_Features(mCurrentFrame.mColorImg, tFeaturesA, tBadPtsA, tBadPtsA);
-    //mCam->Show_Features(mCurrentFrame.mColorImg, tFeaturesA, labels, flag);
-    //std::ofstream outputFilex ("angles.txt");
-    //outputFilex << " ";
-    //std::copy(tAngleSets.begin(), tAngleSets.end(), std::ostream_iterator<double>(outputFilex, " "));
-    //outputFilex << " " << std::endl;
-    //mCam->Draw_Lines(mCurrentFrame.mColorImg, tFeaturesA, tCompensate, tBadPtsA, tBadPtsB);
-
-}
 
 void Tracking::Update_LastFrame()
 {

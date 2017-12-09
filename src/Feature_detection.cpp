@@ -119,7 +119,7 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold, co
         Corner tCorner = corners[iter];
         if(tCorner.score > 20)
         {
-            if(frame->mImgMask.at<uchar>(cv::Point2f(tCorner.x, tCorner.y))!=127)
+            if(frame->mImgMask.at<uchar>(cv::Point2f(tCorner.x, tCorner.y))!=255)
                 continue;
             int Index = static_cast<int>(tCorner.y/mCell_size)*mGrid_cols + static_cast<int>(tCorner.x/mCell_size);
             if(mvGrid_occupy[Index])

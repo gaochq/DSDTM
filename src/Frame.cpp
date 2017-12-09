@@ -60,8 +60,8 @@ void Frame::InitFrame()
     //mColorImg.release();
     //cv::undistort(tColorImg, mColorImg, mCamera->mInstrinsicMat, mCamera->mDistortionMat);
 
-    mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8SC1, cv::Scalar(127));
-    mDynamicMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8SC1, cv::Scalar(0));
+    mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(255));
+    mDynamicMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(0));
 }
 
 void Frame::ResetFrame()
@@ -192,15 +192,15 @@ void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackC
 {
     tlId.clear();
     tTrackCnt.clear();
-    mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8SC1, cv::Scalar(127));
+    mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(255));
 
     std::sort(mvFeatures.begin(), mvFeatures.end());
 
-    mImgMask = mImgMask + mDynamicMask;
+    mImgMask = mImgMask - mDynamicMask;
     int j = 0;
     for (int i = 0; i < mvFeatures.size(); ++i)
     {
-        if(mImgMask.at<uchar>(mvFeatures[i].mpx)==127)
+        if(mImgMask.at<uchar>(mvFeatures[i].mpx)==255)
         {
             mvFeatures[j++] = mvFeatures[i];
             tlId.push_back(mvFeatures[i].mlId);
