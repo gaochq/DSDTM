@@ -17,12 +17,13 @@ public:
     Moving_Detecter();
     ~Moving_Detecter();
 
+    //! Motion Detection with fastMCD
+    cv::Mat Mod_FastMCD(const cv::Mat tImg, std::vector<cv::Point2f> tPointsA,
+                          std::vector<cv::Point2f> tPointsB);
 
-    cv::Mat Mod_FastMCD(const cv::Mat tImg, cv::vector<cv::Point2f> tPointsA,
-                          cv::vector<cv::Point2f> tPointsB);
-
-    cv::Mat Mod_FrameDiff(const cv::Mat tImgA, const cv::Mat tImgB, cv::vector<cv::Point2f> tPointsA,
-                          cv::vector<cv::Point2f> tPointsB);
+    //! Motion Detection with Frame diff
+    cv::Mat Mod_FrameDiff(const cv::Mat tImgA, const cv::Mat tImgB, std::vector<cv::Point2f> tPointsA,
+                          std::vector<cv::Point2f> tPointsB);
 
 
 };

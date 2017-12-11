@@ -29,39 +29,46 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
 
     double *mTransform = se3ToDouble(tCurFrame.Get_Pose().log());
 
+    ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
+    problem.AddParameterBlock(mTransform, SIZE_POSE, local_parameterization);
+
     std::map<size_t, MapPoint*> tObservations = tCurFrame.Get_Observations();
     size_t N = tObservations.size();
     double tPointsets[N][3];
     size_t tNum = 0;
-    for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter)
+    for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter, ++tNum)
     {
         Eigen::Vector3d tPoint(iter->second->Get_Pose());
         int tIndex = iter->first;
-        Eigen::Vector2d tObserves(tCurFrame.mvFeaturesUn[tIndex].x,
-                                  tCurFrame.mvFeaturesUn[tIndex].y);
-
-        //DLOG(INFO)<< "--" << tCurFrame.mvFeatures[tIndex].mlId << "--" << tObserves << "--" << iter->second;
+        Eigen::Vector2d tObserves(tCurFrame.mvFeatures[tIndex].mpx.x,
+                                  tCurFrame.mvFeatures[tIndex].mpx.y);
+        DLOG(INFO)<< "--" << tCurFrame.mvFeatures[tIndex].mlId << "--" << tObserves << "--" << iter->second <<"--" << tPoint;
 
         // only optimize camera pose
-        PoseSolver_Problem* p = new PoseSolver_Problem(tPoint, tObserves, tIntrinsic);
-        problem.AddResidualBlock(p, loss_function, mTransform);
+        //PoseSolver_Problem* p = new PoseSolver_Problem(tPoint, tObserves, tIntrinsic);
+        //problem.AddResidualBlock(p, loss_function, mTransform);
 
-        /*
+
         tPointsets[tNum][0] = tPoint(0);
         tPointsets[tNum][1] = tPoint(1);
         tPointsets[tNum][2] = tPoint(2);
 
+        problem.AddParameterBlock(tPointsets[tNum], 3);
+        problem.SetParameterBlockConstant(tPointsets[tNum]);
+
+
         TwoViewBA_Problem* p = new TwoViewBA_Problem(tObserves, tIntrinsic);
         problem.AddResidualBlock(p, loss_function, mTransform, tPointsets[tNum]);
-        tNum++;
-        */
+
     }
 
     ceres::Solver::Options options;
-    //options.linear_solver_type = ceres::DENSE_SCHUR;
+    options.linear_solver_type = ceres::SPARSE_SCHUR;
+
 #ifndef NDEBUG
     options.minimizer_progress_to_stdout =true;
 #endif
+
     //options.trust_region_strategy_type = ceres::DOGLEG;
     options.max_num_iterations = tIterations;
 
@@ -71,19 +78,18 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
     Eigen::Map< Eigen::Matrix<double, 6, 1> > tFinalPose(mTransform);
     tCurFrame.Set_Pose(Sophus::SE3::exp(tFinalPose));
 
-    tNum = 0;
     std::vector<double> tvdResidual = GetReprojectReidual(problem);
-    /*
-    for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter)
+    tNum = 0;
+    for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter, tNum++)
     {
         //Eigen::Vector3d a = Eigen::Map<Eigen::Matrix<double, 3, 1>>(tPointsets[tNum]);
-        tNum++;
+
         iter->second->Set_Pose(Eigen::Map<Eigen::Matrix<double, 3, 1>>(tPointsets[tNum]));
 
         if(tvdResidual[tNum]>1.0)
             iter->second->SetBadFlag();
     }
-     */
+
 
     DLOG(INFO)<< summary.FullReport() << std::endl;
     std::cout<< "Residual: "<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
@@ -126,5 +132,7 @@ std::vector<double> Optimizer::GetReprojectReidual(const ceres::Problem &problem
 
     return tResult;
 }
+
+
 
 }

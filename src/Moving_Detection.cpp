@@ -16,8 +16,8 @@ Moving_Detecter::~Moving_Detecter()
 
 }
 
-cv::Mat Moving_Detecter::Mod_FastMCD(const cv::Mat tImg, cv::vector<cv::Point2f> tPointsA,
-                                       cv::vector<cv::Point2f> tPointsB)
+cv::Mat Moving_Detecter::Mod_FastMCD(const cv::Mat tImg, std::vector<cv::Point2f> tPointsA,
+                                       std::vector<cv::Point2f> tPointsB)
 {
     cv::Mat tModIMg;
     tImg.copyTo(tModIMg);
@@ -37,8 +37,8 @@ cv::Mat Moving_Detecter::Mod_FastMCD(const cv::Mat tImg, cv::vector<cv::Point2f>
 
 }
 
-cv::Mat Moving_Detecter::Mod_FrameDiff(const cv::Mat tImgA, const cv::Mat tImgB, cv::vector<cv::Point2f> tPointsA,
-                                       cv::vector<cv::Point2f> tPointsB)
+cv::Mat Moving_Detecter::Mod_FrameDiff(const cv::Mat tImgA, const cv::Mat tImgB, std::vector<cv::Point2f> tPointsA,
+                                       std::vector<cv::Point2f> tPointsB)
 {
     cv::Mat mMask;
     cv::Mat tAffine = cv::findHomography(tPointsB, tPointsA, CV_RANSAC);
@@ -50,11 +50,13 @@ cv::Mat Moving_Detecter::Mod_FrameDiff(const cv::Mat tImgA, const cv::Mat tImgB,
 
     cv::Mat element = getStructuringElement(MORPH_RECT, Size(5, 5));
     cv::morphologyEx(mMask, mMask, MORPH_OPEN, element);
-    cv::dilate(mMask, mMask, element);
+    //cv::dilate(mMask, mMask, element);
 
+    /*
     cv::namedWindow("Depth");
     cv::imshow("Depth", mMask);
     cv::waitKey(1);
+    */
 
     return mMask;
 }

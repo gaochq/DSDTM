@@ -67,7 +67,6 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
     {
         Track();
 
-        /*
         if(mState==OK)
         {
             TrackWithReferenceFrame();
@@ -75,10 +74,8 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
             if(NeedKeyframe())
                 CraeteKeyframe();
 
-
             mProcessedFrames++;
         }
-        */
 
     }
 
@@ -110,7 +107,7 @@ void Tracking::Track()
             //Rarsac_F(tCur_Pts, tLast_Pts, tBad_PtsA);
 
             // Motion outline remove, Method 3      FastMCD
-            mCurrentFrame.mDynamicMask = mMoving_detecter->Mod_FastMCD(mCurrentFrame.mColorImg, tCur_Pts, tLast_Pts);
+            //mCurrentFrame.mDynamicMask = mMoving_detecter->Mod_FastMCD(mCurrentFrame.mColorImg, tCur_Pts, tLast_Pts);
 
         }// moving detection
 
@@ -119,10 +116,9 @@ void Tracking::Track()
         {
             mState = Lost;
             std::cout << "Too few features: " << tCur_Pts.size() << " after rarsac" << std::endl;
-            //return;
+            return;
         }
     }
-    //mCam->Draw_Lines(mCurrentFrame.mColorImg, tCur_Pts, tLast_Pts, tBad_PtsA, tBad_PtsB);
 
     AddNewFeatures(tCur_Pts, tBad_PtsA);
     mCurrentFrame.Get_Features(tPts_tmp);
@@ -203,6 +199,7 @@ void Tracking::TrackWithReferenceFrame()
     mCurrentFrame.Set_Pose(mLastFrame.Get_Pose());
     mCurrentFrame.Add_Observations(*mpReferenceKF);
 
+    mCurrentFrame.UndistortFeatures();
     Optimizer::PoseOptimization(mCurrentFrame);
     mCurrentFrame.Set_Pose(mpReferenceKF->Get_Pose()*mCurrentFrame.Get_Pose());
 }
@@ -235,13 +232,13 @@ void Tracking::CraeteKeyframe()
     mpReferenceKF = tKFrame;
 
     size_t tFeature_Num = 0;
-    for(auto it = mCurrentFrame.mvFeatures.begin(); it!=mCurrentFrame.mvFeatures.end();it++)
+    for(auto it = mCurrentFrame.mvFeatures.begin(); it!=mCurrentFrame.mvFeatures.end();it++, tFeature_Num++)
     {
-        float z = mCurrentFrame.Get_FeatureDetph(*it);
+        float z = mCurrentFrame.Get_FeatureDetph(mCurrentFrame.mvFeaturesUn[tFeature_Num]);
         if (z<=0 && mCurrentFrame.Find_Observations(tFeature_Num))
             continue;
 
-        Eigen::Vector3d tPose = mCurrentFrame.UnProject(it->mpx, z);
+        Eigen::Vector3d tPose = mCurrentFrame.UnProject(mCurrentFrame.mvFeaturesUn[tFeature_Num], z);
         MapPoint *tMPoint = new MapPoint(tPose, tKFrame);
 
         tMPoint->Add_Observation(tKFrame, tFeature_Num);
@@ -252,10 +249,7 @@ void Tracking::CraeteKeyframe()
         tKFrame->Add_Observations(tFeature_Num, tMPoint);
 
         mMap->AddMapPoint(tMPoint);
-        tFeature_Num++;
     }
-
-
 }
 
 

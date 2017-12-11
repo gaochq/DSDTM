@@ -50,15 +50,20 @@ namespace DSDTM
         minv_cx = -mcx*minv_fx;
         minv_cy = -mcy*minv_fy;
 
-        Eigen::Matrix<double, 3, 3, Eigen::RowMajor>tInstrinsicMat;
-        Eigen::Matrix<double, 1, 5, Eigen::RowMajor>tDistortionMat;
-        tInstrinsicMat << mfx, 0.0, mcx, 0.0, mfy, mcy, 0, 0, 1;
-        tDistortionMat << mk1, mk2, mp1, mp1, 0.0;
+        cv::Mat tInstrinsicMat = cv::Mat::eye(3,3,CV_32F);
+        tInstrinsicMat.at<float>(0, 0) = mfx;
+        tInstrinsicMat.at<float>(1, 1) = mfy;
+        tInstrinsicMat.at<float>(0, 2) = mcx;
+        tInstrinsicMat.at<float>(1, 2) = mcy;
+        tInstrinsicMat.copyTo(mInstrinsicMat);
 
-        mInstrinsicMat = cv::Mat(3, 3, CV_32FC1);
-        mDistortionMat = cv::Mat(1, 5, CV_32FC1);
-        cv::eigen2cv(tInstrinsicMat, mInstrinsicMat);
-        cv::eigen2cv(tDistortionMat, mDistortionMat);
+        cv::Mat tDistortMat(4, 1, CV_32F);
+        tDistortMat.at<float>(0) = mk1;
+        tDistortMat.at<float>(1) = mk2;
+        tDistortMat.at<float>(2) = mp1;
+        tDistortMat.at<float>(3) = mp2;
+        tDistortMat.at<float>(4) = mk3;
+        tDistortMat.copyTo(mDistortionMat);
 
         int tGridSize_Row = mheight/10;
         int tHalf_GridHeight = tGridSize_Row/2;

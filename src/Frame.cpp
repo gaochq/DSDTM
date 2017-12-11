@@ -56,9 +56,12 @@ void Frame::InitFrame()
     mvImg_Pyr.resize(mPyra_levels);
     ComputeImagePyramid(mColorImg, mvImg_Pyr);
 
-    //cv::Mat tColorImg(mColorImg);
-    //mColorImg.release();
-    //cv::undistort(tColorImg, mColorImg, mCamera->mInstrinsicMat, mCamera->mDistortionMat);
+    //! it takes almost 6ms to undistort the image, it takes too much time
+    /*
+    cv::Mat tColorImg(mColorImg);
+    mColorImg.release();
+    cv::undistort(tColorImg, mColorImg, mCamera->mInstrinsicMat, mCamera->mDistortionMat);
+    */
 
     mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(255));
     mDynamicMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(0));
@@ -139,9 +142,6 @@ void Frame::Add_Observations(const KeyFrame &tKframe)
 void Frame::Add_Feature(Feature tfeature)
 {
     mvFeatures.push_back(tfeature);
-
-    cv::Point2f tUndistPt = mCamera->Undistort(tfeature);
-    mvFeaturesUn.push_back(tUndistPt);
 }
 
 void Frame::Get_SceneDepth(double tMinDepth, double tMeanDepth)
@@ -181,19 +181,36 @@ bool Frame::Find_Observations(size_t tID)
         return false;
 }
 
+void Frame::UndistortFeatures()
+{
+    int N = mvFeatures.size();
+    cv::Mat tMat(N, 2, CV_32F);
+    std::vector<cv::Point2f> tSrc;
+
+    for (int i = 0; i < N; ++i)
+    {
+        tSrc.push_back(mvFeatures[i].mpx);
+    }
+
+    //! the InputArray in undistortPoints should be 2 channels
+    cv::undistortPoints(tSrc, mvFeaturesUn, mCamera->mInstrinsicMat, mCamera->mDistortionMat, cv::noArray(), mCamera->mInstrinsicMat);
+}
+
 Eigen::Vector3d Frame::UnProject(const cv::Point2f tPixel, const float d)
 {
     Eigen::Vector3d tPoint = mCamera->Pixel2Camera(tPixel, d);
-    return mT_c2w*tPoint;
+
+    return mT_c2w.inverse()*tPoint;
 }
 
 void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt,
-                     cv::vector<cv::Point2f> tBadPts)
+                     std::vector<cv::Point2f> tBadPts)
 {
     tlId.clear();
     tTrackCnt.clear();
     mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(255));
 
+    //! Sort features refer to tracking times
     std::sort(mvFeatures.begin(), mvFeatures.end());
 
     mImgMask = mImgMask - mDynamicMask;

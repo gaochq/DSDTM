@@ -26,7 +26,6 @@ public:
     static void PoseOptimization(Frame &tCurFrame, int tIterations = 10);
     static double *se3ToDouble(Eigen::Matrix<double, 6, 1> tso3);
     static std::vector<double> GetReprojectReidual(const ceres::Problem &problem);
-
 };
 
 
@@ -57,18 +56,10 @@ public:
         Eigen::Map<Eigen::Vector2d> mResidual(residuals);
         Eigen::Vector3d tCamPoint = mPose*mMapPoint;
 
-        //! in normalize plane, distortion correction
-        double tx = tCamPoint(0)/tCamPoint(2);
-        double ty = tCamPoint(1)/tCamPoint(2);
-        double tk1 = mIntrinsic(0, 3);
-        double tk2 = mIntrinsic(1, 3);
-
-        double tr2 = tx*tx + ty*ty;
-        double tDistortion = 1.0 + tr2*(tk1 + tk2*tr2);
-
+        //! Don't need undistortion
         Eigen::Vector2d tPixel;
-        tPixel << mfx*tx*tDistortion + mcx,
-                mfy*ty*tDistortion + mcy;
+        tPixel << mfx*tCamPoint(0)/tCamPoint(2) + mcx,
+                mfy*tCamPoint(1)/tCamPoint(2) + mcy;
 
         mResidual = mObservation - tPixel;
 
@@ -77,6 +68,8 @@ public:
 
         //std::cout<< "num" <<std::endl;
         //std::cout << mResidual <<std::endl<<std::endl;
+        Eigen::Matrix<double, 2, 3, Eigen::RowMajor> J_cam;
+
 
         if(jacobians!=NULL)
         {
@@ -90,19 +83,19 @@ public:
             {
                 Eigen::Map< Eigen::Matrix<double, 2, 6, Eigen::RowMajor> > mJacobians1(jacobians[0]);
 
-                mJacobians1(0, 0) = mfx*z_inv;
-                mJacobians1(0, 1) = 0;
-                mJacobians1(0, 2) = -mfx*x*z_invsquare;
-                mJacobians1(0, 3) = -mfx*x*y*z_invsquare;
-                mJacobians1(0, 4) = mfx + mfx*x*x/z_invsquare;
-                mJacobians1(0, 5) = -mfx*y/z_inv;
+                mJacobians1(0, 0) = -mfx*x*y*z_invsquare;
+                mJacobians1(0, 1) = mfx + mfx*x*x/z_invsquare;
+                mJacobians1(0, 2) = -mfx*y/z_inv;
+                mJacobians1(0, 3) = mfx*z_inv;
+                mJacobians1(0, 4) = 0;
+                mJacobians1(0, 5) = -mfx*x*z_invsquare;
 
-                mJacobians1(1, 0) = 0;
-                mJacobians1(1, 1) = mfy*z_inv;
-                mJacobians1(1, 2) = -mfy*y*z_invsquare;
-                mJacobians1(1, 3) = -mfy - mfy*y*y/z_invsquare;
-                mJacobians1(1, 4) = mfy*x*y*z_invsquare;
-                mJacobians1(1, 5) = mfy*x/z_inv;
+                mJacobians1(1, 0) = -mfy - mfy*y*y/z_invsquare;
+                mJacobians1(1, 1) = mfy*x*y*z_invsquare;
+                mJacobians1(1, 2) = mfy*x/z_inv;
+                mJacobians1(1, 3) = 0;
+                mJacobians1(1, 4) = mfy*z_inv;
+                mJacobians1(1, 5) = -mfy*y*z_invsquare;
 
                 mJacobians1 = -1.0*mJacobians1;
             }
@@ -153,19 +146,9 @@ public:
         Eigen::Map<Eigen::Vector2d> mResidual(residuals);
         Eigen::Vector3d tCamPoint = mPose*mMapPoint;
 
-        //! in normalize plane, distortion correction
-        double tx = tCamPoint(0)/tCamPoint(2);
-        double ty = tCamPoint(1)/tCamPoint(2);
-        double tk1 = mIntrinsic(0, 3);
-        double tk2 = mIntrinsic(1, 3);
-
-        double tr2 = tx*tx + ty*ty;
-        //double tDistortion = 1.0 + tr2*(tk1 + tk2*tr2);
-        double tDistortion = 1.0;
-
         Eigen::Vector2d tPixel;
-        tPixel << mfx*tx*tDistortion + mcx,
-                mfy*ty*tDistortion + mcy;
+        tPixel << mfx*tCamPoint(0)/tCamPoint(2) + mcx,
+                mfy*tCamPoint(1)/tCamPoint(2) + mcy;
 
         mResidual = mObservation - tPixel;
 
@@ -186,19 +169,19 @@ public:
             {
                 Eigen::Map< Eigen::Matrix<double, 2, 6, Eigen::RowMajor> > mJacobians1(jacobians[0]);
 
-                mJacobians1(0, 0) = mfx*z_inv;
-                mJacobians1(0, 1) = 0;
-                mJacobians1(0, 2) = -mfx*x*z_invsquare;
-                mJacobians1(0, 3) = -mfx*x*y*z_invsquare;
-                mJacobians1(0, 4) = mfx + mfx*x*x/z_invsquare;
-                mJacobians1(0, 5) = -mfx*y/z_inv;
+                mJacobians1(0, 0) = -mfx*x*y*z_invsquare;
+                mJacobians1(0, 1) = mfx + mfx*x*x/z_invsquare;
+                mJacobians1(0, 2) = -mfx*y/z_inv;
+                mJacobians1(0, 3) = mfx*z_inv;
+                mJacobians1(0, 4) = 0;
+                mJacobians1(0, 5) = -mfx*x*z_invsquare;
 
-                mJacobians1(1, 0) = 0;
-                mJacobians1(1, 1) = mfy*z_inv;
-                mJacobians1(1, 2) = -mfy*y*z_invsquare;
-                mJacobians1(1, 3) = -mfy - mfy*y*y/z_invsquare;
-                mJacobians1(1, 4) = mfy*x*y*z_invsquare;
-                mJacobians1(1, 5) = mfy*x/z_inv;
+                mJacobians1(1, 0) = -mfy - mfy*y*y/z_invsquare;
+                mJacobians1(1, 1) = mfy*x*y*z_invsquare;
+                mJacobians1(1, 2) = mfy*x/z_inv;
+                mJacobians1(1, 3) = 0;
+                mJacobians1(1, 4) = mfy*z_inv;
+                mJacobians1(1, 5) = -mfy*y*z_invsquare;
 
                 mJacobians1 = -1.0*mJacobians1;
             }
@@ -211,7 +194,7 @@ public:
                 mJacob_tmp << mfx*z_inv, 0, -mfx*x*z_invsquare,
                             0, mfy*z_inv, -mfy*y*z_invsquare;
 
-                mJacobians2 = -mJacob_tmp*mPose.so3().matrix();
+                mJacobians2 = -1.0*mJacob_tmp*mPose.so3().matrix();
             }
 
         }
@@ -230,6 +213,41 @@ protected:
     double              mcx;
     double              mcy;
 };
+
+
+class PoseLocalParameterization : public ceres::LocalParameterization
+{
+
+    virtual bool Plus(const double *x, const double *delta, double *x_plus_delta) const
+    {
+        Eigen::Map<const Eigen::Vector3d> trans(x + 3);
+        Sophus::SE3 se3_delta = Sophus::SE3::exp(Eigen::Map<const Eigen::Matrix<double, 6, 1>>(delta));
+        Sophus::SO3 so3_plus = se3_delta.so3()*Sophus::SO3(x[0], x[1], x[2]);
+
+        Eigen::Map<Eigen::Vector3d> angles_plus(x_plus_delta);
+        angles_plus = so3_plus.log();
+
+        Eigen::Map<Eigen::Vector3d> trans_plus(x_plus_delta + 3);
+        trans_plus = se3_delta.rotation_matrix() * trans + se3_delta.translation();
+
+
+        return true;
+    }
+
+    virtual bool ComputeJacobian(const double *x, double *jacobian) const
+    {
+        Eigen::Map<Eigen::Matrix<double, 6, 6, Eigen::RowMajor> > J(jacobian);
+        J.setIdentity();
+
+        return true;
+    }
+
+    virtual int GlobalSize() const { return 6; }
+
+    virtual int LocalSize() const { return 6; }
+
+};
+
 
 
 } //namespace DSDTM

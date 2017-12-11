@@ -14,7 +14,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 # Opencv
 #set(OpenCV_DIR "/home/buyi/Software/Opencv/opencv-3.2.0/build")
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 2.4.13 REQUIRED)
 include_directories(${Opencv_INCLUDE_DIRS})
 message(STATUS "    version: ${OpenCV_VERSION}")
 

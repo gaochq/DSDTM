@@ -76,7 +76,7 @@ protected:
 
     std::vector< std::pair<int, double> > mvBinIndexProba;      // Bins ranked according to the probability
 
-    cv::vector<Eigen::Vector2d> mvGridBinPose;      // center position of Bins
+    std::vector<Eigen::Vector2d> mvGridBinPose;      // center position of Bins
 };
 }// namspace DSDTM
 #endif //DSDTM_RARSAC_BASE_H

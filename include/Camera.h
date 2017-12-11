@@ -25,14 +25,11 @@
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/core/eigen.hpp>
 
-
-
-
-
 #include <sophus/se3.h>
 
 #include <glog/logging.h>
 
+#include "tic_toc.h"
 #include "Config.h"
 #include "Frame.h"
 #include "Feature.h"
@@ -144,7 +141,7 @@ public:
     cv::Mat         mInstrinsicMat;
     cv::Mat         mDistortionMat;
 
-    cv::vector<Eigen::Vector2d> mvGridBinPose;
+    std::vector<Eigen::Vector2d> mvGridBinPose;
 
 };
 

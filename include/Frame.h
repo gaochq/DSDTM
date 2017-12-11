@@ -71,12 +71,15 @@ public:
     //! Check whether the feature int observations
     bool Find_Observations(size_t tID);
 
+    //! Undistort Features
+    void UndistortFeatures();
+
     //! Unproject pixel into world
     Eigen::Vector3d UnProject(const cv::Point2f tPixel, const float d);
 
     //! Set the image mask for feature extraction and filter
     void Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt,
-                  cv::vector<cv::Point2f> tBadPts);
+                  std::vector<cv::Point2f> tBadPts);
 
     //! Reset the probability of rarsac grid
     void Reset_Gridproba();

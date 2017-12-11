@@ -31,6 +31,11 @@ public:
     }
 };
 
+enum SIZE_PARAMETERIZATION
+{
+    SIZE_POSE = 6
+};
+
 }// namespace DSDTM
 
 
