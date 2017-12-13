@@ -6,6 +6,7 @@
 #define DSDTM_FEATURE_H
 
 #include "Camera.h"
+//#include "MapPoint.h"
 
 namespace DSDTM
 {
@@ -19,8 +20,10 @@ struct Feature
     int                 mlevel;
     Eigen::Vector2d     mgrad;
     long int            mlId;
-    long int            mTrack_cnt;
-    cv::Point2f         mLpx;
+    long int            mTrack_cnt; // Succeed tracking times
+    cv::Point2f         mUnpx;
+    Eigen::Vector3d     mf;         //Unit-bearing vector of the feature. But now just for position of mappoint in last frame temporarily.
+
 
     Feature(Frame* _frame, const cv::Point2f& _px, int _level, long int tlId = -1, long int tTrack_cnt = 1):
             mframe(_frame),
@@ -28,7 +31,8 @@ struct Feature
             mlevel(_level),
             mgrad(0.0, 0.0),
             mlId(tlId),
-            mTrack_cnt(tTrack_cnt)
+            mTrack_cnt(tTrack_cnt),
+            mf(0.0, 0.0, 0.0)
 
     {}
     Feature(){};

@@ -186,6 +186,7 @@ void Frame::UndistortFeatures()
     int N = mvFeatures.size();
     cv::Mat tMat(N, 2, CV_32F);
     std::vector<cv::Point2f> tSrc;
+    std::vector<cv::Point2f> tmvFeaturesUn;           //Features undistorted
 
     for (int i = 0; i < N; ++i)
     {
@@ -193,7 +194,13 @@ void Frame::UndistortFeatures()
     }
 
     //! the InputArray in undistortPoints should be 2 channels
-    cv::undistortPoints(tSrc, mvFeaturesUn, mCamera->mInstrinsicMat, mCamera->mDistortionMat, cv::noArray(), mCamera->mInstrinsicMat);
+    cv::undistortPoints(tSrc, tmvFeaturesUn, mCamera->mInstrinsicMat,
+                        mCamera->mDistortionMat, cv::noArray(), mCamera->mInstrinsicMat);
+
+    for (int j = 0; j < N; ++j)
+    {
+        mvFeatures[j].mUnpx = tmvFeaturesUn[j];
+    }
 }
 
 Eigen::Vector3d Frame::UnProject(const cv::Point2f tPixel, const float d)

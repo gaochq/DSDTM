@@ -105,8 +105,8 @@ public:
     cv::Mat                 mImgMask;
     cv::Mat                 mDynamicMask;
 
-    std::vector<MapPoint*>  mvMapPoints;
-    std::map<size_t, MapPoint*>  mpObservation;
+    std::vector<MapPoint*>                      mvMapPoints;
+    std::map<size_t, MapPoint*>                 mpObservation;
 
 
 protected:

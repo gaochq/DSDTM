@@ -23,7 +23,7 @@ public:
     Optimizer();
     ~Optimizer();
 
-    static void PoseOptimization(Frame &tCurFrame, int tIterations = 10);
+    static void PoseOptimization(Frame &tCurFrame, int tIterations = 100);
     static double *se3ToDouble(Eigen::Matrix<double, 6, 1> tso3);
     static std::vector<double> GetReprojectReidual(const ceres::Problem &problem);
 };
@@ -220,15 +220,15 @@ class PoseLocalParameterization : public ceres::LocalParameterization
 
     virtual bool Plus(const double *x, const double *delta, double *x_plus_delta) const
     {
-        Eigen::Map<const Eigen::Vector3d> trans(x + 3);
-        Sophus::SE3 se3_delta = Sophus::SE3::exp(Eigen::Map<const Eigen::Matrix<double, 6, 1>>(delta));
-        Sophus::SO3 so3_plus = se3_delta.so3()*Sophus::SO3(x[0], x[1], x[2]);
+        Eigen::Map<const Eigen::Vector3d> tTrans_in(x + 3);
+        Sophus::SE3 tSE3_delta = Sophus::SE3::exp(Eigen::Map<const Eigen::Matrix<double, 6, 1>>(delta));
+        Sophus::SO3 tSO3_out = tSE3_delta.so3()*Sophus::SO3(x[0], x[1], x[2]);
 
-        Eigen::Map<Eigen::Vector3d> angles_plus(x_plus_delta);
-        angles_plus = so3_plus.log();
+        Eigen::Map<Eigen::Vector3d> tAngleVec(x_plus_delta);
+        tAngleVec = tSO3_out.log();
 
-        Eigen::Map<Eigen::Vector3d> trans_plus(x_plus_delta + 3);
-        trans_plus = se3_delta.rotation_matrix() * trans + se3_delta.translation();
+        Eigen::Map<Eigen::Vector3d> tTrans_out(x_plus_delta + 3);
+        tTrans_out = tSE3_delta.rotation_matrix() * tTrans_in + tSE3_delta.translation();
 
 
         return true;

@@ -130,10 +130,10 @@ bool Initializer::Init_RGBDCam(Frame &frame)
                 tKFrame->mvFeatures[i].mlId = i;
 
 
-                float z = mReferFrame.Get_FeatureDetph(mReferFrame.mvFeaturesUn[i]);
+                float z = mReferFrame.Get_FeatureDetph(mReferFrame.mvFeatures[i].mUnpx);
                 if (z>0)
                 {
-                    Eigen::Vector3d tPose = mCam->Pixel2Camera(mReferFrame.mvFeaturesUn[i], z);
+                    Eigen::Vector3d tPose = mCam->Pixel2Camera(mReferFrame.mvFeatures[i].mUnpx, z);
                     MapPoint *tMPoint = new MapPoint(tPose, tKFrame);
 
                     tMPoint->Add_Observation(tKFrame, i);
@@ -141,7 +141,9 @@ bool Initializer::Init_RGBDCam(Frame &frame)
                     tKFrame->Add_Observations(i, tMPoint);
 
                     mReferFrame.Add_MapPoint(i, tMPoint);
-                    frame.Add_MapPoint(i, tMPoint);
+
+                    frame.mvFeatures[i].mf = tPose;
+
                     mMap->AddMapPoint(tMPoint);
                 }
 

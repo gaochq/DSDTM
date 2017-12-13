@@ -12,7 +12,11 @@
 #include <memory>
 #include "math.h"
 #include <fstream>
-#include<iterator>
+#include <iterator>
+#include <utility>
+
+
+#include "boost/bind.hpp"
 
 #include <Eigen/Core>
 #include <Eigen/Dense>

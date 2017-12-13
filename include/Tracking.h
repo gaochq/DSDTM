@@ -71,7 +71,7 @@ private:
                      std::vector<cv::Point2f> &_bad_Pts);
 
     //! Solve the pose of cunrrent with last keyframe
-    void TrackWithReferenceFrame();
+    void TrackWithLastFrame();
 
     //! Add new features into the frame refer to the detection Grid
     void AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv::Point2f> &tLast_Pts);

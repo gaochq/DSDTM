@@ -69,7 +69,7 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
 
         if(mState==OK)
         {
-            TrackWithReferenceFrame();
+            TrackWithLastFrame();
 
             if(NeedKeyframe())
                 CraeteKeyframe();
@@ -194,12 +194,37 @@ void Tracking::AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv
     mFeature_detector->detect(&mCurrentFrame, 10);
 }
 
-void Tracking::TrackWithReferenceFrame()
+void Tracking::TrackWithLastFrame()
 {
-    mCurrentFrame.Set_Pose(mLastFrame.Get_Pose());
-    mCurrentFrame.Add_Observations(*mpReferenceKF);
-
     mCurrentFrame.UndistortFeatures();
+
+    TicToc tc;
+    size_t N = mLastFrame.mvFeatures.size();
+    for (int i = 0; i < N; ++i)
+    {
+        Feature tFeature = mLastFrame.mvFeatures[i];
+        float z = mLastFrame.Get_FeatureDetph(tFeature.mUnpx);
+        if(z<0 || tFeature.mlId==-1)
+            continue;
+
+        auto it = std::find_if(mCurrentFrame.mvFeatures.begin(), mCurrentFrame.mvFeatures.end(),
+                               boost::bind(&Feature::mlId, _1) == tFeature.mlId);
+
+        std::vector<std::pair<Eigen::Vector3d, cv::Point2f>> test;
+        if(it != mCurrentFrame.mvFeatures.end())
+        {
+            Eigen::Vector3d tCamPoint = mCam->Pixel2Camera(tFeature.mUnpx, z);
+            it->mf = tCamPoint;
+            std::cout << it->mUnpx << std::endl;
+        }
+
+    }
+    std::vector<std::pair<char,char>> test;
+    test.push_back(std::make_pair<char, char>(2, 2));
+
+
+    std::cout<< tc.toc() << std::endl;
+
     Optimizer::PoseOptimization(mCurrentFrame);
     mCurrentFrame.Set_Pose(mpReferenceKF->Get_Pose()*mCurrentFrame.Get_Pose());
 }
@@ -231,22 +256,22 @@ void Tracking::CraeteKeyframe()
     KeyFrame *tKFrame = new KeyFrame(mCurrentFrame);
     mpReferenceKF = tKFrame;
 
-    size_t tFeature_Num = 0;
-    for(auto it = mCurrentFrame.mvFeatures.begin(); it!=mCurrentFrame.mvFeatures.end();it++, tFeature_Num++)
+    size_t tNum = 0;
+    for(auto it = mCurrentFrame.mvFeatures.begin(); it!=mCurrentFrame.mvFeatures.end();it++, tNum++)
     {
-        float z = mCurrentFrame.Get_FeatureDetph(mCurrentFrame.mvFeaturesUn[tFeature_Num]);
-        if (z<=0 && mCurrentFrame.Find_Observations(tFeature_Num))
+        float z = mCurrentFrame.Get_FeatureDetph(mCurrentFrame.mvFeatures[tNum].mUnpx);
+        if (z<=0 && mCurrentFrame.Find_Observations(tNum))
             continue;
 
-        Eigen::Vector3d tPose = mCurrentFrame.UnProject(mCurrentFrame.mvFeaturesUn[tFeature_Num], z);
+        Eigen::Vector3d tPose = mCurrentFrame.UnProject(mCurrentFrame.mvFeatures[tNum].mUnpx, z);
         MapPoint *tMPoint = new MapPoint(tPose, tKFrame);
 
-        tMPoint->Add_Observation(tKFrame, tFeature_Num);
+        tMPoint->Add_Observation(tKFrame, tNum);
 
-        mCurrentFrame.Add_MapPoint(tFeature_Num, tMPoint);
+        mCurrentFrame.Add_MapPoint(tNum, tMPoint);
 
         tKFrame->Add_MapPoint(tMPoint);
-        tKFrame->Add_Observations(tFeature_Num, tMPoint);
+        tKFrame->Add_Observations(tNum, tMPoint);
 
         mMap->AddMapPoint(tMPoint);
     }

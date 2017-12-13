@@ -36,19 +36,22 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
     size_t N = tObservations.size();
     double tPointsets[N][3];
     size_t tNum = 0;
-    for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter, ++tNum)
+    for (auto iter = tCurFrame.mvFeatures.begin(); iter!=tCurFrame.mvFeatures.end(); ++iter, ++tNum)
     {
-        Eigen::Vector3d tPoint(iter->second->Get_Pose());
-        int tIndex = iter->first;
-        Eigen::Vector2d tObserves(tCurFrame.mvFeatures[tIndex].mpx.x,
-                                  tCurFrame.mvFeatures[tIndex].mpx.y);
-        DLOG(INFO)<< "--" << tCurFrame.mvFeatures[tIndex].mlId << "--" << tObserves << "--" << iter->second <<"--" << tPoint;
+        Eigen::Vector3d tPoint(iter->mf);
+
+        if(tPoint.isZero(0))
+            continue;
+
+        Eigen::Vector2d tObserves(tCurFrame.mvFeatures[tNum].mUnpx.x,
+                                  tCurFrame.mvFeatures[tNum].mUnpx.y);
+        //DLOG(INFO)<< "--" << tCurFrame.mvFeatures[tNum].mlId << "--" << tObserves << "--" << tPoint <<"--" << tPoint;
 
         // only optimize camera pose
-        //PoseSolver_Problem* p = new PoseSolver_Problem(tPoint, tObserves, tIntrinsic);
-        //problem.AddResidualBlock(p, loss_function, mTransform);
+        PoseSolver_Problem* p = new PoseSolver_Problem(tPoint, tObserves, tIntrinsic);
+        problem.AddResidualBlock(p, loss_function, mTransform);
 
-
+        /*
         tPointsets[tNum][0] = tPoint(0);
         tPointsets[tNum][1] = tPoint(1);
         tPointsets[tNum][2] = tPoint(2);
@@ -56,9 +59,9 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
         problem.AddParameterBlock(tPointsets[tNum], 3);
         problem.SetParameterBlockConstant(tPointsets[tNum]);
 
-
         TwoViewBA_Problem* p = new TwoViewBA_Problem(tObserves, tIntrinsic);
         problem.AddResidualBlock(p, loss_function, mTransform, tPointsets[tNum]);
+         */
 
     }
 
@@ -93,6 +96,7 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
 
     DLOG(INFO)<< summary.FullReport() << std::endl;
     std::cout<< "Residual: "<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
+
     DLOG(INFO)<< "Residual Sum: "<<std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0);
 }
 
