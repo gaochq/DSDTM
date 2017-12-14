@@ -27,6 +27,9 @@ public:
     //! Return Observations
     std::map<long int, MapPoint*> Get_Observations() const { return mpObservation;};
 
+    //! Return MapPoints
+    std::vector<MapPoint*> GetMapPoints();
+
     //! Get and Set Keyframe pose
     Sophus::SE3 Get_Pose() { return mT_c2w; }
     void Set_Pose(Sophus::SE3 tPose) { mT_c2w = tPose; }

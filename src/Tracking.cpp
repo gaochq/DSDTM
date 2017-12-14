@@ -69,11 +69,19 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
 
         if(mState==OK)
         {
-            TrackWithLastFrame();
+            bool bOK;
 
-            if(NeedKeyframe())
-                CraeteKeyframe();
+            bOK = TrackWithLastFrame();
 
+            if(bOK)
+            {
+
+
+                if (NeedKeyframe())
+                    CraeteKeyframe();
+            }
+            else
+                DLOG(ERROR)<< "Tracking lost with last frame" << std::endl;
             mProcessedFrames++;
         }
 
@@ -194,11 +202,10 @@ void Tracking::AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv
     mFeature_detector->detect(&mCurrentFrame, 10);
 }
 
-void Tracking::TrackWithLastFrame()
+bool Tracking::TrackWithLastFrame()
 {
     mCurrentFrame.UndistortFeatures();
 
-    TicToc tc;
     size_t N = mLastFrame.mvFeatures.size();
     for (int i = 0; i < N; ++i)
     {
@@ -215,18 +222,81 @@ void Tracking::TrackWithLastFrame()
         {
             Eigen::Vector3d tCamPoint = mCam->Pixel2Camera(tFeature.mUnpx, z);
             it->mf = tCamPoint;
-            std::cout << it->mUnpx << std::endl;
         }
 
     }
-    std::vector<std::pair<char,char>> test;
-    test.push_back(std::make_pair<char, char>(2, 2));
-
-
-    std::cout<< tc.toc() << std::endl;
 
     Optimizer::PoseOptimization(mCurrentFrame);
     mCurrentFrame.Set_Pose(mpReferenceKF->Get_Pose()*mCurrentFrame.Get_Pose());
+
+    return true;
+}
+
+void Tracking::TrackWithLocalMap()
+{
+    UpdateLocalMap();
+
+
+
+}
+
+void Tracking::UpdateLocalMap()
+{
+    //! Update lcoal keyframes
+    std::list<std::pair<KeyFrame *, double> > tClose_kfs;
+    mMap->GetCLoseKeyFrames(&mCurrentFrame, tClose_kfs);
+
+    //! Sort kfs refer to the distance between current frame
+    tClose_kfs.sort(boost::bind(&std::pair<FramePtr, double>::second, _1) <
+                    boost::bind(&std::pair<FramePtr, double>::second, _1));
+
+    mvpLocalKeyFrames.reserve(10);
+
+    int tNum = 0;
+    for (auto iter = tClose_kfs.begin(); iter != tClose_kfs.end()&&tNum<10; iter++, tNum++)
+    {
+        KeyFrame *tKFrame = iter->first;
+        mvpLocalKeyFrames.push_back(tKFrame);
+    }
+
+    //! Update local mappoints
+    mvpLocalMapPoints.clear();
+    for (std::vector<KeyFrame*>::const_iterator itKF = mvpLocalKeyFrames.begin(); itKF != mvpLocalKeyFrames.end(); itKF++)
+    {
+        KeyFrame *tKFrame = *itKF;
+        const vector<MapPoint*> tMapPoints = tKFrame->GetMapPoints();
+
+        for (std::vector<MapPoint*>::const_iterator itMP = tMapPoints.begin(); itMP != tMapPoints.end(); itMP++)
+        {
+            MapPoint* tMP = *itMP;
+            if(tMP->Get_Pose().isZero(0))
+                continue;
+
+            if(tMP->mReferenceProjectedFrameId == mCurrentFrame.mlId)
+                continue;
+            tMP->mReferenceProjectedFrameId = mCurrentFrame.mlId;
+
+            if(mCurrentFrame.isVisible(tMP->Get_Pose()))
+                mvpLocalMapPoints.push_back(tMP);
+        }
+    }
+}
+
+void Tracking::SearchLocalPoints()
+{
+    //! Mark MapPoints alreadly have been added in current frame
+    for(std::vector<MapPoint*>::const_iterator itMP = mCurrentFrame.mvMapPoints.begin(); itMP != mCurrentFrame.mvMapPoints.end(); itMP++)
+    {
+        MapPoint *tMP = *itMP;
+        if(tMP->Get_Pose().isZero(0))
+            continue;
+
+        tMP->mLastSeenFrameId = mCurrentFrame.mlId;
+    }
+
+    //! Add MapPoints refer to local mappoints
+
+
 }
 
 bool Tracking::NeedKeyframe()

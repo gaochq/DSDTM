@@ -39,6 +39,8 @@ protected:
 public:
     unsigned long           mlID;
     static unsigned long    mlNextId;
+    unsigned long           mLastSeenFrameId;
+    unsigned long           mReferenceProjectedFrameId;
 
     bool                    mbOutlier;
 

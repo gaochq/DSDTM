@@ -24,7 +24,7 @@ public:
         start = std::chrono::system_clock::now();
     }
 
-    double toc()
+    double toc()        //ms
     {
         end = std::chrono::system_clock::now();
         std::chrono::duration<double> elapsed_seconds = end - start;

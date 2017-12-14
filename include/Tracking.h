@@ -71,7 +71,16 @@ private:
                      std::vector<cv::Point2f> &_bad_Pts);
 
     //! Solve the pose of cunrrent with last keyframe
-    void TrackWithLastFrame();
+    bool TrackWithLastFrame();
+
+    //! Track with lcoal map, and add more mappoint into current frame
+    void TrackWithLocalMap();
+
+    //! Updata local map keyframes, I choose the 10 most closer to current frame
+    void UpdateLocalMap();
+
+    //! Update MapPoint observed by Current Frame
+    void SearchLocalPoints();
 
     //! Add new features into the frame refer to the detection Grid
     void AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv::Point2f> &tLast_Pts);
@@ -113,7 +122,7 @@ protected:
 
     Map                     *mMap;
     std::vector<long int>   mvcStatus;          //! The features status when tracking between adjacent frames
-    std::vector<long int >  mvsTrack_cnt;
+    std::vector<long int>  mvsTrack_cnt;
 
     size_t                  mProcessedFrames;       //! the number of processed frames after last keyframe inseration
     double                  mdMinRotParallax;
@@ -122,6 +131,9 @@ protected:
 
     LocalMapping            *mLocalMapping;
     Moving_Detecter         *mMoving_detecter;
+
+    std::vector<KeyFrame*>  mvpLocalKeyFrames;
+    std::vector<MapPoint*>  mvpLocalMapPoints;
 
 };
 

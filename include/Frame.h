@@ -81,13 +81,14 @@ public:
     void Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt,
                   std::vector<cv::Point2f> tBadPts);
 
+    //! Check if this point is visible in current frame
+    bool isVisible(const Eigen::Vector3d tPose) const;
+
     //! Reset the probability of rarsac grid
     void Reset_Gridproba();
 
 
 public:
-    typedef std::shared_ptr<Frame> FramePtr;
-
     Features                    mvFeatures;
     std::vector<cv::Point2f>    mvFeaturesUn;           //Features undistorted
 
@@ -120,6 +121,8 @@ protected:
     double                  mMeanDepth;
 
 };
+
+typedef std::shared_ptr<Frame> FramePtr;
 }// namespace DSDTM
 
 

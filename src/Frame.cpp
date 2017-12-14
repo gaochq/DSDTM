@@ -139,6 +139,11 @@ void Frame::Add_Observations(const KeyFrame &tKframe)
     }
 }
 
+std::vector<MapPoint*> KeyFrame::GetMapPoints()
+{
+    return mvMapPoints;
+}
+
 void Frame::Add_Feature(Feature tfeature)
 {
     mvFeatures.push_back(tfeature);
@@ -239,6 +244,19 @@ void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackC
         cv::circle(mImgMask, tBadPts[k], mMin_Dist, 0, -1);
     }
     mvFeatures.resize(j);
+}
+
+bool Frame::isVisible(const Eigen::Vector3d tPose) const
+{
+    Eigen::Vector3d tPoseCam = mT_c2w*tPose;
+    if(tPoseCam(3) < 0.0)
+        return false;
+
+    Eigen::Vector2d px = mCamera->Camera2Pixel(tPoseCam);
+    if(mCamera->IsInImage(cv::Point2f(px(0), px(1))))
+        return true;
+
+    return false;
 }
 
 void Frame::Reset_Gridproba()
