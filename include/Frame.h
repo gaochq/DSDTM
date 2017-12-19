@@ -46,8 +46,11 @@ public:
     const int Get_FeatureSize(){ return mvFeatures.size(); }
 
     //! Set and get frame pose
-    void Set_Pose(Sophus::SE3 _pose) { mT_c2w = _pose;}
-    Sophus::SE3 Get_Pose() { return  mT_c2w;}
+    void Set_Pose(Sophus::SE3 _pose);
+    Sophus::SE3 Get_Pose() const { return  mT_c2w; }
+
+    //! Get Camera center in world coordinate system
+    Eigen::Vector3d Get_CameraCnt() const { return mOw; }
 
     //! Get the feature depth from depth image
     float Get_FeatureDetph(const Feature feature);
@@ -82,10 +85,13 @@ public:
                   std::vector<cv::Point2f> tBadPts);
 
     //! Check if this point is visible in current frame
-    bool isVisible(const Eigen::Vector3d tPose) const;
+    bool isVisible(const Eigen::Vector3d tPose, int tBoundary = 0) const;
 
     //! Reset the probability of rarsac grid
     void Reset_Gridproba();
+
+    //! World to camera
+    Eigen::Vector2d World2Pixel(const Eigen::Vector3d &Point);
 
 
 public:
@@ -116,6 +122,8 @@ protected:
     int                     mMin_Dist;
 
     Sophus::SE3             mT_c2w;                 // pose from world to camera
+    Sophus::SO3             mR_w2c;
+    Eigen::Vector3d         mOw;
 
     double                  mMinDepth;
     double                  mMeanDepth;

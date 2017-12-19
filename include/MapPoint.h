@@ -32,7 +32,13 @@ public:
 
     //! Set mappoint bad
     void SetBadFlag();
+    bool IsBad() const;
 
+    //! Get observe times
+    int Get_ObserveNums() const;
+
+    //! Get the closest keyframe between cunrrent frame refer this MapPoint
+    bool Get_ClosetObs(const Frame &tFrame, Feature &tFeature, KeyFrame *tKframe);
 
 protected:
 
@@ -52,7 +58,7 @@ protected:
     unsigned long           mFirstFrame;
 
     //! Observation
-    size_t                  mObserveNum;
+    size_t                  mObsNum;
     std::map<KeyFrame*, size_t>         mObservations;
 
 };

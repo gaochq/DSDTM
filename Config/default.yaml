@@ -54,6 +54,8 @@ Camera.CellSize: 30
 Camera.Max_fts: 200
 Camera.Min_dist: 30
 
+Camera.Half_PatchSize: 4
+
 
 #Rarsac algorithm
 Rarsac.Sampson_Dist_threshold: 1.25

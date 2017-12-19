@@ -31,7 +31,7 @@ public:
     void AddMapPoint(MapPoint *_point);
 
     //! Get frames have an overlapping field of current view
-    void GetCLoseKeyFrames(const FramePtr& tFrame, std::list<std::pair<KeyFrame*, double> >& tClose_kfs) const;
+    void GetCLoseKeyFrames(const Frame tFrame, std::list<std::pair<KeyFrame*, double> >& tClose_kfs) const;
 
     KeyFrame *Get_InitialKFrame();
 

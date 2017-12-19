@@ -38,12 +38,49 @@ void MapPoint::Add_Observation(KeyFrame *tKFrame, size_t tFID)
     else
         mObservations[tKFrame] = tFID;
 
-    mObserveNum++;
+    mObsNum++;
 }
 
 void MapPoint::SetBadFlag()
 {
     mbOutlier = true;
+}
+
+bool MapPoint::IsBad() const
+{
+    return mbOutlier;
+}
+
+int MapPoint::Get_ObserveNums() const
+{
+    return mObsNum;
+}
+
+bool MapPoint::Get_ClosetObs(const Frame &tFrame, Feature &tFeature, KeyFrame *tKframe)
+{
+    Eigen::Vector3d tPt_frame = mPose - tFrame.Get_CameraCnt();
+    tPt_frame.normalize();
+
+    double tMin_angle = 0;
+    for (auto iter = mObservations.begin(); iter != mObservations.end(); iter++)
+    {
+        Eigen::Vector3d tPt_refer = mPose - iter->first->Get_CameraCnt();
+        tPt_refer.normalize();
+
+        double tCos_angle = tPt_refer.dot(tPt_frame);
+        if(tCos_angle > tMin_angle)
+        {
+            tMin_angle = tCos_angle;
+            tFeature = iter->first->mvFeatures[iter->second];
+
+            tKframe = iter->first;
+        }
+    }
+
+    if(tMin_angle < 0.5)
+        return false;
+
+    return true;
 }
 
 

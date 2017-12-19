@@ -82,12 +82,13 @@ public:
 
     //! Pixel to Camera
     Eigen::Vector3d Pixel2Camera(const cv::Point2f &point, const float &depth);
+    Eigen::Vector3d Pixel2Camera(const Eigen::Vector2d &point, const float &depth);
 
     //! Initalize the camera parameters
     void Init_CamParam(const std::string &Paramfile);
 
     //! whether is the point in image
-    bool IsInImage(cv::Point2f _point);
+    bool IsInImage(const cv::Point2f _point, int tBoundary = 1, int tLevel = 0) const;
 
     //! Draw features in image
     void Draw_Features(cv::Mat &_image, const Features _features, cv::Scalar _color);
@@ -148,6 +149,17 @@ public:
     std::vector<Eigen::Vector2d> mvGridBinPose;
 
 };
+
+//! Used for unaryExpr(), which can save a lot time than that in "for loop"
+static int Eigenceil(double x)
+{
+    return ceil(x);
+}
+
+static int Eigenfloor(double x)
+{
+    return floor(x);
+}
 
 }//namespace DSDTM
 

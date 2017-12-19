@@ -33,7 +33,7 @@ namespace DSDTM
         return *msKeyFrames.begin();
     }
 
-    void Map::GetCLoseKeyFrames(const FramePtr &tFrame, std::list<std::pair<KeyFrame *, double> > &tClose_kfs) const
+    void Map::GetCLoseKeyFrames(const Frame tFrame, std::list<std::pair<KeyFrame *, double> > &tClose_kfs) const
     {
         for (auto kf : msKeyFrames)
         {
@@ -42,8 +42,8 @@ namespace DSDTM
                 if(keypoint->Get_Pose().isZero(0))
                     continue;
 
-                if(tFrame->isVisible(keypoint->Get_Pose()))
-                    tClose_kfs.push_back(std::make_pair(kf, (tFrame->Get_Pose().translation() -
+                if(tFrame.isVisible(keypoint->Get_Pose()))
+                    tClose_kfs.push_back(std::make_pair(kf, (tFrame.Get_Pose().translation()-
                                                              kf->Get_Pose().translation()).norm()));
 
                 break;

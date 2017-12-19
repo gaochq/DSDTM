@@ -31,8 +31,11 @@ public:
     std::vector<MapPoint*> GetMapPoints();
 
     //! Get and Set Keyframe pose
-    Sophus::SE3 Get_Pose() { return mT_c2w; }
-    void Set_Pose(Sophus::SE3 tPose) { mT_c2w = tPose; }
+    Sophus::SE3 Get_Pose() const { return mT_c2w; }
+    void Set_Pose(Sophus::SE3 tPose);
+
+    //! Get camera center in world coordinate system
+    Eigen::Vector3d Get_CameraCnt() const { return mOw; }
 
 
 public:
@@ -45,11 +48,13 @@ public:
     std::map<long int, MapPoint*>   mpObservation;     //Feaure_id ---> Mappoint
     std::map<long int, size_t>      mpFFObservation;   //Feature_id ---> feature order in mvFeatures
 
-protected:
     Frame                   *mFrame;
+protected:
+
 
     Sophus::SE3             mT_c2w;
-
+    Sophus::SO3             mR_w2c;
+    Eigen::Vector3d         mOw;
 };
 
 } //DSDTM

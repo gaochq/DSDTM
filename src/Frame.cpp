@@ -107,6 +107,15 @@ void Frame::SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<l
     }
 }
 
+void Frame::Set_Pose(Sophus::SE3 _pose)
+{
+    mT_c2w = _pose;
+
+    Sophus::SE3 tT_w2c = mT_c2w.inverse();
+    mR_w2c = tT_w2c.so3();
+    mOw = tT_w2c.translation();
+}
+
 float Frame::Get_FeatureDetph(const Feature feature)
 {
     float p = mDepthImg.at<float>(feature.mpx.y, feature.mpx.x);
@@ -137,11 +146,6 @@ void Frame::Add_Observations(const KeyFrame &tKframe)
         if(it != tObservations.end())
             Add_MapPoint(i, it->second);
     }
-}
-
-std::vector<MapPoint*> KeyFrame::GetMapPoints()
-{
-    return mvMapPoints;
 }
 
 void Frame::Add_Feature(Feature tfeature)
@@ -246,14 +250,14 @@ void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackC
     mvFeatures.resize(j);
 }
 
-bool Frame::isVisible(const Eigen::Vector3d tPose) const
+bool Frame::isVisible(const Eigen::Vector3d tPose, int tBoundary) const
 {
     Eigen::Vector3d tPoseCam = mT_c2w*tPose;
     if(tPoseCam(3) < 0.0)
         return false;
 
     Eigen::Vector2d px = mCamera->Camera2Pixel(tPoseCam);
-    if(mCamera->IsInImage(cv::Point2f(px(0), px(1))))
+    if(mCamera->IsInImage(cv::Point2f(px(0), px(1)), tBoundary))
         return true;
 
     return false;
@@ -262,6 +266,13 @@ bool Frame::isVisible(const Eigen::Vector3d tPose) const
 void Frame::Reset_Gridproba()
 {
     mvGrid_probability.resize(100, 0.5);
+}
+
+Eigen::Vector2d Frame::World2Pixel(const Eigen::Vector3d &Point)
+{
+    Eigen::Vector3d tPoint = mT_c2w*Point;
+
+    return mCamera->Camera2Pixel(tPoint);
 }
 
 }

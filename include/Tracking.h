@@ -13,6 +13,7 @@
 #include "Optimizer.h"
 #include "LocalMapping.h"
 #include "Moving_Detection.h"
+#include "Feature_alignment.h"
 
 namespace DSDTM
 {
@@ -122,7 +123,7 @@ protected:
 
     Map                     *mMap;
     std::vector<long int>   mvcStatus;          //! The features status when tracking between adjacent frames
-    std::vector<long int>  mvsTrack_cnt;
+    std::vector<long int>   mvsTrack_cnt;
 
     size_t                  mProcessedFrames;       //! the number of processed frames after last keyframe inseration
     double                  mdMinRotParallax;
@@ -131,6 +132,7 @@ protected:
 
     LocalMapping            *mLocalMapping;
     Moving_Detecter         *mMoving_detecter;
+    Feature_Alignment       *mFeature_Alignment;
 
     std::vector<KeyFrame*>  mvpLocalKeyFrames;
     std::vector<MapPoint*>  mvpLocalMapPoints;

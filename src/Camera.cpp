@@ -171,9 +171,17 @@ namespace DSDTM
                                 depth);
     }
 
-    bool Camera::IsInImage(cv::Point2f _point)
+    Eigen::Vector3d Camera::Pixel2Camera(const Eigen::Vector2d &point, const float &depth)
     {
-        if (cvRound(_point.x) >=1 && cvRound(_point.x)<mwidth-1 && cvRound(_point.y)>=1 && cvRound(_point.y)< mheight-1)
+        return Eigen::Vector3d( depth*(point(0) - mcx)/mfx,
+                                depth*(point(1) - mcy)/mfy,
+                                depth);
+    }
+
+    bool Camera::IsInImage(const cv::Point2f _point, int tBoundary, int tLevel) const
+    {
+        if (cvRound(_point.x) >=tBoundary && cvRound(_point.x) < mwidth/(1<<tLevel) - tBoundary
+            && cvRound(_point.y)>=tBoundary && cvRound(_point.y)< mheight/(1<<tLevel) - tBoundary)
             return true;
         return false;
     }

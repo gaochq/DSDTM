@@ -5,6 +5,11 @@
 #include "Camera.h"
 
 
+double Eigenceil(double x)
+{
+    return ceil(x);
+}
+
 int main(int argc, char **argv)
 {
     //google::InitGoogleLogging(argv[0]);
@@ -15,12 +20,68 @@ int main(int argc, char **argv)
     //FLAGS_stderrthreshold = 0;
     FLAGS_log_dir = "./log";
 
+    Eigen::Vector2d tTestCeil(1.1, 1.6);
+    Eigen::Vector2d tTestFinal = tTestCeil.unaryExpr(std::ptr_fun(Eigenceil));
+
+    double aa = ceil(tTestCeil(0));
+    double bb = ceil(tTestCeil(1));
+
+    /*
+    Eigen::MatrixXd tMatTest(10000, 10000);
+    for (int k = 0; k < 10000; ++k)
+    {
+        for (int i = 0; i < 10000; ++i)
+        {
+            tMatTest(k,i) = 1.0*k + 0.22;
+        }
+    }
+    std::cout << tMatTest(999,100) << std::endl;
+
+    DSDTM::TicToc tc;
+    for (int k = 0; k < 10000; ++k)
+    {
+        for (int i = 0; i < 10000; ++i)
+        {
+            tMatTest(k,i) = ceil(tMatTest(k,i));
+        }
+    }
+    std::cout << tc.toc() << std::endl;
+    std::cout << tMatTest(999,100) << std::endl;
+
+    for (int k = 0; k < 10000; ++k)
+    {
+        for (int i = 0; i < 10000; ++i)
+        {
+            tMatTest(k,i) = 1.0*k + 0.22;
+        }
+    }
+    std::cout << tMatTest(999,100) << std::endl;
+
+    //Eigen::MatrixXd tMatTestCeil(10000, 10000);
+    DSDTM::TicToc tcc;
+    Eigen::MatrixXd tMatTestCeil = tMatTest.unaryExpr(std::ptr_fun(Eigenceil));
+    std::cout << tcc.toc() << std::endl;
+    std::cout << tMatTestCeil(999,100) << std::endl;
+    */
+
+    Eigen::MatrixXf tWrapMat(2, 100);
+    Eigen::MatrixXf tColBlock(1, 10);
+    tColBlock << -5, -4, -3, -2, -1, 0, 1, 2, 3, 4;
+    tWrapMat = Eigen::MatrixXf::Zero(2, 100);
+    int tindex = 1;
+    for (int i = -5; i < 5; ++i, ++tindex)
+    {
+        tWrapMat.block(0, (tindex-1)*10, 1, 10) = tColBlock;
+        tWrapMat.block(1, (tindex-1)*10, 1, 10) = Eigen::MatrixXf::Ones(1, 10)*i;
+    }
+    std::cout << tWrapMat << std::endl;
+
     std::vector<int> a;
     for (int i = 0; i < 10; ++i)
     {
         a.push_back(i);
     }
-    a.assign(10,0);
+    a.assign(10, 0);
     a.resize(10, 0);
 
     int b = a[a.size()-1];

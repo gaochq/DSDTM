@@ -25,7 +25,10 @@ Tracking::Tracking(Camera *_cam, Map *_map, LocalMapping *tLocalMapping):
     mMinFeatures = Config::Get<int>("KeyFrame.min_features");
 
     mFeature_detector = new Feature_detector();
+
     mMoving_detecter = new Moving_Detecter();
+
+    mFeature_Alignment = new Feature_Alignment(mCam);
 }
 
 Tracking::~Tracking()
@@ -244,11 +247,11 @@ void Tracking::UpdateLocalMap()
 {
     //! Update lcoal keyframes
     std::list<std::pair<KeyFrame *, double> > tClose_kfs;
-    mMap->GetCLoseKeyFrames(&mCurrentFrame, tClose_kfs);
+    mMap->GetCLoseKeyFrames(mCurrentFrame, tClose_kfs);
 
     //! Sort kfs refer to the distance between current frame
-    tClose_kfs.sort(boost::bind(&std::pair<FramePtr, double>::second, _1) <
-                    boost::bind(&std::pair<FramePtr, double>::second, _1));
+    tClose_kfs.sort(boost::bind(&std::pair<KeyFrame*, double>::second, _1) <
+                    boost::bind(&std::pair<KeyFrame*, double>::second, _2));
 
     mvpLocalKeyFrames.reserve(10);
 
@@ -268,16 +271,16 @@ void Tracking::UpdateLocalMap()
 
         for (std::vector<MapPoint*>::const_iterator itMP = tMapPoints.begin(); itMP != tMapPoints.end(); itMP++)
         {
-            MapPoint* tMP = *itMP;
-            if(tMP->Get_Pose().isZero(0))
+            MapPoint* tMPoint = *itMP;
+            if(tMPoint->Get_Pose().isZero(0))
                 continue;
 
-            if(tMP->mReferenceProjectedFrameId == mCurrentFrame.mlId)
+            if(tMPoint->mReferenceProjectedFrameId == mCurrentFrame.mlId)
                 continue;
-            tMP->mReferenceProjectedFrameId = mCurrentFrame.mlId;
+            tMPoint->mReferenceProjectedFrameId = mCurrentFrame.mlId;
 
-            if(mCurrentFrame.isVisible(tMP->Get_Pose()))
-                mvpLocalMapPoints.push_back(tMP);
+            if(mFeature_Alignment->ReprojectPoint(mCurrentFrame, tMPoint))
+                mvpLocalMapPoints.push_back(tMPoint);
         }
     }
 }

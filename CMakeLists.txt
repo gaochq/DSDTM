@@ -51,7 +51,8 @@ add_library(${PROJECT_NAME} SHARED
 	src/Keyframe.cpp
 	src/Optimizer.cpp
 	src/LocalMapping.cpp
-	src/Moving_Detection.cpp)
+	src/Moving_Detection.cpp
+	src/Feature_alignment.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
