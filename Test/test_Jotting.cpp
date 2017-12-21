@@ -76,6 +76,15 @@ int main(int argc, char **argv)
     }
     std::cout << tWrapMat << std::endl;
 
+    double tPt3[3];
+    Eigen::Map<Eigen::Vector3d> tPtv3(tPt3);
+    tPtv3 << 1, 2, 3;
+    for (int k = 0; k < 3; ++k)
+    {
+        std::cout<< tPt3[k] << std::endl;
+    }
+
+
     std::vector<int> a;
     for (int i = 0; i < 10; ++i)
     {

@@ -92,6 +92,7 @@ bool Feature_Alignment::ReprojectCell(Frame tFrame, Cell *tCell)
         if(iter->mMpPoint->IsBad())
             continue;
 
+        FindMatchDirect(iter->mMpPoint, tFrame, iter->mPx);
 
     }
 }
@@ -103,6 +104,8 @@ bool Feature_Alignment::CellComparator(Candidate &c1, Candidate &c2)
 
 bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const Frame tFrame, Eigen::Vector2d &tPt)
 {
+    bool success = false;
+
     Feature tReferFeature;
     KeyFrame *tRefKeyframe;
     if(!(tMpPoint->Get_ClosetObs(tFrame, tReferFeature, tRefKeyframe)))
@@ -117,6 +120,16 @@ bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const Frame tFrame, 
     int tBestLevel = GetBestSearchLevel(tA_c2r, mPyr_levels);
 
     WarpAffine(tA_c2r, tRefKeyframe->mFrame->mvImg_Pyr[tReferFeature.mlevel], tReferFeature, tBestLevel, mPatch_WithBoarder);
+
+    GetPatchNoBoarder();
+
+    Eigen::Vector2d tCurPx = tPt/(1<<tBestLevel);
+
+    success = Align2D(tFrame.mColorImg, mPatch_WithBoarder, mPatch, 10, tCurPx);
+
+    tCurPx = tCurPx*(1<<tBestLevel);
+
+    return success;
 }
 
 Eigen::Matrix2d Feature_Alignment::SolveAffineMatrix(KeyFrame *tReferKframe, const Frame &tCurFrame, Feature tReferFeature,
@@ -165,12 +178,11 @@ void Feature_Alignment::WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &
 {
     int const tReferPh_Size = mHalf_PatchSize+2;
     Eigen::Matrix2f tA_r2c = tA_r2c.inverse().cast<float>();
-    //Eigen::Map<Eigen::Matrix<double, 2*tReferPh_Size, 2*tReferPh_Size, Eigen::RowMajor> > tCurPatch_Mat(tPatchLarger);
 
     uchar *tRefPatch = tPatchLarger;
     Eigen::Vector2f tRefPx;
     tRefPx << tRefFeature.mpx.x/(1<<tRefFeature.mlevel),
-            tRefFeature.mpx.y/(1<<tRefFeature.mlevel);
+              tRefFeature.mpx.y/(1<<tRefFeature.mlevel);
 
     //! generate the reference board patch
     Eigen::MatrixXf tWrapMat(2, 100);
@@ -187,6 +199,7 @@ void Feature_Alignment::WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &
     tWrapMat = tA_r2c*tWrapMat*(1/(1<<tSearchLevel));
     tWrapMat = tWrapMat.colwise() + tRefPx;
 
+    //! Bilinear interpolation
     Eigen::MatrixXi tWrapMatFloor = tWrapMat.unaryExpr(std::ptr_fun(Eigenfloor));
     Eigen::MatrixXf tWrapMatSubpix = tWrapMat - tWrapMatFloor.cast<float>();
 
@@ -201,7 +214,7 @@ void Feature_Alignment::WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &
     const int tStep = tImg_ref.step.p[0];
     for (int j = 0; j < 100; ++j, tRefPatch++)
     {
-        if(tWrapMat(0, j) < 0 || tWrapMat(1, j) < 0 || tWrapMat(0, j) > tImg_ref.cols-1 || tWrapMat(0, j) > tImg_ref.rows-1)
+        if(tWrapMat(0, j) < 0 || tWrapMat(1, j) < 0 || tWrapMat(0, j) > tImg_ref.cols - 1 || tWrapMat(1, j) > tImg_ref.rows - 1)
             *tRefPatch = 0;
         else
         {
@@ -210,6 +223,143 @@ void Feature_Alignment::WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &
                          tCofficientW10(j)*tPtr[1] + tCofficientW11(j)*tPtr[tStep+1];
         }
     }
+}
+
+void Feature_Alignment::GetPatchNoBoarder()
+{
+    uchar *RefPatch = mPatch;
+
+    int tBoardPatchSize = 2*mHalf_PatchSize +2;
+    for (int i = 1; i < tBoardPatchSize-1; ++i, RefPatch +=mHalf_PatchSize)
+    {
+        uchar *tRowPtr = mPatch_WithBoarder + i*tBoardPatchSize + 1;
+        for (int j = 0; j < 2*mHalf_PatchSize; ++j)
+        {
+            RefPatch[j] = tRowPtr[j];
+        }
+    }
+}
+
+bool Feature_Alignment::Align2D(const cv::Mat &tCurImg, uchar *tPatch_WithBoarder, uchar *tPatch,  int MaxIters, Eigen::Vector2d &tCurPx)
+{
+    const int tPatchSize = 2*mHalf_PatchSize;
+    const int tLPatchSize = tPatchSize + 2;
+
+    // TODO using ceres
+    //! Ceres maybe more ineffecitive, for calculating "Bilinear interpolation" each problem and calculating "Hessian Matrix" each iterate
+    /*
+    ceres::Problem problem;
+    double tCurPxArray[3];
+    tCurPxArray[0] = tCurPx(0);
+    tCurPxArray[1] = tCurPx(1);
+    tCurPxArray[2] = 0;
+    problem.AddParameterBlock(tCurPxArray, 3);*/
+
+    //! Calculate the jacobian vector(patch gradient)
+
+    //! This method cost more time on boarder patch
+    /*
+    float k1[] = {-1, 0, 1};
+    float k2[3][1] = {-1, 0, 1};
+    cv::Mat Kcore1(1, 3, CV_32FC1, k1);
+    cv::Mat Kcore2(3, 1, CV_32FC1, k2);
+    cv::Mat tPatchWithBoard(10, 10, CV_32FC1, mPatch_WithBoarder);
+
+    cv::Mat tRefBdx, tRefBdy;
+    cv::filter2D(tPatchWithBoard, tRefBdx, -1, Kcore1);
+    cv::filter2D(tPatchWithBoard, tRefBdy, -1, Kcore2);
+    cv::Rect tRoi(1, 1, tPatchSize, tPatchSize);
+    cv::Mat tRefdx = tRefBdx(tRoi);
+    cv::Mat tRefdy = tRefBdy(tRoi);
+    */
+
+    Eigen::Matrix3f H, Hinv;
+    H.setZero();
+    float tRefdx[tPatchSize*tPatchSize], tRefdy[tPatchSize*tPatchSize];
+    float *itdx = tRefdx;
+    float *itdy = tRefdy;
+
+    for (int l = 0; l < tPatchSize; ++l)
+    {
+        uchar *it = tPatch_WithBoarder + (l+1)*tLPatchSize + 1;
+        for (int i = 0; i < tPatchSize; ++i, ++it, ++itdx, ++itdy)
+        {
+            Eigen::Vector3f J;
+            J(0) = 0.5*(it[1] - it[-1]);
+            J(1) = 0.5*(it[tLPatchSize] - it[-tLPatchSize]);
+            J(2) = 1;
+            *itdx = J(0);
+            *itdy = J(1);
+            H += J*J.transpose();
+        }
+    }
+
+    Hinv = H.inverse();
+    float mean_diff = 0;
+
+
+    float u = tCurPx(0);
+    float v = tCurPx(1);
+
+    const float min_update_squared = 0.03*0.03;
+    const int tCurImg_step = tCurImg.step.p[0];
+
+    Eigen::Vector3f tUpdate;
+    tUpdate.setZero();
+
+    bool tConverged = false;
+    for (int i = 0; i < MaxIters; ++i)
+    {
+        uchar *it_ref = tPatch;
+        itdx = tRefdx;
+        itdy = tRefdy;
+
+        int u_r = floor(u);
+        int v_r = floor(v);
+        if(u_r < mHalf_PatchSize || v_r < mHalf_PatchSize || u_r > tCurImg.cols - mHalf_PatchSize ||
+           v_r > tCurImg.rows - mHalf_PatchSize || isnan(u) || isnan(v))
+            break;
+
+        float subpix_x = u - u_r;
+        float subpix_y = v - v_r;
+        float wTL = (1.0 - subpix_x)*(1.0 - subpix_y);
+        float wTR = subpix_x*(1 - subpix_y);
+        float wBL = (1.0 - subpix_x)*subpix_y;
+        float wBR = subpix_x*subpix_y;
+
+        Eigen::Vector3f Jres;
+        Jres.setZero();
+
+        for (int j = 0; j < tPatchSize; ++j)
+        {
+            uchar *it = (uchar *)tCurImg.data + (v_r + j - mHalf_PatchSize)*tCurImg_step + u_r - mHalf_PatchSize;
+            for (int k = 0; k < tPatchSize; ++k, ++it , ++it_ref, ++itdx, ++itdy)
+            {
+                float tSearchPx = wTL*it[0] + wTR*it[1] + wBL*it[tCurImg_step] + wBR*it[tCurImg_step+1];
+                float tRes = tSearchPx - *it_ref + mean_diff;
+                Jres[0] -= tRes*(*itdx);
+                Jres[1] -= tRes*(*itdy);
+                Jres[2] -= tRes;
+
+                std::cout << (float)(*itdy) << std::endl;
+            }
+        }
+
+        tUpdate = Hinv*Jres;
+        u += tUpdate(0);
+        v += tUpdate(1);
+        mean_diff +=tUpdate(2);
+
+        if(tUpdate(0)*tUpdate(0) + tUpdate(1)*tUpdate(1) < min_update_squared)
+        {
+            tConverged = true;
+            break;
+        }
+    }
+
+    tCurPx << u, v;
+    return tConverged;
+
 }
 
 

@@ -6,7 +6,8 @@
 #define DSDTM_FEATURE_ALIGNMENT_H
 
 #include "Camera.h"
-
+#include "ceres/ceres.h"
+#include "ceres/rotation.h"
 
 
 namespace DSDTM
@@ -75,6 +76,12 @@ public:
     //! Affine transformation to get the reference patch
     void WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &tImg_ref, Feature tRefFeature, const int tSearchLevel, uchar *tPatchLarger);
 
+    //! Get the final patch form patch with boarder
+    void GetPatchNoBoarder();
+
+    //! Use inverse compositional align method
+    static bool Align2D(const cv::Mat &tCurImg, uchar *tPatch_WithBoarder, uchar *tPatch,  int MaxIters, Eigen::Vector2d &tCurPx);
+
 
 private:
 
@@ -90,6 +97,50 @@ private:
 
 };
 
+/*
+class FeatureAlign2D:public ceres::SizedCostFunction<1, 3>
+{
+
+public:
+    FeatureAlign2D(const int index, const uchar *tRefPatch, const uchar *tRefdx, const uchar *tRefdy, const cv::Mat tCurImg):
+         tIndex(index), itRef(tRefPatch), itRefdx(tRefdx), itRefdy(tRefdy), mCurImg(tCurImg)
+    {}
+
+    virtual bool Evaluate(double const* const* parameters, double *residuals, double **jacobians) const
+    {
+        int y = tIndex/8;
+        int x = tIndex%8;
+
+        double u = parameters[0][0];
+        double v = parameters[0][1];
+        double mean_diff = parameters[0][2];
+
+        int u_r = floor(u);
+        int v_r = floor(v);
+        if(u_r < mHalf_PatchSize || v_r < mHalf_PatchSize || u_r > mCurImg.cols - mHalf_PatchSize ||
+           v_r > mCurImg.rows - mHalf_PatchSize || isnan(u) || isnan(v))
+            return false;
+
+        float subpix_x = u - u_r;
+        float subpix_y = v - v_r;
+        float wTL = (1.0 - subpix_x)*(1.0 - subpix_y);
+        float wTR = subpix_x*(1 - subpix_y);
+        float wBL = (1.0 - subpix_x)*subpix_y;
+        float wBR = subpix_x*subpix_y;
+
+
+    }
+
+protected:
+    int tIndex;
+
+    uchar *itRef;
+    uchar *itRefdx;
+    uchar *itRefdy;
+    cv::Mat mCurImg;
+
+};
+*/
 
 }// namespace DSDTM
 
