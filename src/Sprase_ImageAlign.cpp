@@ -47,7 +47,7 @@ int Sprase_ImgAlign::Run(FramePtr tCurFrame, FramePtr tRefFrame)
         GetJocabianMat(i);
         TicToc tc;
         DirectSolver(mT_c2r, i);
-        std::cout <<"Cost "<< tc.toc()<< " ms" << std::endl;
+        std::cout <<"Cost "<< tc.toc() << " ms" << std::endl;
         Reset();
     }
 
@@ -184,12 +184,15 @@ void Sprase_ImgAlign::DirectSolver(Sophus::SE3 &tT_c2r, int tLevel)
     }
 
     ceres::Solver::Options options;
-    //options.linear_solver_type = ceres::DENSE_SCHUR;
+    options.trust_region_strategy_type = ceres::DOGLEG;
+    options.linear_solver_type = ceres::DENSE_QR;
     //options.minimizer_progress_to_stdout = true;
     options.max_num_iterations = 5;
 
     ceres::Solver::Summary summary;
+    //TicToc tc;
     ceres::Solve(options, &problem, &summary);
+    //std::cout << tc.toc() << std::endl;
     //std::cout << summary.FullReport() << std::endl;
 
     Sophus::SE3 mT_c2r(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>());

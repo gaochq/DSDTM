@@ -256,17 +256,6 @@ bool Feature_Alignment::Align2D(const cv::Mat &tCurImg, uchar *tPatch_WithBoarde
     const int tPatchSize = 2*mHalf_PatchSize;
     const int tLPatchSize = tPatchSize + 2;
 
-    // TODO using ceres
-    //! Ceres maybe more ineffecitive, for calculating "Bilinear interpolation" each problem and calculating "Hessian Matrix" each iterate
-    /*
-    ceres::Problem problem;
-    double tCurPxArray[3];
-    tCurPxArray[0] = tCurPx(0);
-    tCurPxArray[1] = tCurPx(1);
-    tCurPxArray[2] = 0;
-    problem.AddParameterBlock(tCurPxArray, 3);*/
-
-    //! Calculate the jacobian vector(patch gradient)
 
     //! This method cost more time on boarder patch
     /*
@@ -284,93 +273,38 @@ bool Feature_Alignment::Align2D(const cv::Mat &tCurImg, uchar *tPatch_WithBoarde
     cv::Mat tRefdy = tRefBdy(tRoi);
     */
 
-    Eigen::Matrix3f H, Hinv;
-    H.setZero();
-    float tRefdx[tPatchSize*tPatchSize], tRefdy[tPatchSize*tPatchSize];
-    float *itdx = tRefdx;
-    float *itdy = tRefdy;
-
-    for (int l = 0; l < tPatchSize; ++l)
+    Eigen::Matrix<double, tPatchSize*tPatchSize, 3, Eigen::RowMajor> tJacobians;
+    int tNum = 0;
+    for (int i = 0; i < tPatchSize; ++i)
     {
-        uchar *it = tPatch_WithBoarder + (l+1)*tLPatchSize + 1;
-        for (int i = 0; i < tPatchSize; ++i, ++it, ++itdx, ++itdy)
+        uchar* it = (uchar*) tPatch_WithBoarder + (i+1)*tLPatchSize + 1;
+        for (int j = 0; j < tPatchSize; ++j, tNum++, ++it)
         {
-            Eigen::Vector3f J;
-            J(0) = 0.5*(it[1] - it[-1]);
-            J(1) = 0.5*(it[tLPatchSize] - it[-tLPatchSize]);
-            J(2) = 1;
-            *itdx = J(0);
-            *itdy = J(1);
-            H += J*J.transpose();
+            tJacobians.row(tNum) << 0.5*(it[1] - it[-1]),
+                                    0.5*(it[tLPatchSize] - it[-tLPatchSize]),
+                                    1;
         }
     }
 
-    Hinv = H.inverse();
-    float mean_diff = 0;
+    Eigen::Vector3d mCurpx;
+    mCurpx << tCurPx(0), tCurPx(1), 0;
 
+    ceres::Problem problem;
+    problem.AddParameterBlock(mCurpx.data(), 3);
 
-    float u = tCurPx(0);
-    float v = tCurPx(1);
+    FeatureAlign2DProblem *p = new FeatureAlign2DProblem(tPatch, &tCurImg, tJacobians.data());
+    problem.AddResidualBlock(p, NULL, mCurpx.data());
 
-    const float min_update_squared = 0.03*0.03;
-    const int tCurImg_step = tCurImg.step.p[0];
+    ceres::Solver::Options options;
+    options.linear_solver_type = ceres::DENSE_QR;
+    //options.minimizer_progress_to_stdout = true;
+    options.max_num_iterations = 5;
 
-    Eigen::Vector3f tUpdate;
-    tUpdate.setZero();
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+    //std::cout << summary.FullReport() << std::endl;
 
-    bool tConverged = false;
-    for (int i = 0; i < MaxIters; ++i)
-    {
-        uchar *it_ref = tPatch;
-        itdx = tRefdx;
-        itdy = tRefdy;
-
-        int u_r = floor(u);
-        int v_r = floor(v);
-        if(u_r < mHalf_PatchSize || v_r < mHalf_PatchSize || u_r > tCurImg.cols - mHalf_PatchSize ||
-           v_r > tCurImg.rows - mHalf_PatchSize || isnan(u) || isnan(v))
-            break;
-
-        float subpix_x = u - u_r;
-        float subpix_y = v - v_r;
-        float wTL = (1.0 - subpix_x)*(1.0 - subpix_y);
-        float wTR = subpix_x*(1 - subpix_y);
-        float wBL = (1.0 - subpix_x)*subpix_y;
-        float wBR = subpix_x*subpix_y;
-
-        Eigen::Vector3f Jres;
-        Jres.setZero();
-
-        for (int j = 0; j < tPatchSize; ++j)
-        {
-            uchar *it = (uchar *)tCurImg.data + (v_r + j - mHalf_PatchSize)*tCurImg_step + u_r - mHalf_PatchSize;
-            for (int k = 0; k < tPatchSize; ++k, ++it , ++it_ref, ++itdx, ++itdy)
-            {
-                float tSearchPx = wTL*it[0] + wTR*it[1] + wBL*it[tCurImg_step] + wBR*it[tCurImg_step+1];
-                float tRes = tSearchPx - *it_ref + mean_diff;
-                Jres[0] -= tRes*(*itdx);
-                Jres[1] -= tRes*(*itdy);
-                Jres[2] -= tRes;
-
-                std::cout << (float)(*itdy) << std::endl;
-            }
-        }
-
-        tUpdate = Hinv*Jres;
-        u += tUpdate(0);
-        v += tUpdate(1);
-        mean_diff +=tUpdate(2);
-
-        if(tUpdate(0)*tUpdate(0) + tUpdate(1)*tUpdate(1) < min_update_squared)
-        {
-            tConverged = true;
-            break;
-        }
-    }
-
-    tCurPx << u, v;
-    return tConverged;
-
+    tCurPx = mCurpx.head<2>();
 }
 
 

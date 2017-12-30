@@ -98,50 +98,84 @@ private:
 
 };
 
-/*
-class FeatureAlign2D:public ceres::SizedCostFunction<1, 3>
+
+class FeatureAlign2DProblem:public ceres::SizedCostFunction<4*mHalf_PatchSize*mHalf_PatchSize, 3>
 {
-
 public:
-    FeatureAlign2D(const int index, const uchar *tRefPatch, const uchar *tRefdx, const uchar *tRefdy, const cv::Mat tCurImg):
-         tIndex(index), itRef(tRefPatch), itRefdx(tRefdx), itRefdy(tRefdy), mCurImg(tCurImg)
-    {}
-
-    virtual bool Evaluate(double const* const* parameters, double *residuals, double **jacobians) const
+    FeatureAlign2DProblem(uchar *tRefPatch, const cv::Mat *tCurImg, double *tJacobianPatch):
+            mRefPatch(tRefPatch), mCurImg(tCurImg), mJacobianPatch(tJacobianPatch),
+            mPatchArea(4*mHalf_PatchSize*mHalf_PatchSize)
     {
-        int y = tIndex/8;
-        int x = tIndex%8;
-
-        double u = parameters[0][0];
-        double v = parameters[0][1];
-        double mean_diff = parameters[0][2];
-
-        int u_r = floor(u);
-        int v_r = floor(v);
-        if(u_r < mHalf_PatchSize || v_r < mHalf_PatchSize || u_r > mCurImg.cols - mHalf_PatchSize ||
-           v_r > mCurImg.rows - mHalf_PatchSize || isnan(u) || isnan(v))
-            return false;
-
-        float subpix_x = u - u_r;
-        float subpix_y = v - v_r;
-        float wTL = (1.0 - subpix_x)*(1.0 - subpix_y);
-        float wTR = subpix_x*(1 - subpix_y);
-        float wBL = (1.0 - subpix_x)*subpix_y;
-        float wBR = subpix_x*subpix_y;
-
 
     }
 
-protected:
-    int tIndex;
+    virtual bool Evaluate(double const* const* parameters, double *residuals, double **jacobians) const
+    {
+        double u = parameters[0][0];
+        double v = parameters[0][1];
+        double tMeandiff = parameters[0][2];
 
-    uchar *itRef;
-    uchar *itRefdx;
-    uchar *itRefdy;
-    cv::Mat mCurImg;
+        int u_i = floor(u);
+        int v_i = floor(v);
+
+        if(u_i < mHalf_PatchSize || v_i < mHalf_PatchSize || u_i > mCurImg->cols - mHalf_PatchSize ||
+                v_i > mCurImg->rows - mHalf_PatchSize)
+        {
+            Eigen::Map<Eigen::Matrix<double, 4*mHalf_PatchSize*mHalf_PatchSize, 1>> mResiduals(residuals);
+
+            mResiduals.setZero();
+
+            if (jacobians != NULL && jacobians[0] != NULL)
+            {
+                Eigen::Map<Eigen::Matrix<double, 4*mHalf_PatchSize*mHalf_PatchSize, 3, Eigen::RowMajor>> mJacobians(jacobians[0]);
+                mJacobians.setZero();
+            }
+
+            return true;
+        }
+
+        const double subpix_x = u - u_i;
+        const double subpix_y = v - v_i;
+        const double tC_tl = (1.0 - subpix_x)*(1.0 - subpix_y);
+        const double tC_tr = subpix_x*(1.0 - subpix_y);
+        const double tC_bl = (1.0 - subpix_x)*subpix_y;
+        const double tC_br = subpix_x*subpix_y;
+
+        int mStep = mCurImg->step.p[0];
+        int tNum = 0;
+        for (int i = 0; i < 2*mHalf_PatchSize; ++i)
+        {
+            uchar *it = (uchar*)mCurImg->data + (v_i + i - mHalf_PatchSize)*mStep + u_i - mHalf_PatchSize;
+            for (int j = 0; j < 2*mHalf_PatchSize; ++j, ++it, ++tNum)
+            {
+                double tSearchPx = tC_tl*it[0] + tC_tr*it[1] + tC_bl*it[mStep] + tC_br*it[mStep+1];
+                residuals[tNum] = tSearchPx - *(mRefPatch+tNum) + tMeandiff;
+            }
+        }
+
+        if (jacobians != NULL && jacobians[0] != NULL)
+        {
+            Eigen::Map<Eigen::Matrix<double, 4*mHalf_PatchSize*mHalf_PatchSize, 3, Eigen::RowMajor>> mJacobians(jacobians[0]);
+
+            Eigen::Map<Eigen::Matrix<double, 4*mHalf_PatchSize*mHalf_PatchSize, 3, Eigen::RowMajor>> tJacobians(mJacobianPatch);
+            mJacobians = tJacobians;
+        }
+
+        return true;
+    }
+
+
+protected:
+
+    const int   mPatchArea;
+
+    uchar       *mRefPatch;
+    double      *mJacobianPatch;
+
+    const cv::Mat     *mCurImg;
 
 };
-*/
+
 
 }// namespace DSDTM
 

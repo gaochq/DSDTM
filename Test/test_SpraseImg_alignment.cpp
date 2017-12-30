@@ -150,15 +150,14 @@ int main(int argc, char **argv)
         frame_cur_.reset(new DSDTM::Frame(camera.get(), img, vTimestamps[i]));
         frame_cur_->Set_Pose(T_prev_w);
 
-        //double start = static_cast<double>(cvGetTickCount());
+        DSDTM::TicToc tc;
         mSpraseAlign.Run(frame_cur_, frame_ref_);
-        //double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
-        //std::cout <<"Cost "<< time/1000 << " us" << std::endl;
+        //std::cout << tc.toc() << std::endl;
 
         Sophus::SE3 T_f_gt = frame_cur_->Get_Pose()*T_w_g.inverse();
         mTranslationErrorSets.push_back(T_f_gt.translation().norm());
 
-        cout << i  << "---" << "Translation error: " << mTranslationErrorSets.back() << endl;
+        cout << i  << "---" << tc.toc() << "ms" <<"---"<< "Translation error: " << mTranslationErrorSets.back() << endl;
 
         T_prev_w = frame_cur_->Get_Pose();
     }
