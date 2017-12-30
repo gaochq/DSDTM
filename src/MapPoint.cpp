@@ -15,7 +15,7 @@ MapPoint::MapPoint()
 }
 
 MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame):
-        mPose(_pose), mFirstFrame(_frame->mlId)
+        mPose(_pose), mFirstFrame(_frame->mlId), mnFound(0)
 {
     mlID = mlNextId++;
     mbOutlier = false;
@@ -56,9 +56,9 @@ int MapPoint::Get_ObserveNums() const
     return mObsNum;
 }
 
-bool MapPoint::Get_ClosetObs(const Frame &tFrame, Feature &tFeature, KeyFrame *tKframe)
+bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature &tFeature, KeyFrame *tKframe)
 {
-    Eigen::Vector3d tPt_frame = mPose - tFrame.Get_CameraCnt();
+    Eigen::Vector3d tPt_frame = mPose - tFrame->Get_CameraCnt();
     tPt_frame.normalize();
 
     double tMin_angle = 0;
@@ -81,6 +81,11 @@ bool MapPoint::Get_ClosetObs(const Frame &tFrame, Feature &tFeature, KeyFrame *t
         return false;
 
     return true;
+}
+
+void MapPoint::IncreaseFound(int n)
+{
+    mnFound = mnFound + n;
 }
 
 

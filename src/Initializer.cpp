@@ -56,7 +56,7 @@ bool Initializer::Init_RGBDCam(Frame &frame)
         //! Show first frame
         cv::namedWindow("Feature_Detect");
         cv::Mat tFeatureImg(mReferFrame.mColorImg);
-        mCam->Draw_Features(tFeatureImg, mReferFrame.mvFeatures, 0);
+        //mCam->Draw_Features(tFeatureImg, mReferFrame.mvFeatures, 0);
         cv::imshow("Feature_Detect", tFeatureImg);
         cv::waitKey(1);
 
@@ -104,8 +104,8 @@ bool Initializer::Init_RGBDCam(Frame &frame)
 
         //! Show first frame
         cv::Mat tFeatureImg(frame.mColorImg);
-        mCam->Draw_Lines(tFeatureImg, frame.mvFeatures, mReferFrame.mvFeatures);
-        mCam->Draw_Features(tFeatureImg, frame.mvFeatures, cv::Scalar(0, 255, 0));
+        //mCam->Draw_Lines(tFeatureImg, frame.mvFeatures, mReferFrame.mvFeatures);
+        //mCam->Draw_Features(tFeatureImg, frame.mvFeatures, cv::Scalar(0, 255, 0));
         cv::imshow("Feature_Detect", tFeatureImg);
         cv::waitKey(1);
 
@@ -142,7 +142,7 @@ bool Initializer::Init_RGBDCam(Frame &frame)
 
                     mReferFrame.Add_MapPoint(i, tMPoint);
 
-                    frame.mvFeatures[i].mf = tPose;
+                    frame.mvFeatures[i].mPoint = tPose;
 
                     mMap->AddMapPoint(tMPoint);
                 }

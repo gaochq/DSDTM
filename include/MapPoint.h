@@ -38,7 +38,10 @@ public:
     int Get_ObserveNums() const;
 
     //! Get the closest keyframe between cunrrent frame refer this MapPoint
-    bool Get_ClosetObs(const Frame &tFrame, Feature &tFeature, KeyFrame *tKframe);
+    bool Get_ClosetObs(const Frame *tFrame, Feature &tFeature, KeyFrame *tKframe);
+
+    //! Increase the match times with frames
+    void IncreaseFound(int n = 1);
 
 protected:
 
@@ -60,6 +63,10 @@ protected:
     //! Observation
     size_t                  mObsNum;
     std::map<KeyFrame*, size_t>         mObservations;
+
+    //! Tracking counters
+    int mnFound;
+    int mnVisible;
 
 };
 

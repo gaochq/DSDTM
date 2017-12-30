@@ -6,6 +6,7 @@
 #define DSDTM_FEATURE_ALIGNMENT_H
 
 #include "Camera.h"
+#include "Keyframe.h"
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"
 
@@ -53,22 +54,22 @@ public:
     void ResetGrid();
 
     //! Add the best feature into cell
-    bool ReprojectCell(Frame tFrame, Cell *tCell);
+    bool ReprojectCell(Frame *tFrame, Cell *tCell);
 
     //! project mappoint into Grid
     bool ReprojectPoint(Frame tFrame, MapPoint *tMPoint);
 
     //! Find mappoint match for current frame through feature alignment
-    void SearchLocalPoints(Frame tFrame);
+    void SearchLocalPoints(Frame *tFrame);
 
     //! Compare cells refer to observe times
     static bool CellComparator(Candidate &c1, Candidate &c2);
 
-    //! Find the match of MapPoint using Featureliment
-    bool FindMatchDirect(MapPoint *tMpPoint, const Frame tFrame, Eigen::Vector2d &tPt);
+    //! Find the match of MapPoint using Featurealignment
+    bool FindMatchDirect(MapPoint *tMpPoint, const Frame *tFrame, Eigen::Vector2d &tPt, int &tLevel);
 
     //! Get the affine matrix
-    Eigen::Matrix2d SolveAffineMatrix(KeyFrame *tReferKframe, const Frame &tCurFrame, Feature tReferFeature, MapPoint *tMpPoint);
+    Eigen::Matrix2d SolveAffineMatrix(KeyFrame *tReferKframe, const Frame *tCurFrame, Feature tReferFeature, MapPoint *tMpPoint);
 
     //! Get the best search level refer to the determinate of affine matrix
     int GetBestSearchLevel(Eigen::Matrix2d tAffineMat, int tMaxLevel);

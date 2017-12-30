@@ -18,12 +18,6 @@ namespace DSDTM
         Init_CamParam(Paramfile);
     }
 
-    Camera::Camera(Camera_Model model, float _fx, float _fy, float _cx, float _cy):
-            mCam_Model(model), mfx(_fx), mfy(_fy), mcx(_cx), mcy(_cy)
-    {
-
-    }
-
     Camera::~Camera()
     {
 
@@ -31,6 +25,8 @@ namespace DSDTM
 
     void Camera::Init_CamParam(const std::string &Paramfile)
     {
+        mf = Config::Get<float>("Camera.f");
+
         mfx = Config::Get<float>("Camera.fx");
         mfy = Config::Get<float>("Camera.fy");
         mcx = Config::Get<float>("Camera.cx");
@@ -78,8 +74,9 @@ namespace DSDTM
         //std::cout<< mInstrinsicMat << std::endl << mDistortionMat <<std::endl;
     }
 
-    void Camera::LiftProjective(const Feature &feature, Eigen::Vector3d P, bool tUnDistort)
+    Eigen::Vector3d Camera::LiftProjective(const Feature &feature, bool tUnDistort)
     {
+        Eigen::Vector3d P;
         double tmx_d, tmy_d, tmx_u, tmy_u;
 
         tmx_d = feature.mpx.x*minv_fx + minv_cx;
@@ -108,6 +105,8 @@ namespace DSDTM
 
             P << tmx_u, tmy_u, 1;
         }
+
+        return P;
     }
 
     void Camera::Distortion(const Eigen::Vector2d tPt, Eigen::Vector2d tvPt)
@@ -148,12 +147,12 @@ namespace DSDTM
         return cv::KeyPoint(point[0], point[1], 1);
     }
 
-    Eigen::Vector3d Camera::Camera2World(const Sophus::SE3 &mT_cw, const Eigen::Vector3d &Point)
+    Eigen::Vector3d Camera::Camera2World(const Sophus::SO3 &mT_cw, const Eigen::Vector3d &Point)
     {
         return mT_cw.inverse()*Point;
     }
 
-    Eigen::Vector3d Camera::World2Camera(const Sophus::SE3 &mT_cw, const Eigen::Vector3d &Point)
+    Eigen::Vector3d Camera::World2Camera(const Sophus::SO3 &mT_cw, const Eigen::Vector3d &Point)
     {
         return mT_cw*Point;
     }

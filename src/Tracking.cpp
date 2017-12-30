@@ -224,7 +224,7 @@ bool Tracking::TrackWithLastFrame()
         if(it != mCurrentFrame.mvFeatures.end())
         {
             Eigen::Vector3d tCamPoint = mCam->Pixel2Camera(tFeature.mUnpx, z);
-            it->mf = tCamPoint;
+            it->mPoint = tCamPoint;
         }
 
     }

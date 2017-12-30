@@ -38,7 +38,7 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
     size_t tNum = 0;
     for (auto iter = tCurFrame.mvFeatures.begin(); iter!=tCurFrame.mvFeatures.end(); ++iter, ++tNum)
     {
-        Eigen::Vector3d tPoint(iter->mf);
+        Eigen::Vector3d tPoint(iter->mPoint);
 
         if(tPoint.isZero(0))
             continue;
@@ -82,6 +82,7 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
     tCurFrame.Set_Pose(Sophus::SE3::exp(tFinalPose));
 
     std::vector<double> tvdResidual = GetReprojectReidual(problem);
+    /*
     tNum = 0;
     for (auto iter = tObservations.begin(); iter!=tObservations.end(); ++iter, tNum++)
     {
@@ -92,6 +93,7 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
         if(tvdResidual[tNum]>1.0)
             iter->second->SetBadFlag();
     }
+     */
 
 
     DLOG(INFO)<< summary.FullReport() << std::endl;

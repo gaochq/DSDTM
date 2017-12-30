@@ -31,11 +31,11 @@
 
 #include <sophus/se3.h>
 
+
 #include <glog/logging.h>
 
 #include "tic_toc.h"
 #include "Config.h"
-#include "Frame.h"
 #include "Feature.h"
 
 
@@ -57,7 +57,7 @@ public:
     ~Camera();
 
     //! Distortion correction for Feature in normalized plane
-    void LiftProjective(const Feature &feature, Eigen::Vector3d P, bool tUnDistort = true);
+    Eigen::Vector3d LiftProjective(const Feature &feature, bool tUnDistort = true);
 
     //! Calculate the distortion vary in normalized
     void Distortion(const Eigen::Vector2d tPt, Eigen::Vector2d tvPt);
@@ -72,10 +72,10 @@ public:
     cv::KeyPoint Vector2Keypoint(const Eigen::Vector2f &point);
 
     //! Camera to world
-    Eigen::Vector3d Camera2World(const Sophus::SE3 &mT_cw, const Eigen::Vector3d &Point);
+    Eigen::Vector3d Camera2World(const Sophus::SO3 &mT_cw, const Eigen::Vector3d &Point);
 
     //! World to camera
-    Eigen::Vector3d World2Camera(const Sophus::SE3 &mT_cw, const Eigen::Vector3d &Point);
+    Eigen::Vector3d World2Camera(const Sophus::SO3 &mT_cw, const Eigen::Vector3d &Point);
 
     //! Camera to pixel
     Eigen::Vector2d Camera2Pixel(const Eigen::Vector3d &Point);
@@ -126,6 +126,7 @@ public:
     float           mfy;
     float           mcx;
     float           mcy;
+    float           mf;
 
     double          minv_fx;
     double          minv_fy;

@@ -6,11 +6,9 @@
 #define DSDTM_FEATURE_H
 
 #include "Camera.h"
-//#include "MapPoint.h"
 
 namespace DSDTM
 {
-
 class Frame;
 
 struct Feature
@@ -20,10 +18,10 @@ struct Feature
     int                 mlevel;
     Eigen::Vector2d     mgrad;
     long int            mlId;
-    long int            mTrack_cnt; // Succeed tracking times
+    long int            mTrack_cnt;             // Succeed tracking times
     cv::Point2f         mUnpx;
-    Eigen::Vector3d     mf;         //Unit-bearing vector of the feature. But now just for position of mappoint in last frame temporarily.
-
+    Eigen::Vector3d     mNormal;         //Unit-bearing vector of the feature. But now just for position of mappoint in last frame temporarily.
+    Eigen::Vector3d     mPoint;
 
     Feature(Frame* _frame, const cv::Point2f& _px, int _level, long int tlId = -1, long int tTrack_cnt = 1):
             mframe(_frame),
@@ -32,9 +30,11 @@ struct Feature
             mgrad(0.0, 0.0),
             mlId(tlId),
             mTrack_cnt(tTrack_cnt),
-            mf(0.0, 0.0, 0.0)
+            mPoint(0.0, 0.0, 0.0)
+    {
 
-    {}
+    }
+
     Feature(){};
 
     bool operator < (const Feature& _f1) const
@@ -42,8 +42,8 @@ struct Feature
         return (_f1.mTrack_cnt < mTrack_cnt);
     }
 };
-typedef std::vector<Feature> Features;
 
+    typedef std::vector<Feature> Features;
 }// namespace DSDTM
 
 

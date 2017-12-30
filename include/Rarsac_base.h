@@ -10,6 +10,8 @@
 
 namespace DSDTM
 {
+class Frame;
+
 
 class Rarsac_base
 {

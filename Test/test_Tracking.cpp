@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 {
     if(argc!=2)
     {
-        cout << "Usage: Test_Feature_detection Path_To_ParamFile" <<endl;
+        cout << "Usage: test_Tracking Path_To_ParamFile" <<endl;
         return 0;
     }
 

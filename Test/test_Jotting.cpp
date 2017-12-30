@@ -76,6 +76,7 @@ int main(int argc, char **argv)
     }
     std::cout << tWrapMat << std::endl;
 
+    //! Convert c++ array into Eigen vector
     double tPt3[3];
     Eigen::Map<Eigen::Vector3d> tPtv3(tPt3);
     tPtv3 << 1, 2, 3;
@@ -84,6 +85,29 @@ int main(int argc, char **argv)
         std::cout<< tPt3[k] << std::endl;
     }
 
+    //! Resize the matrix without change former value
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> tmpMat;
+    tmpMat.resize(3, 2);
+    tmpMat.col(0) << 1, 2, 3;
+    tmpMat.col(1) << 4, 5, 6;
+    std::cout << tmpMat << std::endl;
+    tmpMat.conservativeResize(2, 2);
+    std::cout << tmpMat << std::endl;
+
+    //! Test the select API in Eigen
+    std::cout << "Test the select API in Eigen" << std::endl;
+    Eigen::Vector3d tVec3(1, 2, 3);
+    Eigen::VectorXd tVec3Out = Eigen::VectorXd((tVec3.array() >= 2).select(tVec3.array().inverse(), 0));
+    std::cout << tVec3Out << std::endl;
+    Eigen::MatrixXd tDigInv = tVec3.asDiagonal().inverse();
+    std::cout << tDigInv << std::endl;
+
+    //! Test the segment API in Eigen
+    std::cout << "Test the segment API in Eigen" << std::endl;
+    Eigen::Matrix<double, 6, 1> tVec6;
+    tVec6 << 1, 2, 3, 4, 5, 6;
+    Eigen::VectorXd tVec6Seg = tVec6.segment(2, 3);
+    std::cout << tVec6Seg << std::endl;
 
     std::vector<int> a;
     for (int i = 0; i < 10; ++i)

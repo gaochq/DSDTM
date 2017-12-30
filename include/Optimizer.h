@@ -10,6 +10,8 @@
 
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"
+#include <sophus/se3.h>
+
 
 namespace DSDTM
 {
@@ -46,7 +48,7 @@ public:
 
     virtual bool Evaluate(double const* const* parameters, double* residuals, double **jacobians) const
     {
-        //! Convert se3 into SE3
+        //! Convert se3 into SO3
         Eigen::Matrix<double, 6, 1> tTransform;
         tTransform << parameters[0][0], parameters[0][1], parameters[0][2],
                       parameters[0][3], parameters[0][4], parameters[0][5];
@@ -99,6 +101,11 @@ public:
 
                 mJacobians1 = -1.0*mJacobians1;
             }
+
+            if(jacobians[1]!=NULL)
+            {
+                std::cout << "11" << std::endl;
+            }
         }
 
         return true;
@@ -132,7 +139,7 @@ public:
 
     virtual bool Evaluate(double const* const* parameters, double* residuals, double **jacobians) const
     {
-        //! Camera pose: Convert se3 into SE3
+        //! Camera pose: Convert se3 into SO3
         Eigen::Matrix<double, 6, 1> tTransform;
         tTransform << parameters[0][0], parameters[0][1], parameters[0][2],
                     parameters[0][3], parameters[0][4], parameters[0][5];
@@ -218,31 +225,26 @@ protected:
 class PoseLocalParameterization : public ceres::LocalParameterization
 {
 
-    virtual bool Plus(const double *x, const double *delta, double *x_plus_delta) const
+    virtual bool Plus(const double *T_raw, const double *delta_raw, double *T_plus_delta_raw) const
     {
-        Eigen::Map<const Eigen::Vector3d> tTrans_in(x + 3);
-        Sophus::SE3 tSE3_delta = Sophus::SE3::exp(Eigen::Map<const Eigen::Matrix<double, 6, 1>>(delta));
-        Sophus::SO3 tSO3_out = tSE3_delta.so3()*Sophus::SO3(x[0], x[1], x[2]);
-
-        Eigen::Map<Eigen::Vector3d> tAngleVec(x_plus_delta);
-        tAngleVec = tSO3_out.log();
-
-        Eigen::Map<Eigen::Vector3d> tTrans_out(x_plus_delta + 3);
-        tTrans_out = tSE3_delta.rotation_matrix() * tTrans_in + tSE3_delta.translation();
-
+        //Eigen::Map<Sophus::SE3 const> const T(T_raw);
+        //Eigen::Map<Eigen::Matrix<double, 6, 1> const> const delta(delta_raw);
+        //Eigen::Map<Sophus::SE3> T_plus_delta(T_plus_delta_raw);
+        //T_plus_delta = Sophus::SE3::exp(delta)*T;
 
         return true;
     }
 
-    virtual bool ComputeJacobian(const double *x, double *jacobian) const
+    virtual bool ComputeJacobian(const double *T_raw, double *jacobian_raw) const
     {
-        Eigen::Map<Eigen::Matrix<double, 6, 6, Eigen::RowMajor> > J(jacobian);
-        J.setIdentity();
+        Eigen::Map<Eigen::Matrix<double, 6, 7, Eigen::RowMajor> > J(jacobian_raw);
+        J.block(0, 0, 6, 6).setIdentity();
+        J.col(6).setZero();
 
         return true;
     }
 
-    virtual int GlobalSize() const { return 6; }
+    virtual int GlobalSize() const { return 7; }
 
     virtual int LocalSize() const { return 6; }
 

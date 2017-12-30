@@ -14,6 +14,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 # Opencv
 #set(OpenCV_DIR "/home/buyi/Software/Opencv/opencv-3.2.0/build")
+
 find_package(OpenCV REQUIRED)
 include_directories(${Opencv_INCLUDE_DIRS})
 message(STATUS "    version: ${OpenCV_VERSION}")
@@ -24,6 +25,7 @@ include_directories(${Ceres_INCLUDE_DIRS})
 
 # Sophus
 find_package(Sophus REQUIRED)
+set(Sophus_LIBRARIES libSophus.so)
 include_directories(${Sophus_INCLUDE_DIRS})
 
 # Eigen
@@ -52,7 +54,8 @@ add_library(${PROJECT_NAME} SHARED
 	src/Optimizer.cpp
 	src/LocalMapping.cpp
 	src/Moving_Detection.cpp
-	src/Feature_alignment.cpp)
+	src/Feature_alignment.cpp
+	src/Sprase_ImageAlign.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
@@ -90,9 +93,15 @@ target_link_libraries(test_Optimizer ${PROJECT_NAME})
 add_executable(test_Motion_dection Test/test_Motion_detection.cpp)
 target_link_libraries(test_Motion_dection ${PROJECT_NAME})
 
-#Test Motion Dection
+#Test Feature Alignment
 add_executable(test_Feature_alignemnt Test/test_Feature_alignment.cpp)
 target_link_libraries(test_Feature_alignemnt ${PROJECT_NAME})
+
+#Test Feature Alignment
+add_executable(test_SpraseImg_alignment Test/test_SpraseImg_alignment.cpp)
+target_link_libraries(test_SpraseImg_alignment ${PROJECT_NAME})
+
+
 
 #Test Keyframe creating
 #add_executable(KFrame_Creating Test/test_KFrame_Creating.cpp)

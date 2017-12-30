@@ -68,6 +68,7 @@ void Feature_detector::ResetGrid()
 
 void Feature_detector::detect(Frame* frame, const double detection_threshold, const bool tFirst)
 {
+    /*
     if(frame->mvFeatures.size()>=mMax_fts)
         return;
 
@@ -114,6 +115,7 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold, co
     });
      */
 
+    /*
     for (int iter = 0; iter < corners.size(); ++iter)
     {
         Corner tCorner = corners[iter];
@@ -147,6 +149,11 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold, co
         });
     }
      */
+    std::vector<cv::Point2f> kps;
+    cv::goodFeaturesToTrack(frame->mColorImg, kps, 400, 0.1, 30);
+    std::for_each(kps.begin(), kps.end(), [&](cv::Point2f tPoint) {
+        frame->Add_Feature(Feature(frame, cv::Point2f(tPoint.x, tPoint.y), 1));
+    });
 }
 
 //! http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_shi_tomasi/py_shi_tomasi.html

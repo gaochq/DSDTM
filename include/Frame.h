@@ -5,19 +5,19 @@
 #ifndef DSDTM_FRAME_H
 #define DSDTM_FRAME_H
 
+
 #include "Camera.h"
 #include "Feature.h"
 #include "MapPoint.h"
 
 namespace DSDTM
 {
-
 class MapPoint;
-class Camera;
 class KeyFrame;
 
 class Frame
 {
+
 public:
     Frame();
     Frame(Frame &frame);
@@ -30,6 +30,7 @@ public:
 
     //! Compute thr image pyramid
     void ComputeImagePyramid(const cv::Mat Image, std::vector<cv::Mat> &Img_Pyr);
+    void halfSample(const cv::Mat& in, cv::Mat& out);
 
     //! Return keypoints from features
     void Get_Features(std::vector<cv::Point2f> &KeyPoints);
