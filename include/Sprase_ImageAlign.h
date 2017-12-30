@@ -59,32 +59,24 @@ protected:
     std::vector<bool> mVisible;
 };
 
-class DirectSE3_Problem: public ceres::SizedCostFunction<mHalf_PatchSize*mHalf_PatchSize, 7>
+class DirectSE3_Problem: public ceres::SizedCostFunction<mHalf_PatchSize*mHalf_PatchSize, 6>
 {
 public:
     DirectSE3_Problem(Eigen::Vector3d tPoint, double *tRefPatch, double *tJocabianPatch,
                       const cv::Mat *tCurImg, const float tScale, Camera *tCamera):
             mMapPoint(tPoint), mRefPatch(tRefPatch), mJacobianPatch(tJocabianPatch),
-            mCurImg(tCurImg), mScale(tScale), mCamera(tCamera)
+            mCurImg(tCurImg), mScale(tScale), mCamera(tCamera), mnboarder(mHalf_PatchSize-1)
     {
-
-
     }
 
     virtual bool Evaluate(double const* const* parameters, double *residuals, double **jacobians) const
     {
         // parameter: translation--rotation
-        /*
         Eigen::Matrix<double, 6, 1> tT_c2rArray;
         tT_c2rArray<< parameters[0][0], parameters[0][1], parameters[0][2],
                       parameters[0][3], parameters[0][4], parameters[0][5];
-        */
-        Eigen::Map<const Eigen::Quaterniond> q(parameters[0]);
-        Eigen::Map<const Eigen::Vector3d> t(parameters[0]+4);
 
-        Sophus::SE3 tT_c2r(q, t);
-
-        //Sophus::SO3 tT_c2r(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>());
+        Sophus::SE3 tT_c2r(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>());
 
         Eigen::Vector3d tCurPoint = tT_c2r*mMapPoint;
         Eigen::Vector2d tCurPix = mCamera->Camera2Pixel(tCurPoint)*mScale;
@@ -93,8 +85,19 @@ public:
         const double v = tCurPix(1);
         const int u_i = floor(u);
         const int v_i = floor(v);
-        if(u_i < 0 || v_i < 0 || u_i >= mCurImg->cols || v_i >= mCurImg->rows)
-            return false;
+        if(u_i < 0 || v_i < 0 || u_i - mnboarder < 0 || v_i - mnboarder < 0 || u_i + mnboarder >= mCurImg->cols || v_i + mnboarder >= mCurImg->rows)
+        {
+            Eigen::Map<Eigen::Matrix<double, mHalf_PatchSize*mHalf_PatchSize, 1>> mResiduals(residuals);
+            mResiduals.setZero();
+
+            if(jacobians != NULL && jacobians[0] != NULL)
+            {
+                Eigen::Map<Eigen::Matrix<double, mHalf_PatchSize * mHalf_PatchSize, 6, Eigen::RowMajor>> mJacobians(jacobians[0]);
+                mJacobians.setZero();
+            }
+
+            return true;
+        }
 
         const double tSubPixU = u - u_i;
         const double tSubPixV = v - v_i;
@@ -106,8 +109,6 @@ public:
         int tStep = mCurImg->step.p[0];
         int tNum = 0;
 
-        //residuals[0] = 0;
-        //Eigen::Map<Eigen::Matrix<double, mHalf_PatchSize*mHalf_PatchSize, 6, Eigen::RowMajor>> mJacobians(jacobians[0]);
         for (int i = 0; i < mHalf_PatchSize; ++i)
         {
             uchar *it = mCurImg->data + (v_i + i - 2)*mCurImg->cols + u_i - 2;
@@ -122,30 +123,10 @@ public:
         {
             if (jacobians[0] != NULL)
             {
-                Eigen::Map<Eigen::Matrix<double, mHalf_PatchSize * mHalf_PatchSize, 7, Eigen::RowMajor>> mJacobians(jacobians[0]);
-
+                Eigen::Map<Eigen::Matrix<double, mHalf_PatchSize * mHalf_PatchSize, 6, Eigen::RowMajor>> mJacobians(jacobians[0]);
                 Eigen::Matrix<double, mHalf_PatchSize * mHalf_PatchSize, 6, Eigen::RowMajor> tJacobians(mJacobianPatch);
 
-                mJacobians.setZero();
-                mJacobians.block(0, 0, mHalf_PatchSize * mHalf_PatchSize, 6) = tJacobians;
-
-                //Eigen::Matrix<double, 1, 16, Eigen::RowMajor> I;
-                //I.setOnes();
-                //Eigen::MatrixXd mJacobians = I*tJacobians;
-
-                //mJacobians.row(i) << *mJacobianPatch, *(mJacobianPatch + 1), *(mJacobianPatch + 2),
-                //                    *(mJacobianPatch + 3), *(mJacobianPatch + 4), *(mJacobianPatch + 5);
-
-                /*
-                int tNum1 = 0;
-                for (int i = 0; i < mHalf_PatchSize*mHalf_PatchSize; ++i)
-                {
-                    for (int j = 0; j < 6; ++j, ++tNum1)
-                    {
-                        jacobians[0][tNum1] = tJacobians(i, j);
-                    }
-                }
-                 */
+                mJacobians = tJacobians;
             }
         }
 
@@ -156,14 +137,14 @@ public:
 protected:
     Eigen::Vector3d     mMapPoint;
 
-    double      *mRefPatch;
-    double      *mJacobianPatch;
-
-    const cv::Mat     *mCurImg;
-
+    Camera              *mCamera;
+    const cv::Mat       *mCurImg;
     const float         mScale;
 
-    Camera      *mCamera;
+    double              *mRefPatch;
+    double              *mJacobianPatch;
+
+    const int           mnboarder;
 };
 
 

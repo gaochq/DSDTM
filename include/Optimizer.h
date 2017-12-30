@@ -227,24 +227,29 @@ class PoseLocalParameterization : public ceres::LocalParameterization
 
     virtual bool Plus(const double *T_raw, const double *delta_raw, double *T_plus_delta_raw) const
     {
-        //Eigen::Map<Sophus::SE3 const> const T(T_raw);
-        //Eigen::Map<Eigen::Matrix<double, 6, 1> const> const delta(delta_raw);
-        //Eigen::Map<Sophus::SE3> T_plus_delta(T_plus_delta_raw);
-        //T_plus_delta = Sophus::SE3::exp(delta)*T;
+        Eigen::Map<const Sophus::Vector6d> tOld(T_raw);
+        Eigen::Map<const Sophus::Vector6d> tDelta(delta_raw);
+        Eigen::Map<Sophus::Vector6d> tNew(T_plus_delta_raw);
+
+        Sophus::SE3 tT_Old(Sophus::SO3::exp(tOld.tail<3>()), tOld.head<3>());
+        Sophus::SE3 tT_Delta(Sophus::SO3::exp(tDelta.tail<3>()), tDelta.head<3>());
+        Sophus::SE3 tT_New = tT_Old*tT_Delta;
+
+        tNew.block(0, 0, 3, 1) = tT_New.translation();
+        tNew.block(3, 0, 3, 1) = tT_New.so3().log();
 
         return true;
     }
 
     virtual bool ComputeJacobian(const double *T_raw, double *jacobian_raw) const
     {
-        Eigen::Map<Eigen::Matrix<double, 6, 7, Eigen::RowMajor> > J(jacobian_raw);
-        J.block(0, 0, 6, 6).setIdentity();
-        J.col(6).setZero();
+        Eigen::Map<Eigen::Matrix<double, 6, 6, Eigen::RowMajor> > J(jacobian_raw);
+        J.setIdentity();
 
         return true;
     }
 
-    virtual int GlobalSize() const { return 7; }
+    virtual int GlobalSize() const { return 6; }
 
     virtual int LocalSize() const { return 6; }
 

@@ -43,11 +43,11 @@ int Sprase_ImgAlign::Run(FramePtr tCurFrame, FramePtr tRefFrame)
 
     for (int i = mnMaxLevel; i >= mnMinLevel; --i)
     {
-        TicToc tc;
-        GetJocabianMat(i);
-        std::cout << tc.toc() << std::endl;
 
+        GetJocabianMat(i);
+        TicToc tc;
         DirectSolver(mT_c2r, i);
+        std::cout <<"Cost "<< tc.toc()<< " ms" << std::endl;
         Reset();
     }
 
@@ -160,7 +160,6 @@ void Sprase_ImgAlign::DirectSolver(Sophus::SE3 &tT_c2r, int tLevel)
     const cv::Mat tCurImg = mCurFrame->mvImg_Pyr[tLevel];
     const float tScale = 1.0/(1<<tLevel);
 
-    Sophus::SE3 mT_c2r = tT_c2r;
 
     Eigen::Matrix<double, 6, 1> tT_c2rArray;
     tT_c2rArray.block(0, 0, 3, 1) = tT_c2r.translation();
@@ -172,7 +171,7 @@ void Sprase_ImgAlign::DirectSolver(Sophus::SE3 &tT_c2r, int tLevel)
 
     ceres::Problem problem;
     ceres::LocalParameterization *local_Parameterization = new PoseLocalParameterization();
-    problem.AddParameterBlock(tT_c2rArray.data(), 7, local_Parameterization);
+    problem.AddParameterBlock(tT_c2rArray.data(), 6, local_Parameterization);
 
     int tnPts = mRefPatch.rows();
     for (int i = 0; i < tnPts; ++i)
@@ -185,15 +184,15 @@ void Sprase_ImgAlign::DirectSolver(Sophus::SE3 &tT_c2r, int tLevel)
     }
 
     ceres::Solver::Options options;
-    //options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-    options.linear_solver_type = ceres::DENSE_QR;
-    options.minimizer_progress_to_stdout = true;
-    options.max_num_iterations = 100;
+    //options.linear_solver_type = ceres::DENSE_SCHUR;
+    //options.minimizer_progress_to_stdout = true;
+    options.max_num_iterations = 5;
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-    std::cout << summary.FullReport() << std::endl;
+    //std::cout << summary.FullReport() << std::endl;
 
+    Sophus::SE3 mT_c2r(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>());
     tT_c2r = mT_c2r;
 }
 
@@ -206,24 +205,6 @@ Eigen::Matrix<double, 2, 6> Sprase_ImgAlign::GetJocabianBA(Eigen::Vector3d tPoin
     const double y = tPoint(1);
     const double z_inv = 1.0/tPoint(2);
     const double z_inv2 = z_inv*z_inv;
-
-    //! It is important to note that in sophus translation is ahead of so3
-
-    /*
-    J(0, 3) = -z_inv;
-    J(0, 4) = 0.0;
-    J(0, 5) = x*z_inv2;
-    J(0, 0) = y*J(0, 5);
-    J(0, 1) = -(1.0 + x*J(0, 5));
-    J(0, 2) = y*z_inv;
-
-    J(1, 3) = 0.0;
-    J(1, 4) = -z_inv;
-    J(1, 5) = y*z_inv2;
-    J(1, 0) = 1.0 + y*J(1, 5);
-    J(1, 1) = -J(0, 0);
-    J(1, 2) = -x*z_inv;
-    */
 
     J(0,0) = -z_inv;              // -1/z
     J(0,1) = 0.0;                 // 0
@@ -238,7 +219,6 @@ Eigen::Matrix<double, 2, 6> Sprase_ImgAlign::GetJocabianBA(Eigen::Vector3d tPoin
     J(1,3) = 1.0 + y*J(1,2);      // 1.0 + y^2/z^2
     J(1,4) = -x*J(1,2);             // -x*y/z^2
     J(1,5) = -x*z_inv;            // x/z
-
 
     return J;
 }
