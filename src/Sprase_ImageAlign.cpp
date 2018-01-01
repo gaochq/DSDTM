@@ -45,9 +45,9 @@ int Sprase_ImgAlign::Run(FramePtr tCurFrame, FramePtr tRefFrame)
     {
 
         GetJocabianMat(i);
-        TicToc tc;
-        DirectSolver(mT_c2r, i);
-        std::cout <<"Cost "<< tc.toc() << " ms" << std::endl;
+        //TicToc tc;
+        CeresSolver(mT_c2r, i);
+        //std::cout <<"Cost "<< tc.toc() << " ms" << std::endl;
         Reset();
     }
 
@@ -110,6 +110,7 @@ void Sprase_ImgAlign::GetJocabianMat(int tLevel)
     tRefPtDepth = tRefPoints.colwise().norm();
     mRefNormals = tRefNormals.array().rowwise()*tRefPtDepth.array();
 
+
     //! Calculate the coffient Bilinear difference
     Eigen::MatrixXi tRefPtsFloor = tRefPts.unaryExpr(std::ptr_fun(Eigenfloor));
     Eigen::MatrixXd tRefPtsSubpix = tRefPts - tRefPtsFloor.cast<double>();
@@ -154,7 +155,7 @@ void Sprase_ImgAlign::GetJocabianMat(int tLevel)
     }
 }
 
-void Sprase_ImgAlign::DirectSolver(Sophus::SE3 &tT_c2r, int tLevel)
+void Sprase_ImgAlign::CeresSolver(Sophus::SE3 &tT_c2r, int tLevel)
 {
     int tPatchArea = mHalf_PatchSize*mHalf_PatchSize;
     const cv::Mat tCurImg = mCurFrame->mvImg_Pyr[tLevel];

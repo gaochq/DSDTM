@@ -30,7 +30,6 @@ public:
 
     //! Compute thr image pyramid
     void ComputeImagePyramid(const cv::Mat Image, std::vector<cv::Mat> &Img_Pyr);
-    void halfSample(const cv::Mat& in, cv::Mat& out);
 
     //! Return keypoints from features
     void Get_Features(std::vector<cv::Point2f> &KeyPoints);

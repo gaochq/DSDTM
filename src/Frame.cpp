@@ -76,36 +76,8 @@ void Frame::ComputeImagePyramid(const cv::Mat Image, std::vector<cv::Mat> &Img_P
     Img_Pyr[0] = Image;
     for (int i = 1; i <= mPyra_levels; ++i)
     {
-        Img_Pyr[i] = cv::Mat(Img_Pyr[i-1].rows/2, Img_Pyr[i-1].cols/2, CV_8U);
-        halfSample(Img_Pyr[i-1], Img_Pyr[i]);
-        //cv::pyrDown(Img_Pyr[i-1], Img_Pyr[i]);
+        cv::pyrDown(Img_Pyr[i-1], Img_Pyr[i]);
     }
-}
-
-void Frame::halfSample(const cv::Mat &in, cv::Mat &out)
-{
-    assert( in.rows/2==out.rows && in.cols/2==out.cols);
-    assert( in.type()==CV_8U && out.type()==CV_8U);
-
-    const int stride = in.step.p[0];
-    uint8_t* top = (uint8_t*) in.data;
-    uint8_t* bottom = top + stride;
-    uint8_t* end = top + stride*in.rows;
-    const int out_width = out.cols;
-    uint8_t* p = (uint8_t*) out.data;
-    while (bottom < end)
-    {
-        for (int j=0; j<out_width; j++)
-        {
-            *p = static_cast<uint8_t>( (uint16_t (top[0]) + top[1] + bottom[0] + bottom[1])/4 );
-            p++;
-            top += 2;
-            bottom += 2;
-        }
-        top += stride;
-        bottom += stride;
-    }
-
 }
 
 void Frame::Get_Features(std::vector<cv::Point2f> &_features)
@@ -178,6 +150,7 @@ void Frame::Add_Feature(Feature tfeature)
 {
     tfeature.mNormal = mCamera->Pixel2Camera(tfeature.mpx, 1.0);
     tfeature.mNormal.normalize();
+
     mvFeatures.push_back(tfeature);
 }
 

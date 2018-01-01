@@ -34,8 +34,11 @@ public:
     //! Compute the jacobian about pixel position to camera transform
     Eigen::Matrix<double, 2,6> GetJocabianBA(Eigen::Vector3d tPoint);
 
-    //! Solve transform with ceres
-    void DirectSolver(Sophus::SE3 &tT_c2r, int tLevel);
+    //! Solve the transform with ceres
+    void CeresSolver(Sophus::SE3 &tT_c2r, int tLevel);
+
+    //! Solve the transform with normal LM method
+    void LMSolver(Sophus::SE3 &tT_c2r, int level);
 
 protected:
     int     mnMaxLevel;
@@ -59,7 +62,7 @@ protected:
     std::vector<bool> mVisible;
 };
 
-class DirectSE3_Problem: public ceres::SizedCostFunction<mHalf_PatchSize*mHalf_PatchSize, 6>
+class DirectSE3_Problem: public ceres::SizedCostFunction<1, 6>
 {
 public:
     DirectSE3_Problem(Eigen::Vector3d tPoint, double *tRefPatch, double *tJocabianPatch,
@@ -87,12 +90,12 @@ public:
         const int v_i = floor(v);
         if(u_i < 0 || v_i < 0 || u_i - mnboarder < 0 || v_i - mnboarder < 0 || u_i + mnboarder >= mCurImg->cols || v_i + mnboarder >= mCurImg->rows)
         {
-            Eigen::Map<Eigen::Matrix<double, mHalf_PatchSize*mHalf_PatchSize, 1>> mResiduals(residuals);
+            Eigen::Map<Eigen::Matrix<double, 1, 1>> mResiduals(residuals);
             mResiduals.setZero();
 
             if(jacobians != NULL && jacobians[0] != NULL)
             {
-                Eigen::Map<Eigen::Matrix<double, mHalf_PatchSize * mHalf_PatchSize, 6, Eigen::RowMajor>> mJacobians(jacobians[0]);
+                Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> mJacobians(jacobians[0]);
                 mJacobians.setZero();
             }
 
@@ -108,14 +111,14 @@ public:
 
         int tStep = mCurImg->step.p[0];
         int tNum = 0;
-
+        residuals[0] = 0;
         for (int i = 0; i < mHalf_PatchSize; ++i)
         {
             uchar *it = mCurImg->data + (v_i + i - 2)*mCurImg->cols + u_i - 2;
             for (int j = 0; j < mHalf_PatchSize; ++j, ++it, ++tNum)
             {
                 double tCurPx = tC_tl*it[0] + tC_tr*it[1] + tC_bl*it[tStep] + tC_br*it[tStep+1];
-                residuals[tNum] = *(mRefPatch+tNum) - tCurPx;
+                residuals[0] += *(mRefPatch+tNum) - tCurPx;
             }
         }
 
@@ -123,10 +126,12 @@ public:
         {
             if (jacobians[0] != NULL)
             {
-                Eigen::Map<Eigen::Matrix<double, mHalf_PatchSize * mHalf_PatchSize, 6, Eigen::RowMajor>> mJacobians(jacobians[0]);
+                Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> mJacobians(jacobians[0]);
                 Eigen::Matrix<double, mHalf_PatchSize * mHalf_PatchSize, 6, Eigen::RowMajor> tJacobians(mJacobianPatch);
 
-                mJacobians = tJacobians;
+                Eigen::Matrix<double, 1, 16> I;
+                I.setOnes();
+                mJacobians = I*tJacobians;
             }
         }
 

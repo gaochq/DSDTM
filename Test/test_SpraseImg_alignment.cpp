@@ -78,6 +78,7 @@ void loadBlenderDepthmap(const std::string file_name, const DSDTM::Camera::Camer
                 printf("WARNING: did not read the full depthmap!\n");
         }
     }
+    cv::imwrite("depth.png", img);
 }
 
 
