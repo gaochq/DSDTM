@@ -109,6 +109,23 @@ int main(int argc, char **argv)
     Eigen::VectorXd tVec6Seg = tVec6.segment(2, 3);
     std::cout << tVec6Seg << std::endl;
 
+    //! Test noalias
+    Eigen::Matrix2d ta, tb, tc; ta << -1,2,3,-4; tb << 5,6,7,8;
+    tc.noalias() = ta * tb; // this computes the product directly to c
+    std::cout << tc << std::endl;
+    std::cout << ta.cwiseAbs().maxCoeff() << std::endl;
+
+    //! Test cv::Mat and eigen elements
+    cv::Mat L = (cv::Mat_<double>(3,3) << 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7, 8, 9);
+    cv::Mat_<double> tMat_cv = L;
+    Eigen::Matrix3d tMat_eigen;
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            tMat_eigen(j, i) = tMat_cv(i, j);
+    std::cout << tMat_cv <<std::endl;
+    std::cout << tMat_eigen <<std::endl;
+
+
     std::vector<int> a;
     for (int i = 0; i < 10; ++i)
     {

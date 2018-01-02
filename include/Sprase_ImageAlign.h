@@ -37,8 +37,11 @@ public:
     //! Solve the transform with ceres
     void CeresSolver(Sophus::SE3 &tT_c2r, int tLevel);
 
-    //! Solve the transform with normal LM method
-    void LMSolver(Sophus::SE3 &tT_c2r, int level);
+    //! COmpute residuals in iteration of GaussNewtonSolver
+    double ComputeResiduals(Sophus::SE3 &tT_c2r, int level, bool linearSystem);
+
+    //! Solve the transform with normal G-N method
+    void GaussNewtonSolver(Sophus::SE3 &tT_c2r, int level);
 
 protected:
     int     mnMaxLevel;
@@ -58,6 +61,9 @@ protected:
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> mRefPatch;
     Eigen::Matrix<double, Eigen::Dynamic, 6, Eigen::RowMajor> mJocabianPatch;
     Eigen::Matrix<double, 3, Eigen::Dynamic, Eigen::ColMajor> mRefNormals;
+
+    Eigen::Matrix<double, 6, 6> H;
+    Eigen::Matrix<double, 6, 1> JRes;
 
     std::vector<bool> mVisible;
 };

@@ -46,7 +46,8 @@ int Sprase_ImgAlign::Run(FramePtr tCurFrame, FramePtr tRefFrame)
 
         GetJocabianMat(i);
         //TicToc tc;
-        CeresSolver(mT_c2r, i);
+        //CeresSolver(mT_c2r, i);
+        GaussNewtonSolver(mT_c2r, i);
         //std::cout <<"Cost "<< tc.toc() << " ms" << std::endl;
         Reset();
     }
@@ -152,7 +153,36 @@ void Sprase_ImgAlign::GetJocabianMat(int tLevel)
                 mJocabianPatch.row(j*mPatchArea + tNum1) = (dx*tJacTrans.row(0) + dy*tJacTrans.row(1))*tFocalth*tScale;
             }
         }
+
     }
+
+}
+
+//! The projected plane is normalization plane
+Eigen::Matrix<double, 2, 6> Sprase_ImgAlign::GetJocabianBA(Eigen::Vector3d tPoint)
+{
+    Eigen::Matrix<double, 2, 6> J;
+
+    const double x = tPoint(0);
+    const double y = tPoint(1);
+    const double z_inv = 1.0/tPoint(2);
+    const double z_inv2 = z_inv*z_inv;
+
+    J(0,0) = -z_inv;
+    J(0,1) = 0.0;
+    J(0,2) = x*z_inv2;
+    J(0,3) = y*J(0,2);
+    J(0,4) = -(1.0 + x*J(0,2));
+    J(0,5) = y*z_inv;
+
+    J(1,0) = 0.0;
+    J(1,1) = -z_inv;
+    J(1,2) = y*z_inv2;
+    J(1,3) = 1.0 + y*J(1,2);
+    J(1,4) = -x*J(1,2);
+    J(1,5) = -x*z_inv;
+
+    return J;
 }
 
 void Sprase_ImgAlign::CeresSolver(Sophus::SE3 &tT_c2r, int tLevel)
@@ -200,32 +230,110 @@ void Sprase_ImgAlign::CeresSolver(Sophus::SE3 &tT_c2r, int tLevel)
     tT_c2r = mT_c2r;
 }
 
-//! The projected plane is normalization plane
-Eigen::Matrix<double, 2, 6> Sprase_ImgAlign::GetJocabianBA(Eigen::Vector3d tPoint)
+double Sprase_ImgAlign::ComputeResiduals(Sophus::SE3 &tT_c2r, int level, bool linearSystem)
 {
-    Eigen::Matrix<double, 2, 6> J;
+    int tPatchArea = mHalf_PatchSize*mHalf_PatchSize;
+    const cv::Mat tCurImg = mCurFrame->mvImg_Pyr[level];
+    const float tScale = 1.0/(1<<level);
+    const int mnboarder = mHalf_PatchSize-1;
 
-    const double x = tPoint(0);
-    const double y = tPoint(1);
-    const double z_inv = 1.0/tPoint(2);
-    const double z_inv2 = z_inv*z_inv;
+    double *mRefPatchAdd = (double*)mRefPatch.data();
+    double chi2 = 0.0;
+    int tResNum = 0;
 
-    J(0,0) = -z_inv;              // -1/z
-    J(0,1) = 0.0;                 // 0
-    J(0,2) = x*z_inv2;           // x/z^2
-    J(0,3) = y*J(0,2);            // x*y/z^2
-    J(0,4) = -(1.0 + x*J(0,2));   // -(1.0 + x^2/z^2)
-    J(0,5) = y*z_inv;             // y/z
+    int tnPts = mRefPatch.rows();
+    for (int n = 0; n < tnPts; ++n)
+    {
+        Eigen::Vector3d tCurPoint = tT_c2r*mRefNormals.col(n);
+        Eigen::Vector2d tCurPix = mRefFrame->mCamera->Camera2Pixel(tCurPoint)*tScale;
 
-    J(1,0) = 0.0;                 // 0
-    J(1,1) = -z_inv;              // -1/z
-    J(1,2) = y*z_inv2;           // y/z^2
-    J(1,3) = 1.0 + y*J(1,2);      // 1.0 + y^2/z^2
-    J(1,4) = -x*J(1,2);             // -x*y/z^2
-    J(1,5) = -x*z_inv;            // x/z
+        const double u = tCurPix(0);
+        const double v = tCurPix(1);
+        const int u_i = floor(u);
+        const int v_i = floor(v);
 
-    return J;
+        if(u_i < 0 || v_i < 0 || u_i - mnboarder < 0 || v_i - mnboarder < 0 || u_i + mnboarder >= tCurImg.cols || v_i + mnboarder >= tCurImg.rows)
+            continue;
+
+        const double tSubPixU = u - u_i;
+        const double tSubPixV = v - v_i;
+        const double tC_tl = (1.0 - tSubPixU)*(1.0 - tSubPixV);
+        const double tC_tr = tSubPixU*(1.0 - tSubPixV);
+        const double tC_bl = (1.0 - tSubPixU)*tSubPixV;
+        const double tC_br = tSubPixU*tSubPixV;
+
+        int tStep = tCurImg.step.p[0];
+
+        int tPtnum = n*tPatchArea;
+        int tNum = 0;
+        for (int i = 0; i < mHalf_PatchSize; ++i)
+        {
+            uchar *it = tCurImg.data + (v_i + i - 2)*tCurImg.cols + u_i - 2;
+            for (int j = 0; j < mHalf_PatchSize; ++j, ++it, ++tNum)
+            {
+                double tCurPx = tC_tl*it[0] + tC_tr*it[1] + tC_bl*it[tStep] + tC_br*it[tStep+1];
+                double res = -(*(mRefPatchAdd+tNum+tPtnum) - tCurPx);
+
+                chi2 += res*res;
+                tResNum++;
+
+                if(linearSystem)
+                {
+                    const Eigen::Matrix<double, 6, 1> J = mJocabianPatch.row(tPtnum + tNum).transpose();
+                    H.noalias() += J * J.transpose();
+                    JRes.noalias() -= J * res;
+                }
+            }
+        }
+    }
+    return chi2/tResNum;
 }
+
+void Sprase_ImgAlign::GaussNewtonSolver(Sophus::SE3 &tT_c2r, int level)
+{
+
+    bool stop = false;
+    const double eps = 1e-8;
+    double chi2 = 0.0;
+
+    Sophus::SE3 tT_c2rOld(tT_c2r);
+
+    for (int i = 0; i < mnMaxIterators; ++i)
+    {
+        double chi2Diff = 0.0;
+
+        H.setZero();
+        JRes.setZero();
+
+        double chi2New = ComputeResiduals(tT_c2r, level, true);
+        Eigen::Matrix<double, 6, 1> x = H.ldlt().solve(JRes);
+
+        //! Failed solver
+        if(bool(std::isnan(x(0))))
+        {
+            DLOG(ERROR) << "Matrix is close to singular!" << std::endl;
+            std::cout<< "error" << std::endl;
+            stop = true;
+        }
+
+        if((i > 0 && chi2New > chi2) || stop)
+        {
+            tT_c2r = tT_c2rOld;
+            break;
+        }
+
+        //! Successful solver
+        Sophus::SE3 tT_c2rNew = tT_c2r*Sophus::SE3::exp(-x);
+        tT_c2rOld = tT_c2r;
+        tT_c2r = tT_c2rNew;
+
+        chi2 = chi2New;
+
+        if((x.cwiseAbs().maxCoeff() <= eps))
+            break;
+    }
+}
+
 
 
 }// namesapce DSDTM
