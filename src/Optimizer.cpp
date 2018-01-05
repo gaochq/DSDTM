@@ -38,13 +38,13 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
     size_t tNum = 0;
     for (auto iter = tCurFrame.mvFeatures.begin(); iter!=tCurFrame.mvFeatures.end(); ++iter, ++tNum)
     {
-        Eigen::Vector3d tPoint(iter->mPoint);
+        Eigen::Vector3d tPoint((*iter)->mPoint);
 
         if(tPoint.isZero(0))
             continue;
 
-        Eigen::Vector2d tObserves(tCurFrame.mvFeatures[tNum].mUnpx.x,
-                                  tCurFrame.mvFeatures[tNum].mUnpx.y);
+        Eigen::Vector2d tObserves(tCurFrame.mvFeatures[tNum]->mUnpx.x,
+                                  tCurFrame.mvFeatures[tNum]->mUnpx.y);
         //DLOG(INFO)<< "--" << tCurFrame.mvFeatures[tNum].mlId << "--" << tObserves << "--" << tPoint <<"--" << tPoint;
 
         // only optimize camera pose

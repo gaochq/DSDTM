@@ -23,8 +23,8 @@ struct Corner
     int level;
     float score;
     float angle;
-    Corner(int _x, int _y ,float _score, int level, float _angle):
-            x(_x), y(_y), score(_score), angle(_angle)
+    Corner(int _x, int _y ,float _score, int _level, float _angle):
+            x(_x), y(_y), score(_score), level(_level), angle(_angle)
     {}
     bool operator < (const Corner& _c1) const
     {

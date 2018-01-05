@@ -54,8 +54,8 @@ int main(int argc, char **argv)
 
     DSDTM::Map *mMap = new DSDTM::Map();
     DSDTM::Config::setParameterFile(argv[1]);
-    DSDTM::Camera::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
-    DSDTM::Tracking tracking(camera.get(), mMap);
+    DSDTM::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
+    DSDTM::Tracking tracking(camera, mMap);
 
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");
     vector<string> vstrImageFilenamesRGB;
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
         tracking.Track_RGBDCam(Image_tmp, vTimestamps[i], DepthIMage);
 
-        Image_tmp.release();
+        //Image_tmp.release();
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time << " us" << endl;

@@ -24,7 +24,7 @@ Frame::Frame(Frame &frame):
 }
 
 // construct monocular frame
-Frame::Frame(Camera* _cam, cv::Mat _colorIag, double _timestamp):
+Frame::Frame(CameraPtr _cam, cv::Mat _colorIag, double _timestamp):
         mCamera(_cam), mColorImg(_colorIag), mdCloTimestamp(_timestamp)
 {
     mlId = mlNextId++;
@@ -32,7 +32,7 @@ Frame::Frame(Camera* _cam, cv::Mat _colorIag, double _timestamp):
 }
 
 // construct rgbd frame
-Frame::Frame(Camera *_cam, cv::Mat _colorImg, double _ctimestamp, cv::Mat _depthImg):
+Frame::Frame(CameraPtr _cam, cv::Mat _colorImg, cv::Mat _depthImg, double _ctimestamp):
         mCamera(_cam), mColorImg(_colorImg), mdCloTimestamp(_ctimestamp),
         mDepthImg(_depthImg)
 {
@@ -48,10 +48,10 @@ Frame::~Frame()
 void Frame::InitFrame()
 {
     ResetFrame();
-    mPyra_levels = Config::Get<int>("Camera.PyraLevels");
+    mPyra_levels = Config::Get<int>("Camera.MaxPyraLevels");
     mMin_Dist = Config::Get<int>("Camera.Min_dist");
 
-    mvImg_Pyr.resize(mPyra_levels+1);
+    mvImg_Pyr.resize(mPyra_levels);
     ComputeImagePyramid(mColorImg, mvImg_Pyr);
 
     //! it takes almost 6ms to undistort the image, it takes too much time
@@ -74,25 +74,69 @@ void Frame::ResetFrame()
 void Frame::ComputeImagePyramid(const cv::Mat Image, std::vector<cv::Mat> &Img_Pyr)
 {
     Img_Pyr[0] = Image;
-    for (int i = 1; i <= mPyra_levels; ++i)
+    for (int i = 1; i < mPyra_levels; ++i)
     {
         cv::pyrDown(Img_Pyr[i-1], Img_Pyr[i]);
     }
+}
+
+void Frame::Add_Feature(Feature *tfeature, bool tbNormal)
+{
+    if(tbNormal)
+    {
+        tfeature->mNormal = mCamera->Pixel2Camera(tfeature->mpx, 1.0);
+        tfeature->mNormal.normalize();
+    }
+
+    mvFeatures.push_back(tfeature);
+}
+
+void Frame::UndistortFeatures()
+{
+    int N = mvFeatures.size();
+    cv::Mat tMat(N, 2, CV_32F);
+    std::vector<cv::Point2f> tSrc;
+    std::vector<cv::Point2f> tmvFeaturesUn;           //Features undistorted
+
+    for (int i = 0; i < N; ++i)
+    {
+        tSrc.push_back(mvFeatures[i]->mpx);
+    }
+
+    //! the InputArray in undistortPoints should be 2 channels
+    cv::undistortPoints(tSrc, tmvFeaturesUn, mCamera->mInstrinsicMat,
+                        mCamera->mDistortionMat, cv::noArray(), mCamera->mInstrinsicMat);
+
+    for (int j = 0; j < N; ++j)
+    {
+        mvFeatures[j]->mpx = tmvFeaturesUn[j];
+
+        mvFeatures[j]->mNormal = mCamera->Pixel2Camera(mvFeatures[j]->mpx, 1.0);
+        mvFeatures[j]->mNormal.normalize();
+    }
+}
+
+Eigen::Vector3d Frame::UnProject(const cv::Point2f tPixel, const float d)
+{
+    Eigen::Vector3d tPoint = mCamera->Pixel2Camera(tPixel, d);
+
+    return mT_c2w.inverse()*tPoint;
 }
 
 void Frame::Get_Features(std::vector<cv::Point2f> &_features)
 {
     for (int i = 0; i < mvFeatures.size(); ++i)
     {
-        _features.push_back(mvFeatures[i].mpx);
+        _features.push_back(mvFeatures[i]->mpx);
     }
 }
+
 
 void Frame::SetFeatures(const std::vector<cv::Point2f> &_features)
 {
     for (int i = 0; i < _features.size(); ++i)
     {
-        Add_Feature(Feature(this, _features[i], 0));
+        Add_Feature( new Feature(this, _features[i], 0));
     }
 }
 
@@ -101,7 +145,7 @@ void Frame::SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<l
 {
     for (int i = 0; i < _features.size(); ++i)
     {
-        Add_Feature(Feature(this, _features[i], 0, tStatus[i], tTrack_cnt[i]));
+        Add_Feature(new Feature(this, _features[i], 0, tStatus[i], tTrack_cnt[i]));
     }
 }
 
@@ -114,10 +158,29 @@ void Frame::Set_Pose(Sophus::SE3 _pose)
     mOw = tT_w2c.translation();
 }
 
-float Frame::Get_FeatureDetph(const Feature feature)
+float Frame::Get_FeatureDetph(const Feature* feature)
 {
-    float p = mDepthImg.at<float>(feature.mpx.y, feature.mpx.x);
-    return p;
+    int x = cvRound(feature->mpx.x);
+    int y = cvRound(feature->mpx.y);
+
+    float d = mDepthImg.ptr<float>(y)[x];
+    if(d != 0)
+        return d;
+    else
+    {
+        int dx[4] = {-1, 0, 1, 0};
+        int dy[4] = {0, -1, 0, 1};
+        for (int i = 0; i < 4; ++i)
+        {
+            d = mDepthImg.ptr<float>(y+dy[i])[x+dx[i]];
+            if(d != 0)
+            {
+                return d;
+            }
+        }
+    }
+
+    return -1.0;
 }
 
 float Frame::Get_FeatureDetph(const cv::Point2f feature)
@@ -126,33 +189,17 @@ float Frame::Get_FeatureDetph(const cv::Point2f feature)
     return p;
 }
 
-void Frame::Add_MapPoint(size_t tFid, MapPoint *tPoint)
+//! Add MapPoint to do BA optimize frame pose
+void Frame::Add_MapPoint(MapPoint *tPoint)
 {
     mvMapPoints.push_back(tPoint);
-
-    mpObservation.insert(std::pair<size_t, MapPoint* >(tFid, tPoint));
 }
 
 void Frame::Add_Observations(const KeyFrame &tKframe)
 {
-    std::map<long int, MapPoint*> tObservations = tKframe.Get_Observations();
 
-    std::map<long int, MapPoint*>::iterator it;
-    for (int i = 0; i < mvFeatures.size(); ++i)
-    {
-        it = tObservations.find(mvFeatures[i].mlId);
-        if(it != tObservations.end())
-            Add_MapPoint(i, it->second);
-    }
 }
 
-void Frame::Add_Feature(Feature tfeature)
-{
-    tfeature.mNormal = mCamera->Pixel2Camera(tfeature.mpx, 1.0);
-    tfeature.mNormal.normalize();
-
-    mvFeatures.push_back(tfeature);
-}
 
 void Frame::Get_SceneDepth(double tMinDepth, double tMeanDepth)
 {
@@ -191,36 +238,6 @@ bool Frame::Find_Observations(size_t tID)
         return false;
 }
 
-void Frame::UndistortFeatures()
-{
-    int N = mvFeatures.size();
-    cv::Mat tMat(N, 2, CV_32F);
-    std::vector<cv::Point2f> tSrc;
-    std::vector<cv::Point2f> tmvFeaturesUn;           //Features undistorted
-
-    for (int i = 0; i < N; ++i)
-    {
-        tSrc.push_back(mvFeatures[i].mpx);
-    }
-
-    //! the InputArray in undistortPoints should be 2 channels
-    cv::undistortPoints(tSrc, tmvFeaturesUn, mCamera->mInstrinsicMat,
-                        mCamera->mDistortionMat, cv::noArray(), mCamera->mInstrinsicMat);
-
-    for (int j = 0; j < N; ++j)
-    {
-        mvFeatures[j].mUnpx = tmvFeaturesUn[j];
-
-        mvFeatures[j].mNormal = mCamera->LiftProjective(mvFeatures[j], false);
-    }
-}
-
-Eigen::Vector3d Frame::UnProject(const cv::Point2f tPixel, const float d)
-{
-    Eigen::Vector3d tPoint = mCamera->Pixel2Camera(tPixel, d);
-
-    return mT_c2w.inverse()*tPoint;
-}
 
 void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt,
                      std::vector<cv::Point2f> tBadPts)
@@ -236,13 +253,13 @@ void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackC
     int j = 0;
     for (int i = 0; i < mvFeatures.size(); ++i)
     {
-        if(mImgMask.at<uchar>(mvFeatures[i].mpx)==255)
+        if(mImgMask.at<uchar>(mvFeatures[i]->mpx)==255)
         {
             mvFeatures[j++] = mvFeatures[i];
-            tlId.push_back(mvFeatures[i].mlId);
-            tTrackCnt.push_back(mvFeatures[i].mTrack_cnt);
+            tlId.push_back(mvFeatures[i]->mlId);
+            tTrackCnt.push_back(mvFeatures[i]->mTrack_cnt);
 
-            cv::circle(mImgMask, mvFeatures[i].mpx, mMin_Dist, 0, -1);
+            cv::circle(mImgMask, mvFeatures[i]->mpx, mMin_Dist, 0, -1);
         }
     }
 
@@ -256,7 +273,7 @@ void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackC
 bool Frame::isVisible(const Eigen::Vector3d tPose, int tBoundary) const
 {
     Eigen::Vector3d tPoseCam = mT_c2w*tPose;
-    if(tPoseCam(3) < 0.0)
+    if(tPoseCam(2) < 0.0)
         return false;
 
     Eigen::Vector2d px = mCamera->Camera2Pixel(tPoseCam);

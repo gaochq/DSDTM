@@ -31,10 +31,13 @@ public:
     void AddMapPoint(MapPoint *_point);
 
     //! Get frames have an overlapping field of current view
-    void GetCLoseKeyFrames(const Frame tFrame, std::list<std::pair<KeyFrame*, double> >& tClose_kfs) const;
+    void GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame*, double> >& tClose_kfs) const;
 
+    //! Get the initial Frame
     KeyFrame *Get_InitialKFrame();
 
+    //! Clera all vars in map
+    void Release();
 
 protected:
     std::set<KeyFrame*>     msKeyFrames;

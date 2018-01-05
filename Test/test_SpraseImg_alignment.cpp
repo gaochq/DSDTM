@@ -52,7 +52,7 @@ void LoadImages(const string &strImageFilename, vector<string> &vstrImageFilenam
     }
 }
 
-void loadBlenderDepthmap(const std::string file_name, const DSDTM::Camera::CameraPtr cam, cv::Mat& img)
+void loadBlenderDepthmap(const std::string file_name, const DSDTM::CameraPtr cam, cv::Mat& img)
 {
     std::ifstream file_stream(file_name.c_str());
     assert(file_stream.is_open());
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
     FLAGS_log_dir = "./log";
 
     DSDTM::Config::setParameterFile(argv[1]);
-    DSDTM::Camera::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
+    DSDTM::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
 
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");
     vector<string> vstrImageFilenamesRGB;
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 
         if(i==0)
         {
-            frame_ref_.reset(new DSDTM::Frame(camera.get(), img, vTimestamps[i]));
+            frame_ref_.reset(new DSDTM::Frame(camera, img, vTimestamps[i]));
             frame_ref_->Set_Pose(T_w_g);
 
             cv::Mat depthmap;
@@ -134,12 +134,12 @@ int main(int argc, char **argv)
 
             feature_detector.detect(frame_ref_.get(), 20);
 
-            for_each(frame_ref_->mvFeatures.begin(), frame_ref_->mvFeatures.end(), [&](DSDTM::Feature &it)
+            for_each(frame_ref_->mvFeatures.begin(), frame_ref_->mvFeatures.end(), [&](DSDTM::Feature *it)
             {
-                float depth = depthmap.at<float>(it.mpx.y, it.mpx.x);
-                Eigen::Vector3d pt_pos_cam = it.mNormal*depth;
+                float depth = depthmap.at<float>(it->mpx.y, it->mpx.x);
+                Eigen::Vector3d pt_pos_cam = it->mNormal*depth;
                 Eigen::Vector3d pt_pos_wd = frame_ref_->Get_Pose().inverse()*pt_pos_cam;
-                it.mPoint = pt_pos_wd;
+                it->mPoint = pt_pos_wd;
             });
 
             cout << "Added %d 3d pts to the reference frame" <<  frame_ref_->mvFeatures.size() << endl;
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
             continue;
         }
 
-        frame_cur_.reset(new DSDTM::Frame(camera.get(), img, vTimestamps[i]));
+        frame_cur_.reset(new DSDTM::Frame(camera, img, vTimestamps[i]));
         frame_cur_->Set_Pose(T_prev_w);
 
         DSDTM::TicToc tc;

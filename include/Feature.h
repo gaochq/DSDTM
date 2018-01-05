@@ -16,7 +16,6 @@ struct Feature
     Frame*              mframe;
     cv::Point2f         mpx;
     int                 mlevel;
-    Eigen::Vector2d     mgrad;
     long int            mlId;
     long int            mTrack_cnt;             // Succeed tracking times
     cv::Point2f         mUnpx;
@@ -27,7 +26,6 @@ struct Feature
             mframe(_frame),
             mpx(_px),
             mlevel(_level),
-            mgrad(0.0, 0.0),
             mlId(tlId),
             mTrack_cnt(tTrack_cnt),
             mPoint(0.0, 0.0, 0.0)
@@ -43,7 +41,7 @@ struct Feature
     }
 };
 
-    typedef std::vector<Feature> Features;
+typedef std::vector<Feature*> Features;
 }// namespace DSDTM
 
 

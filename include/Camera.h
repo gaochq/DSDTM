@@ -57,7 +57,7 @@ public:
     ~Camera();
 
     //! Distortion correction for Feature in normalized plane
-    Eigen::Vector3d LiftProjective(const Feature &feature, bool tUnDistort = true);
+    Eigen::Vector3d LiftProjective(const Feature *feature, bool tUnDistort = true);
 
     //! Calculate the distortion vary in normalized
     void Distortion(const Eigen::Vector2d tPt, Eigen::Vector2d tvPt);
@@ -119,7 +119,6 @@ public:
     }
 
 public:
-    typedef std::shared_ptr<Camera> CameraPtr;
 
     Camera_Model    mCam_Model;
     float           mfx;
@@ -150,6 +149,7 @@ public:
     std::vector<Eigen::Vector2d> mvGridBinPose;
 
 };
+typedef std::shared_ptr<Camera> CameraPtr;
 
 //! Used for unaryExpr(), which can save a lot time than that in "for loop"
 static int Eigenceil(double x)

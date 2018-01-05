@@ -53,10 +53,10 @@ bool MapPoint::IsBad() const
 
 int MapPoint::Get_ObserveNums() const
 {
-    return mObsNum;
+    return mnFound;
 }
 
-bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature &tFeature, KeyFrame *tKframe)
+bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *&tKframe)
 {
     Eigen::Vector3d tPt_frame = mPose - tFrame->Get_CameraCnt();
     tPt_frame.normalize();

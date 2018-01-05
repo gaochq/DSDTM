@@ -21,8 +21,8 @@ class Frame
 public:
     Frame();
     Frame(Frame &frame);
-    Frame(Camera* _cam, cv::Mat _colorIag, double _timestamp);
-    Frame(Camera* _cam, cv::Mat _colorImg, double _ctimestamp, cv::Mat _depthImg);
+    Frame(CameraPtr _cam, cv::Mat _colorIag, double _timestamp);
+    Frame(CameraPtr _cam, cv::Mat _colorImg, cv::Mat _depthImg, double _ctimestamp);
     ~Frame();
 
     //! Initalize the Frame
@@ -30,6 +30,12 @@ public:
 
     //! Compute thr image pyramid
     void ComputeImagePyramid(const cv::Mat Image, std::vector<cv::Mat> &Img_Pyr);
+
+    //! Add Feature
+    void Add_Feature(Feature *tfeature, bool tbNormal = true);
+
+    //! Undistort Features
+    void UndistortFeatures();
 
     //! Return keypoints from features
     void Get_Features(std::vector<cv::Point2f> &KeyPoints);
@@ -53,17 +59,14 @@ public:
     Eigen::Vector3d Get_CameraCnt() const { return mOw; }
 
     //! Get the feature depth from depth image
-    float Get_FeatureDetph(const Feature feature);
+    float Get_FeatureDetph(const Feature* feature);
     float Get_FeatureDetph(const cv::Point2f feature);
 
     //! Add mappoint and observation into frame
-    void Add_MapPoint(size_t tFid, MapPoint *tPoint);
+    void Add_MapPoint(MapPoint *tPoint);
 
     //! Add Feature-Mappoint observations
     void Add_Observations(const KeyFrame &tKframe);
-
-    //! Add Feature
-    void Add_Feature(Feature tfeature);
 
     //! Return Observations
     std::map<size_t, MapPoint*> Get_Observations() const { return mpObservation;};
@@ -73,9 +76,6 @@ public:
 
     //! Check whether the feature int observations
     bool Find_Observations(size_t tID);
-
-    //! Undistort Features
-    void UndistortFeatures();
 
     //! Unproject pixel into world
     Eigen::Vector3d UnProject(const cv::Point2f tPixel, const float d);
@@ -95,8 +95,7 @@ public:
 
 
 public:
-    Features                    mvFeatures;
-    std::vector<cv::Point2f>    mvFeaturesUn;           //Features undistorted
+    Features                mvFeatures;
 
     unsigned long           mlId;
     static unsigned long    mlNextId;
@@ -107,7 +106,7 @@ public:
 
     std::vector<double>     mvGrid_probability;
     cv::Mat                 mDepthImg;
-    Camera*                 mCamera;
+    CameraPtr               mCamera;
 
     cv::Mat                 mImgMask;
     cv::Mat                 mDynamicMask;

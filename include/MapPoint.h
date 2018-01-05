@@ -38,7 +38,7 @@ public:
     int Get_ObserveNums() const;
 
     //! Get the closest keyframe between cunrrent frame refer this MapPoint
-    bool Get_ClosetObs(const Frame *tFrame, Feature &tFeature, KeyFrame *tKframe);
+    bool Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *&tKframe);
 
     //! Increase the match times with frames
     void IncreaseFound(int n = 1);
@@ -49,7 +49,7 @@ public:
     unsigned long           mlID;
     static unsigned long    mlNextId;
     unsigned long           mLastSeenFrameId;
-    unsigned long           mReferenceProjectedFrameId;
+    unsigned long           mLastProjectedFrameId;
 
     bool                    mbOutlier;
 

@@ -28,8 +28,8 @@ int main(int argc, char **argv)
 
     DSDTM::Map *mMap = new DSDTM::Map();
     DSDTM::Config::setParameterFile(argv[1]);
-    DSDTM::Camera::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
-    DSDTM::Tracking tracking(camera.get(), mMap);
+    DSDTM::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
+    DSDTM::Tracking tracking(camera, mMap);
 
     // Retrieve paths to images
     vector<string> vstrImageFilenames;

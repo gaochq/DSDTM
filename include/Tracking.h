@@ -14,6 +14,7 @@
 #include "LocalMapping.h"
 #include "Moving_Detection.h"
 #include "Feature_alignment.h"
+#include "Sprase_ImageAlign.h"
 
 namespace DSDTM
 {
@@ -27,6 +28,7 @@ class Initializer;
 class KeyFrame;
 class LocalMapping;
 class Moving_Detecter;
+class Sprase_ImgAlign;
 
 class Tracking
 {
@@ -41,7 +43,7 @@ private:
     };
 
 public:
-    Tracking(Camera *_cam, Map *_map, LocalMapping *tLocalMapping= nullptr);
+    Tracking(CameraPtr _cam, Map *_map, LocalMapping *tLocalMapping= nullptr);
     ~Tracking();
 
     //! Tracking on the rgbd camera
@@ -59,17 +61,9 @@ public:
     void ComputeMaxBin(std::vector<int>* histo, const int L, std::vector<int> &tLktSets);
 
 private:
-    //! The main tracking function
-    void Track();
 
-    //! Tracking with lkt algorithm
-    void LKT_Track(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Point2f> &_cur_Pts);
-
-    //! Reject outliers with RARSAC algorithm
-    void Rarsac_F(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Point2f> &_cur_Pts,
-                  std::vector<cv::Point2f> &_bad_Pts);
-    cv::Mat Reject_FMat(std::vector<cv::Point2f> &_cur_Pts, std::vector<cv::Point2f> &_last_Pts,
-                     std::vector<cv::Point2f> &_bad_Pts);
+    //! Create Keyframe and MapPoints after initialization
+    bool CreateInitialMapRGBD();
 
     //! Solve the pose of cunrrent with last keyframe
     bool TrackWithLastFrame();
@@ -79,9 +73,6 @@ private:
 
     //! Updata local map keyframes, I choose the 10 most closer to current frame
     void UpdateLocalMap();
-
-    //! Update MapPoint observed by Current Frame
-    void SearchLocalPoints();
 
     //! Add new features into the frame refer to the detection Grid
     void AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv::Point2f> &tLast_Pts);
@@ -102,10 +93,14 @@ private:
     void CraeteKeyframe();
 
 
+
+
+
 public:
-    Camera                  *mCam;               //! Camera
-    int                     mPyra_levels;
-    static long int       mlNextID;
+    CameraPtr               mCam;               //! Camera
+    int                     mMaxPyra_levels;
+    int                     mMinPyra_levels;
+    static long int         mlNextID;
 
 protected:
     float                   mDepthScale;
@@ -116,9 +111,9 @@ protected:
     Initializer             *mInitializer;
 
     Tracking_State          mState;             //! Tracking state
-    Frame                   mLastFrame;
-    Frame                   mCurrentFrame;
-    Frame                   mInitFrame;
+    FramePtr                mLastFrame;
+    FramePtr                mCurrentFrame;
+    FramePtr                mInitFrame;
     KeyFrame*               mpReferenceKF;
 
     Map                     *mMap;
@@ -133,6 +128,8 @@ protected:
     LocalMapping            *mLocalMapping;
     Moving_Detecter         *mMoving_detecter;
     Feature_Alignment       *mFeature_Alignment;
+    Sprase_ImgAlign         *mSprase_ImgAlign;
+
 
     std::vector<KeyFrame*>  mvpLocalKeyFrames;
     std::vector<MapPoint*>  mvpLocalMapPoints;

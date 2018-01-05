@@ -7,17 +7,19 @@
 namespace DSDTM
 {
 long unsigned int KeyFrame::mlNextId=0;
-KeyFrame::KeyFrame(Frame &tframe):
-        mFrame(&tframe), mT_c2w(tframe.Get_Pose()), mvMapPoints(tframe.mvMapPoints),
-        mvFeatures(tframe.mvFeatures)
+KeyFrame::KeyFrame(Frame *tframe):
+        mFrame(tframe), mvMapPoints(tframe->mvMapPoints),
+        mvFeatures(tframe->mvFeatures), mnVaildMps(0)
 {
     mlId = mlNextId++;
 
-    std::for_each(tframe.mpObservation.begin(), tframe.mpObservation.end(), [&](std::pair<size_t , MapPoint*> tObs)
+    mvMapPoints.resize(mFrame->mvFeatures.size());
+    Set_Pose(tframe->Get_Pose());
+
+    std::for_each(tframe->mpObservation.begin(), tframe->mpObservation.end(), [&](std::pair<size_t , MapPoint*> tObs)
     {
         Add_Observations(tObs.first, tObs.second);
     });
-
 }
 
 KeyFrame::~KeyFrame()
@@ -25,16 +27,16 @@ KeyFrame::~KeyFrame()
 
 }
 
-void KeyFrame::Add_MapPoint(MapPoint *tMPoint)
+void KeyFrame::Add_MapPoint(MapPoint *tMPoint, int tIdx)
 {
-    mvMapPoints.push_back(tMPoint);
-
+    mvMapPoints[tIdx] = tMPoint;
+    mnVaildMps++;
 }
 
 void KeyFrame::Add_Observations(size_t tId, MapPoint *tMPoint)
 {
-    mpFFObservation.insert(std::pair<long int, size_t>(mvFeatures[tId].mlId, tId));
-    mpObservation.insert(std::pair<long int, MapPoint*>(mvFeatures[tId].mlId, tMPoint));
+    mpFFObservation.insert(std::pair<long int, size_t>(mvFeatures[tId]->mlId, tId));
+    mpObservation.insert(std::pair<long int, MapPoint*>(mvFeatures[tId]->mlId, tMPoint));
 }
 
 std::vector<MapPoint*> KeyFrame::GetMapPoints()

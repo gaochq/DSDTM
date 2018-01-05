@@ -8,7 +8,7 @@
 namespace DSDTM
 {
 
-Feature_Alignment::Feature_Alignment(Camera *camera):
+Feature_Alignment::Feature_Alignment(CameraPtr camera):
         mCam(camera)
 {
     GridInitalization();
@@ -51,9 +51,9 @@ void Feature_Alignment::ResetGrid()
     });
 }
 
-bool Feature_Alignment::ReprojectPoint(Frame tFrame, MapPoint *tMPoint)
+bool Feature_Alignment::ReprojectPoint(FramePtr tFrame, MapPoint *tMPoint)
 {
-    Eigen::Vector2d tPx = tFrame.World2Pixel(tMPoint->Get_Pose());
+    Eigen::Vector2d tPx = tFrame->World2Pixel(tMPoint->Get_Pose());
 
     if(mCam->IsInImage(cv::Point2f(tPx(0), tPx(1)), 8))
     {
@@ -68,7 +68,7 @@ bool Feature_Alignment::ReprojectPoint(Frame tFrame, MapPoint *tMPoint)
     return false;
 }
 
-void Feature_Alignment::SearchLocalPoints(Frame *tFrame)
+void Feature_Alignment::SearchLocalPoints(FramePtr tFrame)
 {
     int mMatches = 0;
 
@@ -82,7 +82,7 @@ void Feature_Alignment::SearchLocalPoints(Frame *tFrame)
     }
 }
 
-bool Feature_Alignment::ReprojectCell(Frame *tFrame, Cell *tCell)
+bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
 {
     //! Sort mappoint refer to their observation times
     tCell->sort(boost::bind(&Feature_Alignment::CellComparator, _1, _2));
@@ -96,14 +96,21 @@ bool Feature_Alignment::ReprojectCell(Frame *tFrame, Cell *tCell)
         int tLevel = 0;
         tFindMatch = FindMatchDirect(iter->mMpPoint, tFrame, iter->mPx, tLevel);
 
-        if(tFindMatch)
+        if(!tFindMatch)
         {
-            iter->mMpPoint->IncreaseFound();
+            tCell->erase(iter);
 
-            Feature tFeature(tFrame, cv::Point2f(iter->mPx(0), iter->mPx(1)), tLevel);
-
-            //TODO Add Feature into Frame
+            continue;
         }
+
+        iter->mMpPoint->IncreaseFound();
+
+        Feature *tFeature = new Feature(tFrame.get(), cv::Point2f(iter->mPx(0), iter->mPx(1)), tLevel);
+        tFeature->mPoint = iter->mMpPoint->Get_Pose();
+
+        tFrame->Add_Feature(tFeature);
+        tFrame->Add_MapPoint(iter->mMpPoint);
+        //TODO Add Feature into Frame
     }
 }
 
@@ -112,24 +119,24 @@ bool Feature_Alignment::CellComparator(Candidate &c1, Candidate &c2)
     return  c1.mMpPoint->Get_ObserveNums() > c2.mMpPoint->Get_ObserveNums();
 }
 
-bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const Frame *tFrame, Eigen::Vector2d &tPt, int &tLevel)
+bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const FramePtr tFrame, Eigen::Vector2d &tPt, int &tLevel)
 {
     bool success = false;
 
-    Feature tReferFeature;
+    Feature *tReferFeature;
     KeyFrame *tRefKeyframe;
-    if(!(tMpPoint->Get_ClosetObs(tFrame, tReferFeature, tRefKeyframe)))
+    if(!(tMpPoint->Get_ClosetObs(tFrame.get(), tReferFeature, tRefKeyframe)))
         return false;
 
-    if(!(mCam->IsInImage(cv::Point2f(tReferFeature.mpx.x/(1<<tReferFeature.mlevel, tReferFeature.mpx.y/(1<<tReferFeature.mlevel))),
-                       mHalf_PatchSize+1, tReferFeature.mlevel)))
+    if(!(mCam->IsInImage(cv::Point2f(tReferFeature->mpx.x/(1<<tReferFeature->mlevel), tReferFeature->mpx.y/(1<<tReferFeature->mlevel)),
+                       mHalf_PatchSize+1, tReferFeature->mlevel)))
         return false;
 
     Eigen::Matrix2d tA_c2r = SolveAffineMatrix(tRefKeyframe, tFrame, tReferFeature, tMpPoint);
 
     int tBestLevel = GetBestSearchLevel(tA_c2r, mPyr_levels);
 
-    WarpAffine(tA_c2r, tRefKeyframe->mFrame->mvImg_Pyr[tReferFeature.mlevel], tReferFeature, tBestLevel, mPatch_WithBoarder);
+    WarpAffine(tA_c2r, tRefKeyframe->mFrame->mvImg_Pyr[tReferFeature->mlevel], tReferFeature, tBestLevel, mPatch_WithBoarder);
 
     GetPatchNoBoarder();
 
@@ -137,30 +144,30 @@ bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const Frame *tFrame,
 
     success = Align2D(tFrame->mColorImg, mPatch_WithBoarder, mPatch, 10, tCurPx);
 
-    tCurPx = tCurPx*(1<<tBestLevel);
+    tPt = tCurPx*(1<<tBestLevel);
 
     tLevel = tBestLevel;
     return success;
 }
 
-Eigen::Matrix2d Feature_Alignment::SolveAffineMatrix(KeyFrame *tReferKframe, const Frame *tCurFrame, Feature tReferFeature,
+Eigen::Matrix2d Feature_Alignment::SolveAffineMatrix(KeyFrame *tReferKframe, const FramePtr tCurFrame, Feature *tReferFeature,
                                                      MapPoint *tMpPoint)
 {
     Eigen::Matrix2d tA_c2r;
 
     const int Half_PatchLarger = mHalf_PatchSize + 1;
-    const int tLevel = tReferFeature.mlevel;
+    const int tLevel = tReferFeature->mlevel;
 
     const Eigen::Vector3d tRefPoint = tReferKframe->Get_Pose() * tMpPoint->Get_Pose();
-    cv::Point2f tRefPx = tReferFeature.mpx;
+    cv::Point2f tRefPx = tReferFeature->mpx;
 
-    Eigen::Vector2d tRefPxU(tRefPx.x + Half_PatchLarger / (1 << tLevel), tRefPx.y);
-    Eigen::Vector2d tRefPxV(tRefPx.x, tRefPx.y + Half_PatchLarger / (1 << tLevel));
+    Eigen::Vector2d tRefPxU(tRefPx.x + Half_PatchLarger*(1 << tLevel), tRefPx.y);
+    Eigen::Vector2d tRefPxV(tRefPx.x, tRefPx.y + Half_PatchLarger*(1 << tLevel));
 
-    Eigen::Vector3d tRefPointU = mCam->Pixel2Camera(tRefPxU, tRefPoint(3));
-    Eigen::Vector3d tRefPointV = mCam->Pixel2Camera(tRefPxV, tRefPoint(3));
+    Eigen::Vector3d tRefPointU = mCam->Pixel2Camera(tRefPxU, tRefPoint(2));
+    Eigen::Vector3d tRefPointV = mCam->Pixel2Camera(tRefPxV, tRefPoint(2));
 
-    Sophus::SE3 tT_c2r = tReferKframe->Get_Pose().inverse() * tCurFrame->Get_Pose();
+    Sophus::SE3 tT_c2r = tCurFrame->Get_Pose()*tReferKframe->Get_Pose().inverse() ;
     Eigen::Vector2d tCurPxU = mCam->Camera2Pixel(tT_c2r * tRefPointU);
     Eigen::Vector2d tCurPxV = mCam->Camera2Pixel(tT_c2r * tRefPointV);
 
@@ -184,21 +191,22 @@ int Feature_Alignment::GetBestSearchLevel(Eigen::Matrix2d tAffineMat, int tMaxLe
     return tSearch_Level;
 }
 
-void Feature_Alignment::WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &tImg_ref, Feature tRefFeature,
+void Feature_Alignment::WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &tImg_ref, Feature *tRefFeature,
                                    const int tSearchLevel, uchar *tPatchLarger)
 {
     int const tReferPh_Size = mHalf_PatchSize+2;
-    Eigen::Matrix2f tA_r2c = tA_r2c.inverse().cast<float>();
+    Eigen::Matrix2f tA_r2c = tA_c2r.inverse().cast<float>();
 
     uchar *tRefPatch = tPatchLarger;
     Eigen::Vector2f tRefPx;
-    tRefPx << tRefFeature.mpx.x/(1<<tRefFeature.mlevel),
-              tRefFeature.mpx.y/(1<<tRefFeature.mlevel);
+    tRefPx << tRefFeature->mpx.x/(1<<tRefFeature->mlevel),
+              tRefFeature->mpx.y/(1<<tRefFeature->mlevel);
+
 
     //! generate the reference board patch
     Eigen::MatrixXf tWrapMat(2, 100);
     Eigen::MatrixXf tColBlock(1, 10);
-    tColBlock << -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5;
+    tColBlock << -5, -4, -3, -2, -1, 0, 1, 2, 3, 4;
     int tindex = 1;
     for (int i = -5; i < 5; ++i, ++tindex)
     {
@@ -302,9 +310,11 @@ bool Feature_Alignment::Align2D(const cv::Mat &tCurImg, uchar *tPatch_WithBoarde
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-    //std::cout << summary.FullReport() << std::endl;
+    std::cout << summary.FullReport() << std::endl;
 
     tCurPx = mCurpx.head<2>();
+
+    return true;
 }
 
 

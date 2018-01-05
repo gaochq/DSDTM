@@ -23,11 +23,11 @@ class Map;
 class Initializer
 {
 public:
-    Initializer(Frame &frame, Camera* camera, Map *map);
+    Initializer(FramePtr frame, CameraPtr camera, Map *map);
     ~Initializer();
 
     //! Initalize the RGBD camera
-    bool Init_RGBDCam(Frame &frame);
+    bool Init_RGBDCam(FramePtr frame);
 
     //! Initalize the Monocular camera
     bool Init_MonocularCam(Frame &lastFrame, Frame &currentFrame);
@@ -39,11 +39,11 @@ private:
 
 
 public:
-    Frame                   mReferFrame;
+    FramePtr                 mReferFrame;
 
 protected:
 
-    Camera                  *mCam;
+    CameraPtr                  mCam;
     Feature_detector        *mFeature_detector;
 
     bool            mbInitSuccess;

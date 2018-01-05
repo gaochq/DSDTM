@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     google::InstallFailureSignalHandler();
 
     DSDTM::Config::setParameterFile(argv[1]);
-    DSDTM::Camera::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
+    DSDTM::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
 
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");
     vector<string> vstrImageFilenamesRGB;
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
         clahe->apply(ColorImage, ColorImage);
 
-        DSDTM::Frame* tFrame = new DSDTM::Frame(camera.get(), ColorImage, vTimestamps[i], DepthIMage);
+        DSDTM::Frame* tFrame = new DSDTM::Frame(camera, ColorImage, DepthIMage, vTimestamps[i]);
         mFrames.push_back(tFrame);
     }
 
@@ -112,16 +112,16 @@ int main(int argc, char **argv)
     mFrames[1]->SetFeatures(tCur_Pts);
     mFrames[0]->Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
 
-    DSDTM::KeyFrame *KFrame = new DSDTM::KeyFrame(*mFrames[0]);
+    DSDTM::KeyFrame *KFrame = new DSDTM::KeyFrame(mFrames[0]);
     for (int i = 0; i <mFrames[0]->mvFeatures.size(); ++i)
     {
         float z = mFrames[0]->Get_FeatureDetph(mFrames[0]->mvFeatures[i]);
         if (z>0)
         {
-            Eigen::Vector3d tPose = camera->Pixel2Camera(mFrames[0]->mvFeatures[i].mpx, z);
+            Eigen::Vector3d tPose = camera->Pixel2Camera(mFrames[0]->mvFeatures[i]->mpx, z);
             DSDTM::MapPoint *tMPoint = new DSDTM::MapPoint(tPose, KFrame);
 
-            mFrames[1]->Add_MapPoint(i, tMPoint);
+            mFrames[1]->Add_MapPoint(tMPoint);
         }
     }
 

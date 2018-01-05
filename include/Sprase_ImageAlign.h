@@ -38,10 +38,10 @@ public:
     void CeresSolver(Sophus::SE3 &tT_c2r, int tLevel);
 
     //! COmpute residuals in iteration of GaussNewtonSolver
-    double ComputeResiduals(Sophus::SE3 &tT_c2r, int level, bool linearSystem);
+    double ComputeResiduals(Sophus::SE3 &tT_c2r, int level, bool linearSystem, int & tnPts);
 
-    //! Solve the transform with normal G-N method
-    void GaussNewtonSolver(Sophus::SE3 &tT_c2r, int level);
+    //! Solve the transform with normal G-N method and return the successfully tracked features number
+    void GaussNewtonSolver(Sophus::SE3 &tT_c2r, int level, int & tnPts);
 
 protected:
     int     mnMaxLevel;

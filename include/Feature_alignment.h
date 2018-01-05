@@ -44,7 +44,7 @@ public:
 
 public:
 
-    Feature_Alignment(Camera *camera);
+    Feature_Alignment(CameraPtr camera);
     ~Feature_Alignment();
 
     //! Init the reproject grid
@@ -54,28 +54,28 @@ public:
     void ResetGrid();
 
     //! Add the best feature into cell
-    bool ReprojectCell(Frame *tFrame, Cell *tCell);
+    bool ReprojectCell(FramePtr tFrame, Cell *tCell);
 
     //! project mappoint into Grid
-    bool ReprojectPoint(Frame tFrame, MapPoint *tMPoint);
+    bool ReprojectPoint(FramePtr tFrame, MapPoint *tMPoint);
 
     //! Find mappoint match for current frame through feature alignment
-    void SearchLocalPoints(Frame *tFrame);
+    void SearchLocalPoints(FramePtr tFrame);
 
     //! Compare cells refer to observe times
     static bool CellComparator(Candidate &c1, Candidate &c2);
 
     //! Find the match of MapPoint using Featurealignment
-    bool FindMatchDirect(MapPoint *tMpPoint, const Frame *tFrame, Eigen::Vector2d &tPt, int &tLevel);
+    bool FindMatchDirect(MapPoint *tMpPoint, const FramePtr tFrame, Eigen::Vector2d &tPt, int &tLevel);
 
     //! Get the affine matrix
-    Eigen::Matrix2d SolveAffineMatrix(KeyFrame *tReferKframe, const Frame *tCurFrame, Feature tReferFeature, MapPoint *tMpPoint);
+    Eigen::Matrix2d SolveAffineMatrix(KeyFrame *tReferKframe, const FramePtr tCurFrame, Feature *tReferFeature, MapPoint *tMpPoint);
 
     //! Get the best search level refer to the determinate of affine matrix
     int GetBestSearchLevel(Eigen::Matrix2d tAffineMat, int tMaxLevel);
 
     //! Affine transformation to get the reference patch
-    void WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &tImg_ref, Feature tRefFeature, const int tSearchLevel, uchar *tPatchLarger);
+    void WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &tImg_ref, Feature *tRefFeature, const int tSearchLevel, uchar *tPatchLarger);
 
     //! Get the final patch form patch with boarder
     void GetPatchNoBoarder();
@@ -86,7 +86,7 @@ public:
 
 private:
 
-    Camera  *mCam;
+    CameraPtr  mCam;
 
     Grid    mGrid;
     int     mMax_pts;
