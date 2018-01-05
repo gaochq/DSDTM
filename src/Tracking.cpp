@@ -86,8 +86,8 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
             {
                 TrackWithLocalMap();
 
-                if (NeedKeyframe())
-                    CraeteKeyframe();
+                //if (NeedKeyframe())
+                //    CraeteKeyframe();
             }
             else
                 DLOG(ERROR)<< "Tracking lost with last frame" << std::endl;
@@ -132,7 +132,7 @@ bool Tracking::CreateInitialMapRGBD()
         if(z < 0)
             continue;
 
-        Eigen::Vector3d tPose = mCam->Pixel2Camera(mInitFrame->mvFeatures[i]->mpx, z);
+        Eigen::Vector3d tPose = mInitFrame->UnProject(mInitFrame->mvFeatures[i]->mpx, z);
 
         MapPoint *pMp = new MapPoint(tPose, tKFrame);
 
@@ -168,6 +168,8 @@ bool Tracking::CreateInitialMapRGBD()
 
 bool Tracking::TrackWithLastFrame()
 {
+    mCurrentFrame->Set_Pose(mInitFrame->Get_Pose());
+
     int tnPts = mSprase_ImgAlign->Run(mCurrentFrame, mLastFrame);
 
     DLOG(INFO) << "Tracked " << tnPts << "Features" << std::endl;

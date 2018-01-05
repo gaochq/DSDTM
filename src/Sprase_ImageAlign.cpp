@@ -47,8 +47,8 @@ int Sprase_ImgAlign::Run(FramePtr tCurFrame, FramePtr tRefFrame)
         GetJocabianMat(i);
 
         //TicToc tc;
-        CeresSolver(mT_c2r, i);
-        //GaussNewtonSolver(mT_c2r, i, mnPts);
+        //CeresSolver(mT_c2r, i);
+        GaussNewtonSolver(mT_c2r, i, mnPts);
         //std::cout <<"Cost "<< tc.toc() << " ms" << std::endl;
 
         Reset();

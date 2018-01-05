@@ -123,7 +123,7 @@ namespace DSDTM
             Corner tCorner = corners[iter];
             if(tCorner.score > 20)
             {
-
+                /*
                 if(frame->mImgMask.at<uchar>(cv::Point2f(tCorner.x, tCorner.y))!=255)
                     continue;
                 int Index = static_cast<int>(tCorner.y/mCell_size)*mGrid_cols + static_cast<int>(tCorner.x/mCell_size);
@@ -134,6 +134,9 @@ namespace DSDTM
 
                 Set_CellIndexOccupy(cv::Point2f(tCorner.x, tCorner.y));
                 cv::circle(frame->mImgMask, cv::Point2f(tCorner.x, tCorner.y), mCell_size, 0, -1);
+                */
+                frame->Add_Feature(new Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level), 1);
+
             }
             if(frame->mvFeatures.size()>=mMax_fts)
                 break;

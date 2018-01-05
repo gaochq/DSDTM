@@ -97,9 +97,13 @@ target_link_libraries(test_Motion_dection ${PROJECT_NAME})
 add_executable(test_Feature_alignemnt Test/test_Feature_alignment.cpp)
 target_link_libraries(test_Feature_alignemnt ${PROJECT_NAME})
 
-#Test Feature Alignment
+#Test Sprase iamge Alignment
 add_executable(test_SpraseImg_alignment Test/test_SpraseImg_alignment.cpp)
 target_link_libraries(test_SpraseImg_alignment ${PROJECT_NAME})
+
+#Test Tracking with SVO datasets
+add_executable(test_uzhsin Test/test_uzhsin.cpp)
+target_link_libraries(test_uzhsin ${PROJECT_NAME})
 
 
 

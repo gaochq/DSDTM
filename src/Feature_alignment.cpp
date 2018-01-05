@@ -98,8 +98,7 @@ bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
 
         if(!tFindMatch)
         {
-            tCell->erase(iter);
-
+            //tCell->erase(iter);
             continue;
         }
 
@@ -142,7 +141,7 @@ bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const FramePtr tFram
 
     Eigen::Vector2d tCurPx = tPt/(1<<tBestLevel);
 
-    success = Align2D(tFrame->mColorImg, mPatch_WithBoarder, mPatch, 10, tCurPx);
+    success = Align2DGaussNewton(tFrame->mColorImg, mPatch_WithBoarder, mPatch, 10, tCurPx);
 
     tPt = tCurPx*(1<<tBestLevel);
 
@@ -259,7 +258,7 @@ void Feature_Alignment::GetPatchNoBoarder()
     }
 }
 
-bool Feature_Alignment::Align2D(const cv::Mat &tCurImg, uchar *tPatch_WithBoarder, uchar *tPatch,  int MaxIters, Eigen::Vector2d &tCurPx)
+bool Feature_Alignment::Align2DCeres(const cv::Mat &tCurImg, uchar *tPatch_WithBoarder, uchar *tPatch,  int MaxIters, Eigen::Vector2d &tCurPx)
 {
     const int tPatchSize = 2*mHalf_PatchSize;
     const int tLPatchSize = tPatchSize + 2;
@@ -317,5 +316,97 @@ bool Feature_Alignment::Align2D(const cv::Mat &tCurImg, uchar *tPatch_WithBoarde
     return true;
 }
 
+bool Feature_Alignment::Align2DGaussNewton(const cv::Mat &tCurImg, uchar *tPatch_WithBoarder, uchar *tPatch,  int MaxIters, Eigen::Vector2d &tCurPx)
+{
+    const int tPatchSize = 2*mHalf_PatchSize;
+    const int tLPatchSize = tPatchSize + 2;
+
+
+    Eigen::Matrix3f H, Hinv;
+    H.setZero();
+    float tRefdx[tPatchSize*tPatchSize], tRefdy[tPatchSize*tPatchSize];
+    float *itdx = tRefdx;
+    float *itdy = tRefdy;
+
+    for (int l = 0; l < tPatchSize; ++l)
+    {
+        uchar *it = tPatch_WithBoarder + (l+1)*tLPatchSize + 1;
+        for (int i = 0; i < tPatchSize; ++i, ++it, ++itdx, ++itdy)
+        {
+            Eigen::Vector3f J;
+            J(0) = 0.5*(it[1] - it[-1]);
+            J(1) = 0.5*(it[tLPatchSize] - it[-tLPatchSize]);
+            J(2) = 1;
+            *itdx = J(0);
+            *itdy = J(1);
+            H += J*J.transpose();
+        }
+    }
+
+    Hinv = H.inverse();
+    float mean_diff = 0;
+
+
+    float u = tCurPx(0);
+    float v = tCurPx(1);
+
+    const float min_update_squared = 0.03*0.03;
+    const int tCurImg_step = tCurImg.step.p[0];
+
+    Eigen::Vector3f tUpdate;
+    tUpdate.setZero();
+
+    bool tConverged = false;
+    for (int i = 0; i < MaxIters; ++i)
+    {
+        uchar *it_ref = tPatch;
+        itdx = tRefdx;
+        itdy = tRefdy;
+
+        int u_r = floor(u);
+        int v_r = floor(v);
+        if(u_r < mHalf_PatchSize || v_r < mHalf_PatchSize || u_r > tCurImg.cols - mHalf_PatchSize ||
+           v_r > tCurImg.rows - mHalf_PatchSize || isnan(u) || isnan(v))
+            break;
+
+        float subpix_x = u - u_r;
+        float subpix_y = v - v_r;
+        float wTL = (1.0 - subpix_x)*(1.0 - subpix_y);
+        float wTR = subpix_x*(1 - subpix_y);
+        float wBL = (1.0 - subpix_x)*subpix_y;
+        float wBR = subpix_x*subpix_y;
+
+        Eigen::Vector3f Jres;
+        Jres.setZero();
+
+        for (int j = 0; j < tPatchSize; ++j)
+        {
+            uchar *it = (uchar *)tCurImg.data + (v_r + j - mHalf_PatchSize)*tCurImg_step + u_r - mHalf_PatchSize;
+            for (int k = 0; k < tPatchSize; ++k, ++it , ++it_ref, ++itdx, ++itdy)
+            {
+                float tSearchPx = wTL*it[0] + wTR*it[1] + wBL*it[tCurImg_step] + wBR*it[tCurImg_step+1];
+                float tRes = tSearchPx - *it_ref + mean_diff;
+                Jres[0] -= tRes*(*itdx);
+                Jres[1] -= tRes*(*itdy);
+                Jres[2] -= tRes;
+            }
+        }
+
+        tUpdate = Hinv*Jres;
+        u += tUpdate(0);
+        v += tUpdate(1);
+        mean_diff +=tUpdate(2);
+
+        if(tUpdate(0)*tUpdate(0) + tUpdate(1)*tUpdate(1) < min_update_squared)
+        {
+            tConverged = true;
+            break;
+        }
+    }
+
+    tCurPx << u, v;
+    return tConverged;
+
+}
 
 } // namespace DSDTM
