@@ -23,13 +23,13 @@ Camera.k3: 0.0
 
 Camera.f: 315.5
 
-Camera.depth_scale: 5000
+Camera.depth_scale: 1
 
 # VO Parameters
 Camera.MaxPyraLevels: 5
 Camera.MinPyraLevels: 0
 Camera.CellSize: 30
-Camera.Max_fts: 400
+Camera.Max_fts: 300
 Camera.Min_fts: 15
 Camera.Min_dist: 30
 

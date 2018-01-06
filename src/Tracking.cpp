@@ -80,12 +80,14 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
         {
             bool bOK;
 
+            TicToc tc;
             bOK = TrackWithLastFrame();
+            std::cout << tc.toc() <<"----";
 
             if(bOK)
             {
                 TrackWithLocalMap();
-
+                std::cout << tc.toc() << std::endl;
                 //if (NeedKeyframe())
                 //    CraeteKeyframe();
             }
@@ -132,7 +134,13 @@ bool Tracking::CreateInitialMapRGBD()
         if(z < 0)
             continue;
 
-        Eigen::Vector3d tPose = mInitFrame->UnProject(mInitFrame->mvFeatures[i]->mpx, z);
+        //Eigen::Vector3d tPose = mInitFrame->UnProject(mInitFrame->mvFeatures[i]->mpx, z);
+        Eigen::Vector3d tPose = mInitFrame->mvFeatures[i]->mNormal*z;
+        tPose = mInitFrame->Get_Pose().inverse()*tPose;
+        Eigen::Vector2d tPt = mInitFrame->World2Pixel(tPose);
+
+        Eigen::Vector3d tPose1 = Sophus::SE3(Eigen::Quaterniond(0.0, 0.8227, 0.2148, 0.0), Eigen::Vector3d(0.2263, 0.2262, 2.000)).inverse()*tPose;
+        Eigen::Vector2d tPt1 = mCam->Camera2Pixel(tPose1);
 
         MapPoint *pMp = new MapPoint(tPose, tKFrame);
 
@@ -220,17 +228,16 @@ void Tracking::UpdateLocalMap()
 
         for (std::vector<MapPoint *>::const_iterator itMP = tMapPoints.begin(); itMP != tMapPoints.end(); itMP++)
         {
-            MapPoint *tMPoint = *itMP;
-            if (tMPoint && tMPoint->IsBad())
+            if ((*itMP)==NULL && (*itMP)->IsBad())
                 continue;
 
-            if (tMPoint->mLastProjectedFrameId == mCurrentFrame->mlId)
+            if ((*itMP)->mLastProjectedFrameId == mCurrentFrame->mlId)
                 continue;
 
-            tMPoint->mLastProjectedFrameId = mCurrentFrame->mlId;
+            (*itMP)->mLastProjectedFrameId = mCurrentFrame->mlId;
 
-            if (mFeature_Alignment->ReprojectPoint(mCurrentFrame, tMPoint))
-                mvpLocalMapPoints.push_back(tMPoint);
+            if (mFeature_Alignment->ReprojectPoint(mCurrentFrame, (*itMP)))
+                mvpLocalMapPoints.push_back((*itMP));
         }
     }
 }
@@ -242,8 +249,8 @@ bool Tracking::NeedKeyframe()
     if(mCurrentFrame->mvFeatures.size() < 30)
         return true;
 
-    if(mProcessedFrames<10)
-        return false;
+    //if(mProcessedFrames<10)
+    //    return false;
 
     Sophus::SE3 tDeltaPose = mpReferenceKF->Get_Pose().inverse()*mCurrentFrame->Get_Pose();
     double tRotNorm = tDeltaPose.so3().log().norm();

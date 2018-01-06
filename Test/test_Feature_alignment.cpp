@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     for(int i=0; i<1; ++i)
     {
         px_est = px_true-px_error;
-        DSDTM::Feature_Alignment::Align2D(img, ref_patch_with_border.data, ref_patch, 3, px_est);
+        DSDTM::Feature_Alignment::Align2DGaussNewton(img, ref_patch_with_border.data, ref_patch, 3, px_est);
     }
     Vector2d e = px_est-px_true;
     printf("1000Xalign 2D took %fms, error = %fpx \t (ref i7-W520: 2.306000ms, 0.015102px)\n", tc.toc(), e.norm());

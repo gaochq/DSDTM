@@ -159,6 +159,7 @@ int main(int argc, char **argv)
         mTranslationErrorSets.push_back(T_f_gt.translation().norm());
 
         cout << i  << "---" << tc.toc() << "ms" <<"---"<< "Translation error: " << mTranslationErrorSets.back() << endl;
+        cout << T_f_gt.unit_quaternion().angularDistance(Eigen::Quaterniond(1, 0, 0, 0)) << std::endl;
 
         T_prev_w = frame_cur_->Get_Pose();
     }

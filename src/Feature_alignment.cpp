@@ -141,7 +141,7 @@ bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const FramePtr tFram
 
     Eigen::Vector2d tCurPx = tPt/(1<<tBestLevel);
 
-    success = Align2DGaussNewton(tFrame->mColorImg, mPatch_WithBoarder, mPatch, 10, tCurPx);
+    success = Align2DGaussNewton(tFrame->mvImg_Pyr[tBestLevel], mPatch_WithBoarder, mPatch, 10, tCurPx);
 
     tPt = tCurPx*(1<<tBestLevel);
 
@@ -245,13 +245,14 @@ void Feature_Alignment::WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &
 
 void Feature_Alignment::GetPatchNoBoarder()
 {
+    const int mPatchSize = 2*mHalf_PatchSize;
     uchar *RefPatch = mPatch;
 
-    int tBoardPatchSize = 2*mHalf_PatchSize +2;
-    for (int i = 1; i < tBoardPatchSize-1; ++i, RefPatch +=mHalf_PatchSize)
+    int tBoardPatchSize = mPatchSize +2;
+    for (int i = 1; i < tBoardPatchSize-1; ++i, RefPatch +=mPatchSize)
     {
         uchar *tRowPtr = mPatch_WithBoarder + i*tBoardPatchSize + 1;
-        for (int j = 0; j < 2*mHalf_PatchSize; ++j)
+        for (int j = 0; j < mPatchSize; ++j)
         {
             RefPatch[j] = tRowPtr[j];
         }
