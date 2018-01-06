@@ -84,6 +84,7 @@ int main(int argc, char **argv)
 
         tracking.Track_RGBDCam(Image_tmp, vTimestamps[i], DepthIMage);
 
+        std::cout << i << std::endl;
         //Image_tmp.release();
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();

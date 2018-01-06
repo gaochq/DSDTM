@@ -39,6 +39,7 @@ public:
 
     //! Get camera center in world coordinate system
     Eigen::Vector3d Get_CameraCnt() const { return mOw; }
+    Eigen::Vector2d World2Pixel(const Eigen::Vector3d &Point);
 
 
 public:
@@ -52,6 +53,10 @@ public:
     std::map<long int, size_t>      mpFFObservation;   //Feature_id ---> feature order in mvFeatures
 
     Frame                   *mFrame;
+
+    cv::Mat                 mClolorImg;
+    cv::Mat                 mDepthImg;
+    std::vector<cv::Mat>     mvImg_Pyr;
 protected:
 
     int     mnVaildMps;     // the number of vaild Feature number
@@ -59,6 +64,8 @@ protected:
     Sophus::SE3             mT_c2w;
     Sophus::SO3             mR_w2c;
     Eigen::Vector3d         mOw;
+
+    CameraPtr               mCamera;
 };
 
 } //DSDTM

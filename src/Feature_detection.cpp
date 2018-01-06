@@ -135,7 +135,7 @@ namespace DSDTM
                 Set_CellIndexOccupy(cv::Point2f(tCorner.x, tCorner.y));
                 cv::circle(frame->mImgMask, cv::Point2f(tCorner.x, tCorner.y), mCell_size, 0, -1);
                 */
-                frame->Add_Feature(new Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level), 1);
+                frame->Add_Feature(new Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level), 0);
 
             }
             if(frame->mvFeatures.size()>=mMax_fts)

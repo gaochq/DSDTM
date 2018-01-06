@@ -93,23 +93,27 @@ void Frame::Add_Feature(Feature *tfeature, bool tbNormal)
 
 void Frame::UndistortFeatures()
 {
-    int N = mvFeatures.size();
-    cv::Mat tMat(N, 2, CV_32F);
     std::vector<cv::Point2f> tSrc;
     std::vector<cv::Point2f> tmvFeaturesUn;           //Features undistorted
 
-    for (int i = 0; i < N; ++i)
+    int N = mvFeatures.size();
+    int tNum = 0;
+    for (auto it = mvFeatures.begin(); it!=mvFeatures.end(); ++it)
     {
-        tSrc.push_back(mvFeatures[i]->mpx);
+        if((*it)->mbInitial)
+            continue;
+
+        tSrc.push_back((*it)->mpx);
+        tNum++;
     }
 
     //! the InputArray in undistortPoints should be 2 channels
     cv::undistortPoints(tSrc, tmvFeaturesUn, mCamera->mInstrinsicMat,
                         mCamera->mDistortionMat, cv::noArray(), mCamera->mInstrinsicMat);
-
-    for (int j = 0; j < N; ++j)
+    int i = 0;
+    for (int j = N - tNum; j < N; ++j, ++i)
     {
-        mvFeatures[j]->mpx = tmvFeaturesUn[j];
+        mvFeatures[j]->mpx = tmvFeaturesUn[i];
 
         mvFeatures[j]->mNormal = mCamera->Pixel2Camera(mvFeatures[j]->mpx, 1.0);
         mvFeatures[j]->mNormal.normalize();
@@ -185,8 +189,27 @@ float Frame::Get_FeatureDetph(const Feature* feature)
 
 float Frame::Get_FeatureDetph(const cv::Point2f feature)
 {
-    float p = mDepthImg.at<float>(feature);
-    return p;
+    int x = cvRound(feature.x);
+    int y = cvRound(feature.y);
+
+    float d = mDepthImg.ptr<float>(y)[x];
+    if(d != 0)
+        return d;
+    else
+    {
+        int dx[4] = {-1, 0, 1, 0};
+        int dy[4] = {0, -1, 0, 1};
+        for (int i = 0; i < 4; ++i)
+        {
+            d = mDepthImg.ptr<float>(y+dy[i])[x+dx[i]];
+            if(d != 0)
+            {
+                return d;
+            }
+        }
+    }
+
+    return -1.0;
 }
 
 //! Add MapPoint to do BA optimize frame pose
@@ -201,33 +224,32 @@ void Frame::Add_Observations(const KeyFrame &tKframe)
 }
 
 
-void Frame::Get_SceneDepth(double tMinDepth, double tMeanDepth)
+bool Frame::Get_SceneDepth(double &tMinDepth, double &tMeanDepth)
 {
     mMinDepth = std::numeric_limits<double>::max();
     std::vector<double> tDepth_vec;
 
     for (auto it = this->mvFeatures.begin(); it != this->mvFeatures.end(); it++)
     {
-        const double z = Get_FeatureDetph(*it);
-        if (z >= 0 && z < 10)
-        {
-            tDepth_vec.push_back(z);
-            mMinDepth = fmin(mMinDepth, z);
-        }
+        Eigen::Vector3d tPose = mT_c2w*(*it)->mPoint;
+        const double z = tPose(2);
+
+        tDepth_vec.push_back(z);
+        mMinDepth = fmin(mMinDepth, z);
     }
 
     if (tDepth_vec.empty())
     {
-        LOG(ERROR)<< "The scene depth is wrong in frame: %d" << this->mlId;
-        return;
+        DLOG(ERROR)<< "The scene depth is wrong in frame: %d" << this->mlId;
+        return false;
     }
 
-    std::vector<double>::iterator iter = tDepth_vec.begin() + floor(tDepth_vec.size()/2);
-    std::nth_element(tDepth_vec.begin(), iter, tDepth_vec.end());
-    mMeanDepth = *iter;
+    mMeanDepth = mCamera->GetMedian(tDepth_vec);
 
     tMinDepth = mMinDepth;
     tMeanDepth = mMeanDepth;
+
+    return true;
 }
 
 bool Frame::Find_Observations(size_t tID)

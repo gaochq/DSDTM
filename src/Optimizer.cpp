@@ -43,8 +43,8 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
         if(tPoint.isZero(0))
             continue;
 
-        Eigen::Vector2d tObserves(tCurFrame.mvFeatures[tNum]->mUnpx.x,
-                                  tCurFrame.mvFeatures[tNum]->mUnpx.y);
+        Eigen::Vector2d tObserves(tCurFrame.mvFeatures[tNum]->mpx.x,
+                                  tCurFrame.mvFeatures[tNum]->mpx.y);
         //DLOG(INFO)<< "--" << tCurFrame.mvFeatures[tNum].mlId << "--" << tObserves << "--" << tPoint <<"--" << tPoint;
 
         // only optimize camera pose

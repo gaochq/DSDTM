@@ -9,7 +9,8 @@ namespace DSDTM
 long unsigned int KeyFrame::mlNextId=0;
 KeyFrame::KeyFrame(Frame *tframe):
         mFrame(tframe), mvMapPoints(tframe->mvMapPoints),
-        mvFeatures(tframe->mvFeatures), mnVaildMps(0)
+        mvFeatures(tframe->mvFeatures), mnVaildMps(0), mCamera(tframe->mCamera),
+        mClolorImg(tframe->mColorImg), mDepthImg(tframe->mDepthImg), mvImg_Pyr(tframe->mvImg_Pyr)
 {
     mlId = mlNextId++;
 
@@ -51,6 +52,13 @@ void KeyFrame::Set_Pose(Sophus::SE3 tPose)
     Sophus::SE3 tT_w2c = mT_c2w.inverse();
     mR_w2c = tT_w2c.so3();
     mOw = tT_w2c.translation();
+}
+
+Eigen::Vector2d KeyFrame::World2Pixel(const Eigen::Vector3d &Point)
+{
+    Eigen::Vector3d tPoint = mT_c2w*Point;
+
+    return mCamera->Camera2Pixel(tPoint);
 }
 
 } //namesapce DSDTM

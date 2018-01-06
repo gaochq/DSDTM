@@ -42,6 +42,8 @@
 namespace DSDTM
 {
 
+const Sophus::SE3 IdentitySE3 = Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero());
+
 enum Camera_Model
 {
     RGB_PinHole,
@@ -89,6 +91,9 @@ public:
 
     //! whether is the point in image
     bool IsInImage(const cv::Point2f _point, int tBoundary = 1, int tLevel = 0) const;
+
+    //! Get the median value of the vector
+    double GetMedian(const std::vector<double> tdVector) const;
 
     //! Draw features in image
     void Draw_Features(cv::Mat &_image, const Features _features, cv::Scalar _color);

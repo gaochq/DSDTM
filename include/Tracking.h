@@ -47,7 +47,7 @@ public:
     ~Tracking();
 
     //! Tracking on the rgbd camera
-    void Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg);
+    Sophus::SE3 Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg);
 
     //! Tracking on the
     void Track_Monocular(const cv::Mat &Image, const double TimeStamp);
@@ -69,7 +69,7 @@ private:
     bool TrackWithLastFrame();
 
     //! Track with lcoal map, and add more mappoint into current frame
-    void TrackWithLocalMap();
+    bool TrackWithLocalMap();
 
     //! Updata local map keyframes, I choose the 10 most closer to current frame
     void UpdateLocalMap();
@@ -114,7 +114,7 @@ protected:
     FramePtr                mLastFrame;
     FramePtr                mCurrentFrame;
     FramePtr                mInitFrame;
-    KeyFrame*               mpReferenceKF;
+    KeyFrame*               mpLastKF;
 
     Map                     *mMap;
     std::vector<long int>   mvcStatus;          //! The features status when tracking between adjacent frames
@@ -123,6 +123,7 @@ protected:
     size_t                  mProcessedFrames;       //! the number of processed frames after last keyframe inseration
     double                  mdMinRotParallax;
     double                  mdMinTransParallax;
+    double                  mdMinDist;
     int                     mMinFeatures;
 
     LocalMapping            *mLocalMapping;

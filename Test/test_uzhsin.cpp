@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 
     google::InitGoogleLogging(argv[0]);
     //FLAGS_stderrthreshold = 0;
-    FLAGS_log_dir = "./log";
+    FLAGS_log_dir = "./log/test_uzhsin";
 
     DSDTM::Map *mMap = new DSDTM::Map();
     DSDTM::Config::setParameterFile(argv[1]);
@@ -110,8 +110,10 @@ int main(int argc, char **argv)
     int nImages = vstrImageFilenamesRGB.size();
     cv::Mat ColorImage, Image_tmp, DepthIMage;
     double start = static_cast<double>(cvGetTickCount());
-    for (int i = 0; i < nImages; ++i)
+    for (int i = 0; i < 30; ++i)
     {
+        std::cout <<"Frame " << i << "---->   ";
+
         //! The single image cost almost 10ms on reading and clahe
         double start = static_cast<double>(cvGetTickCount());
         std::string img_name(Datasets_Dir + "/img/" + vstrImageFilenamesRGB[i] + "_0.png");
@@ -124,9 +126,10 @@ int main(int argc, char **argv)
         //double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
 //        cout << time << "us" << endl;
 
-        tracking.Track_RGBDCam(ColorImage, vTimestamps[i], DepthIMage);
+        Sophus::SE3 tPose = tracking.Track_RGBDCam(ColorImage, vTimestamps[i], DepthIMage);
 
-        //Image_tmp.release();
+        std::cout << "error: " <<(tPose*mTransformSets[i].inverse()).translation().norm() << std::endl;
+
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time << " us" << endl;

@@ -73,3 +73,4 @@ Optimization.MaxIter: 8
 KeyFrame.min_rot: 0.04
 KeyFrame.min_trans: 0.04
 KeyFrame.min_features: 25
+KeyFrame.min_dist: 0.12

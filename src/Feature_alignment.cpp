@@ -105,7 +105,7 @@ bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
         iter->mMpPoint->IncreaseFound();
 
         Feature *tFeature = new Feature(tFrame.get(), cv::Point2f(iter->mPx(0), iter->mPx(1)), tLevel);
-        tFeature->mPoint = iter->mMpPoint->Get_Pose();
+        tFeature->SetPose(iter->mMpPoint->Get_Pose());
 
         tFrame->Add_Feature(tFeature);
         tFrame->Add_MapPoint(iter->mMpPoint);
@@ -135,7 +135,7 @@ bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const FramePtr tFram
 
     int tBestLevel = GetBestSearchLevel(tA_c2r, mPyr_levels);
 
-    WarpAffine(tA_c2r, tRefKeyframe->mFrame->mvImg_Pyr[tReferFeature->mlevel], tReferFeature, tBestLevel, mPatch_WithBoarder);
+    WarpAffine(tA_c2r, tRefKeyframe->mvImg_Pyr[tReferFeature->mlevel], tReferFeature, tBestLevel, mPatch_WithBoarder);
 
     GetPatchNoBoarder();
 

@@ -40,9 +40,11 @@ void Map::GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame *,
                 continue;
 
             if(tFrame->isVisible(keypoint->Get_Pose()))
-                tClose_kfs.push_back(std::make_pair(kf, (tFrame->Get_Pose().translation()- kf->Get_Pose().translation()).norm()));
-
-            break;
+            {
+                tClose_kfs.push_back(
+                        std::make_pair(kf, (tFrame->Get_Pose().translation() - kf->Get_Pose().translation()).norm()));
+                break;
+            }
         }
     }
 }

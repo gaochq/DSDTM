@@ -18,7 +18,7 @@ struct Feature
     int                 mlevel;
     long int            mlId;
     long int            mTrack_cnt;             // Succeed tracking times
-    cv::Point2f         mUnpx;
+    bool                mbInitial;
     Eigen::Vector3d     mNormal;         //Unit-bearing vector of the feature. But now just for position of mappoint in last frame temporarily.
     Eigen::Vector3d     mPoint;
 
@@ -28,12 +28,19 @@ struct Feature
             mlevel(_level),
             mlId(tlId),
             mTrack_cnt(tTrack_cnt),
-            mPoint(0.0, 0.0, 0.0)
+            mNormal(0.0, 0.0, 0.0),
+            mPoint(0.0, 0.0, 0.0),
+            mbInitial(false)
     {
-
     }
 
     Feature(){};
+
+    void SetPose(Eigen::Vector3d tPose)
+    {
+        mPoint = tPose;
+        mbInitial = true;
+    }
 
     bool operator < (const Feature& _f1) const
     {

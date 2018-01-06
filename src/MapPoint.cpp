@@ -11,7 +11,7 @@ unsigned long MapPoint::mlNextId = 0;
 
 MapPoint::MapPoint()
 {
-
+    mbOutlier = false;
 }
 
 MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame):

@@ -72,7 +72,7 @@ public:
     std::map<size_t, MapPoint*> Get_Observations() const { return mpObservation;};
 
     //! Get scene depth
-    void Get_SceneDepth(double tMinDepth, double tMeanDepth);
+    bool Get_SceneDepth(double &tMinDepth, double &tMeanDepth);
 
     //! Check whether the feature int observations
     bool Find_Observations(size_t tID);

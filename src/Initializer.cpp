@@ -50,7 +50,7 @@ bool Initializer::Init_RGBDCam(FramePtr frame)
     }
     mReferFrame = frame;
     //mReferFrame->Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
-    mReferFrame->Set_Pose(Sophus::SE3(Eigen::Quaterniond(0.00000,0.82266, 0.21488, 0.00000), Eigen::Vector3d(0.11314, 0.11314, 2.00000)).inverse());
+    mReferFrame->Set_Pose(Sophus::SE3(Eigen::Quaterniond(0.00000, 0.82266, 0.21488, 0.00000), Eigen::Vector3d(0.11314, 0.11314, 2.00000)).inverse());
 
     return true;
 }

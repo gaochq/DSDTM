@@ -7,6 +7,7 @@
 
 namespace DSDTM
 {
+
 Camera::Camera()
 {
 
@@ -184,6 +185,14 @@ bool Camera::IsInImage(const cv::Point2f _point, int tBoundary, int tLevel) cons
         && cvRound(_point.y)>=tBoundary && cvRound(_point.y)< mheight/(1<<tLevel) - tBoundary)
         return true;
     return false;
+}
+
+double Camera::GetMedian(std::vector<double> tdVector) const
+{
+    std::vector<double>::iterator iter = tdVector.begin() + floor(tdVector.size()/2);
+    std::nth_element(tdVector.begin(), iter, tdVector.end());
+
+    return *iter;
 }
 
 void Camera::Draw_Features(cv::Mat &_image, const Features _features, cv::Scalar _color)
