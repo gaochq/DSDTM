@@ -218,6 +218,8 @@ bool Tracking::TrackWithLocalMap()
     int N = mCurrentFrame->mvFeatures.size();
     DLOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
+    Optimizer::PoseOptimization(mCurrentFrame, 10);
+
     if(N < 30)
     {
         DLOG(ERROR)<< "Too few Features tracked" << std::endl;
