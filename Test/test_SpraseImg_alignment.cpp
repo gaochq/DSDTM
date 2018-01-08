@@ -133,9 +133,11 @@ int main(int argc, char **argv)
             loadBlenderDepthmap(Datasets_Dir + "/depth/" + vstrImageFilenamesRGB[i] + "_0.depth", camera, depthmap);
 
             feature_detector.detect(frame_ref_.get(), 20);
+            frame_ref_->UndistortFeatures();
 
             for_each(frame_ref_->mvFeatures.begin(), frame_ref_->mvFeatures.end(), [&](DSDTM::Feature *it)
             {
+
                 float depth = depthmap.at<float>(it->mpx.y, it->mpx.x);
                 Eigen::Vector3d pt_pos_cam = it->mNormal*depth;
                 Eigen::Vector3d pt_pos_wd = frame_ref_->Get_Pose().inverse()*pt_pos_cam;

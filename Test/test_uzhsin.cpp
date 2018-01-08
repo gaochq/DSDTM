@@ -128,8 +128,7 @@ int main(int argc, char **argv)
 
         Sophus::SE3 tPose = tracking.Track_RGBDCam(ColorImage, vTimestamps[i], DepthIMage);
 
-        std::cout << "error: " <<(tPose*mTransformSets[i].inverse()).translation().norm() << std::endl;
-
+        std::cout << "error: " << (tPose*mTransformSets[i].inverse()).translation().norm() <<"----"<< tPose.unit_quaternion().angularDistance(Eigen::Quaterniond(1, 0, 0, 0)) << std::endl;
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time << " us" << endl;

@@ -228,7 +228,7 @@ void Sprase_ImgAlign::CeresSolver(Sophus::SE3 &tT_c2r, int tLevel)
     //TicToc tc;
     ceres::Solve(options, &problem, &summary);
     //std::cout << tc.toc() << std::endl;
-    std::cout << summary.FullReport() << std::endl;
+    //std::cout << summary.FullReport() << std::endl;
 
     Sophus::SE3 mT_c2r(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>());
     tT_c2r = mT_c2r;

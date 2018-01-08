@@ -66,7 +66,7 @@ public:
         mResidual = mObservation - tPixel;
 
         if(mResidual(0)>10 || mResidual(1)>10)
-            std::cout<< "error" <<std::endl;
+            std::cout<< " optimizer error" <<std::endl;
 
         if(jacobians!=NULL)
         {
@@ -220,7 +220,7 @@ class PoseLocalParameterization : public ceres::LocalParameterization
 
         Sophus::SE3 tT_Old(Sophus::SO3::exp(tOld.tail<3>()), tOld.head<3>());
         Sophus::SE3 tT_Delta(Sophus::SO3::exp(tDelta.tail<3>()), tDelta.head<3>());
-        Sophus::SE3 tT_New = tT_Old*tT_Delta;
+        Sophus::SE3 tT_New = tT_Delta*tT_Old;
 
         tNew.block(0, 0, 3, 1) = tT_New.translation();
         tNew.block(3, 0, 3, 1) = tT_New.so3().log();

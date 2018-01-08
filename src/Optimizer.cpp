@@ -31,8 +31,8 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     tT_c2rArray.block(0, 0, 3, 1) = tCurFrame->Get_Pose().translation();
     tT_c2rArray.block(3, 0, 3, 1) = tCurFrame->Get_Pose().so3().log();
 
-    ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
-    problem.AddParameterBlock(tT_c2rArray.data(), SIZE_POSE, local_parameterization);
+    //ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
+    //problem.AddParameterBlock(tT_c2rArray.data(), SIZE_POSE, local_parameterization);
 
     size_t tNum = 0;
     for (auto iter = tCurFrame->mvFeatures.begin(); iter!=tCurFrame->mvFeatures.end(); ++iter, ++tNum)
@@ -53,7 +53,7 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     //options.linear_solver_type = ceres::SPARSE_SCHUR;
 
 #ifndef NDEBUG
-    options.minimizer_progress_to_stdout = true;
+    //options.minimizer_progress_to_stdout = true;
 #endif
 
     //options.trust_region_strategy_type = ceres::DOGLEG;
@@ -63,13 +63,16 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
+    //std::cout<< "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
+    Sophus::SE3 tPosetmp = Sophus::SE3(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>()).inverse();
+
     tCurFrame->Set_Pose(Sophus::SE3(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>()));
 
-    std::vector<double> tvdResidual = GetReprojectReidual(problem);
-    std::cout << summary.FullReport() << std::endl;
-    std::cout<< "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
+    //std::vector<double> tvdResidual = GetReprojectReidual(problem);
+    //std::cout << summary.FullReport() << std::endl;
 
-    std::cout <<"Residual Sum: "<<std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
+
+    //std::cout <<"Residual Sum: "<<std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
 }
 
 double *Optimizer::se3ToDouble(Eigen::Matrix<double, 6, 1> tse3)
