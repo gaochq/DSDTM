@@ -15,6 +15,8 @@
 #include "Moving_Detection.h"
 #include "Feature_alignment.h"
 #include "Sprase_ImageAlign.h"
+#include "MapDrawer.h"
+#include "Viewer.h"
 
 namespace DSDTM
 {
@@ -29,6 +31,8 @@ class KeyFrame;
 class LocalMapping;
 class Moving_Detecter;
 class Sprase_ImgAlign;
+class MapDrawer;
+class Viewer;
 
 class Tracking
 {
@@ -43,11 +47,11 @@ private:
     };
 
 public:
-    Tracking(CameraPtr _cam, Map *_map, LocalMapping *tLocalMapping= nullptr);
+    Tracking(CameraPtr _cam, Map *_map, LocalMapping *tLocalMapping, MapDrawer *tMapDrawer);
     ~Tracking();
 
     //! Tracking on the rgbd camera
-    Sophus::SE3 Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg);
+    Sophus::SE3 Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &depthImg, const double ctimestamp);
 
     //! Tracking on the
     void Track_Monocular(const cv::Mat &Image, const double TimeStamp);
@@ -59,6 +63,9 @@ public:
 
     //! Found the most large bin
     void ComputeMaxBin(std::vector<int>* histo, const int L, std::vector<int> &tLktSets);
+
+    //! Set the Viewer
+    void SetViewer(Viewer *tViewer);
 
 private:
 
@@ -86,14 +93,11 @@ private:
     //! Update the ID of features
     void UpdateID(Features &features);
 
-    //! Update Last frame
-    void Update_LastFrame();
-
     //! Create new Keyframe
     void CraeteKeyframe();
 
-
-
+    //! Reset Tracker
+    void Reset();
 
 
 public:
@@ -130,6 +134,8 @@ protected:
     Moving_Detecter         *mMoving_detecter;
     Feature_Alignment       *mFeature_Alignment;
     Sprase_ImgAlign         *mSprase_ImgAlign;
+    MapDrawer               *mMapDrawer;
+    Viewer                  *mViewer;
 
 
     std::vector<KeyFrame*>  mvpLocalKeyFrames;

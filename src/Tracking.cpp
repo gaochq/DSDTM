@@ -11,9 +11,9 @@ namespace DSDTM
 
 long int Tracking::mlNextID = 0;
 
-Tracking::Tracking(CameraPtr _cam, Map *_map, LocalMapping *tLocalMapping):
-        mCam(_cam), mInitializer(static_cast<Initializer*>(NULL)), mMap(_map),
-        mLocalMapping(tLocalMapping) ,mProcessedFrames(0)
+Tracking::Tracking(CameraPtr _cam, Map *_map, LocalMapping *tLocalMapping, MapDrawer *tMapDrawer):
+        mCam(_cam), mInitializer(static_cast<Initializer*>(NULL)), mMap(_map), mLocalMapping(tLocalMapping),
+        mProcessedFrames(0), mMapDrawer(tMapDrawer)
 {
     mState = Not_Init;
 
@@ -42,7 +42,7 @@ Tracking::~Tracking()
 
 }
 
-Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, const cv::Mat &depthImg)
+Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &depthImg, const double ctimestamp)
 {
     cv::Mat tDImg = depthImg;
     if(!colorImg.data || !depthImg.data)
@@ -68,6 +68,8 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimes
 
             if(!CreateInitialMapRGBD())
                 return IdentitySE3;
+
+            mMapDrawer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
 
             mState = OK;
             mCurrentFrame->Reset_Gridproba();
@@ -98,10 +100,10 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimes
             else
                 DLOG(ERROR) << "Tracking lost with last frame" << std::endl;
 
-
-
             if(bOK)
             {
+                mMapDrawer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
+
                 if (NeedKeyframe())
                     CraeteKeyframe();
             }
@@ -218,12 +220,12 @@ bool Tracking::TrackWithLocalMap()
     int N = mCurrentFrame->mvFeatures.size();
     DLOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
-//    Optimizer::PoseOptimization(mCurrentFrame, 10);
+    //Optimizer::PoseOptimization(mCurrentFrame, 10);
 
     if(N < 30)
     {
         DLOG(ERROR)<< "Too few Features tracked" << std::endl;
-        return false;
+        return true;
     }
     else
         return true;
@@ -376,11 +378,37 @@ void Tracking::CraeteKeyframe()
     DLOG(INFO)<< "Create new Keyframe " << tKFrame->mlId << " with " << tNum << " new MapPoints" <<std::endl;
 }
 
-void Tracking::Update_LastFrame()
+void Tracking::SetViewer(Viewer *tViewer)
 {
-
+    mViewer = tViewer;
 }
 
+void Tracking::Reset()
+{
+    mViewer->RequestStop();
+
+    while(!mViewer->IsStopped())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
+    }
+
+    // TODO request to reset localmapper
+
+    mMap->Release();
+
+    KeyFrame::mlNextId = 0;
+    Frame::mlNextId = 0;
+    MapPoint::mlNextId = 0;
+    mState = Not_Init;
+
+    if(mInitializer)
+    {
+        delete mInitializer;
+        mInitializer = static_cast<Initializer*>(NULL);
+    }
+
+    mViewer->Release();
+}
 
 void Tracking::ReduceFeatures(std::vector<cv::Point2f> &_Points, const std::vector<uchar> _Status,
                               std::vector<cv::Point2f> *_BadPoints)

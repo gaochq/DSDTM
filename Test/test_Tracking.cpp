@@ -50,11 +50,11 @@ int main(int argc, char **argv)
 
     google::InitGoogleLogging(argv[0]);
     //FLAGS_stderrthreshold = 0;
-    FLAGS_log_dir = "./log";
+    FLAGS_log_dir = "./log/TUM/longhouse";
 
     DSDTM::Map *mMap = new DSDTM::Map();
     DSDTM::Config::setParameterFile(argv[1]);
-    DSDTM::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
+    DSDTM::CameraPtr camera(new DSDTM::Camera(DSDTM::Camera_Model::RGB_PinHole));
     DSDTM::Tracking tracking(camera, mMap);
 
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");
@@ -77,12 +77,12 @@ int main(int argc, char **argv)
         DepthIMage = cv::imread(Depthimg_path.c_str(), CV_LOAD_IMAGE_UNCHANGED);
 
 
-        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
-        clahe->apply(ColorImage, Image_tmp);
+//        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+//        clahe->apply(ColorImage, Image_tmp);
         double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
 //        cout << time << "us" << endl;
 
-        tracking.Track_RGBDCam(Image_tmp, vTimestamps[i], DepthIMage);
+        tracking.Track_RGBDCam(ColorImage, vTimestamps[i], DepthIMage);
 
         std::cout << i << std::endl;
         //Image_tmp.release();

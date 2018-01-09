@@ -16,9 +16,12 @@ public:
     LocalMapping(Map *tMap);
     ~LocalMapping();
 
+    //! Insert keyframe into LocalMap
     void InsertKeyFrame(KeyFrame *tKFrame);
 
-public:
+    //! Insert keyframe into map and create new MapPoints
+    void ProcessNewKeyframe();
+
 
 protected:
     Map         *mMap;

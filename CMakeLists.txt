@@ -35,6 +35,10 @@ include_directories("/usr/include/eigen3")
 find_package(Glog REQUIRED)
 include_directories(${GLOG_INCLUDE_DIRS})
 
+#Pangolin
+find_package(Pangolin REQUIRED)
+include_directories(${Pangolin_INCLUDE_DIRS})
+
 include_directories(
 	${PROJECT_SOURCE_DIR}/include
 	${PROJECT_SOURCE_DIR}/Thirdparty/fast/include
@@ -55,13 +59,17 @@ add_library(${PROJECT_NAME} SHARED
 	src/LocalMapping.cpp
 	src/Moving_Detection.cpp
 	src/Feature_alignment.cpp
-	src/Sprase_ImageAlign.cpp)
+	src/Sprase_ImageAlign.cpp
+	src/Viewer.cpp
+	src/MapDrawer.cpp
+	src/System.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
 		${CERES_LIBRARIES}
 		${Sophus_LIBRARIES}
 		${GLOG_LIBARIES}
+		${Pangolin_LIBRARIES}
 		${PROJECT_SOURCE_DIR}/Thirdparty/fast/lib/libfast.so
 		${PROJECT_SOURCE_DIR}/Thirdparty/fastMCD/lib/libfastMCD.so)
 

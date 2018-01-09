@@ -14,7 +14,7 @@
 #include <fstream>
 #include <iterator>
 #include <utility>
-
+#include <thread>
 
 #include "boost/bind.hpp"
 
@@ -31,6 +31,7 @@
 
 #include <sophus/se3.h>
 
+#include <pangolin/pangolin.h>
 
 #include <glog/logging.h>
 
@@ -54,8 +55,8 @@ class Camera
 {
 public:
     Camera();
-    Camera(const std::string &Paramfile, const Camera_Model model);
-    Camera(Camera_Model model, float _fx, float _fy, float _cx, float _cy);
+    Camera(const Camera_Model model);
+    Camera(Camera_Model model, float f, float _fx, float _fy, float _cx, float _cy);
     ~Camera();
 
     //! Distortion correction for Feature in normalized plane
@@ -87,7 +88,7 @@ public:
     Eigen::Vector3d Pixel2Camera(const Eigen::Vector2d &point, const float &depth);
 
     //! Initalize the camera parameters
-    void Init_CamParam(const std::string &Paramfile);
+    void Init_CamParam();
 
     //! whether is the point in image
     bool IsInImage(const cv::Point2f _point, int tBoundary = 1, int tLevel = 0) const;

@@ -14,7 +14,7 @@ LocalMapping::LocalMapping(Map *tMap):
 
 void LocalMapping::InsertKeyFrame(KeyFrame *tKFrame)
 {
-
+    mlNewKeyFrames.push_back(tKFrame);
 }
 
 

@@ -125,6 +125,12 @@ int main(int argc, char **argv)
     std::cout << tMat_cv <<std::endl;
     std::cout << tMat_eigen <<std::endl;
 
+     //!Test NULL Sophus SE3
+    Sophus::SE3 tNullSE3;
+    if(tNullSE3.matrix().isZero())
+    {
+        tNullSE3 = DSDTM::IdentitySE3;
+    }
 
     std::vector<int> a;
     for (int i = 0; i < 10; ++i)

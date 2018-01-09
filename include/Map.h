@@ -36,6 +36,12 @@ public:
     //! Get the initial Frame
     KeyFrame *Get_InitialKFrame();
 
+    //! Get all MapPoints
+    std::vector<MapPoint*> GetAllMapPoints();
+
+    //! Get all KeyFrames
+    std::vector<KeyFrame*> GetAllKeyFrames();
+
     //! Clera all vars in map
     void Release();
 

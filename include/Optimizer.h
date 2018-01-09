@@ -130,7 +130,7 @@ public:
         Eigen::Matrix<double, 6, 1> tTransform;
         tTransform << parameters[0][0], parameters[0][1], parameters[0][2],
                     parameters[0][3], parameters[0][4], parameters[0][5];
-        Sophus::SE3 mPose = Sophus::SE3::exp(tTransform);
+        Sophus::SE3 mPose(Sophus::SO3::exp(tTransform.tail<3>()), tTransform.head<3>());
 
         //! MapPoint
         Eigen::Vector3d mMapPoint;
@@ -157,27 +157,25 @@ public:
             double x = tCamPoint(0);
             double y = tCamPoint(1);
             double z_inv = 1.0/tCamPoint(2);
-            double z_invsquare = z_inv*z_inv;
+            double z_inv2 = z_inv*z_inv;
 
             if(jacobians[0]!=NULL)
             {
                 Eigen::Map< Eigen::Matrix<double, 2, 6, Eigen::RowMajor> > mJacobians1(jacobians[0]);
 
-                mJacobians1(0, 0) = -mfx*x*y*z_invsquare;
-                mJacobians1(0, 1) = mfx + mfx*x*x/z_invsquare;
-                mJacobians1(0, 2) = -mfx*y/z_inv;
-                mJacobians1(0, 3) = mfx*z_inv;
-                mJacobians1(0, 4) = 0;
-                mJacobians1(0, 5) = -mfx*x*z_invsquare;
+                mJacobians1(0, 0) = -z_inv*mfx;
+                mJacobians1(0, 1) = 0.0;
+                mJacobians1(0, 2) = x*z_inv2*mfx;
+                mJacobians1(0, 3) = y*mJacobians1(0,2);
+                mJacobians1(0, 4) = -(1.0*mfx + x*mJacobians1(0,2));
+                mJacobians1(0, 5) = y*z_inv*mfx;
 
-                mJacobians1(1, 0) = -mfy - mfy*y*y/z_invsquare;
-                mJacobians1(1, 1) = mfy*x*y*z_invsquare;
-                mJacobians1(1, 2) = mfy*x/z_inv;
-                mJacobians1(1, 3) = 0;
-                mJacobians1(1, 4) = mfy*z_inv;
-                mJacobians1(1, 5) = -mfy*y*z_invsquare;
-
-                mJacobians1 = -1.0*mJacobians1;
+                mJacobians1(1, 0) = 0.0;
+                mJacobians1(1, 1) = -z_inv*mfy;
+                mJacobians1(1, 2) = y*z_inv2*mfy;
+                mJacobians1(1, 3) = 1.0*mfy + y*mJacobians1(1,2);
+                mJacobians1(1, 4) = -x*mJacobians1(1,2);
+                mJacobians1(1, 5) = -x*z_inv*mfy;
             }
 
             if(jacobians!=NULL && jacobians[1]!=NULL)
@@ -185,10 +183,10 @@ public:
                 Eigen::Map< Eigen::Matrix<double, 2, 3, Eigen::RowMajor> > mJacobians2(jacobians[1]);
 
                 Eigen::Matrix<double, 2, 3, Eigen::RowMajor> mJacob_tmp;
-                mJacob_tmp << mfx*z_inv, 0, -mfx*x*z_invsquare,
-                            0, mfy*z_inv, -mfy*y*z_invsquare;
+                mJacob_tmp << mfx*z_inv, 0, -mfx*x*z_inv2,
+                            0, mfy*z_inv, -mfy*y*z_inv2;
 
-                mJacobians2 = -1.0*mJacob_tmp*mPose.so3().matrix();
+                mJacobians2 = -1.0*mJacob_tmp*mPose.rotation_matrix();
             }
 
         }

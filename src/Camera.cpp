@@ -13,10 +13,15 @@ Camera::Camera()
 
 }
 
-Camera::Camera(const std::string &Paramfile, const Camera_Model model):
+Camera::Camera(const Camera_Model model):
         mCam_Model(model)
 {
-    Init_CamParam(Paramfile);
+    Init_CamParam();
+}
+
+Camera::Camera(Camera_Model model, float f, float _fx, float _fy, float _cx, float _cy):
+        mCam_Model(model), mf(f), mfx(_fx), mfy(_fy), mcx(_cx), mcy(_cy)
+{
 }
 
 Camera::~Camera()
@@ -24,7 +29,7 @@ Camera::~Camera()
 
 }
 
-void Camera::Init_CamParam(const std::string &Paramfile)
+void Camera::Init_CamParam()
 {
     mf = Config::Get<float>("Camera.f");
 

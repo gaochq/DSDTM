@@ -54,6 +54,16 @@ KeyFrame* Map::Get_InitialKFrame()
     return *msKeyFrames.begin();
 }
 
+std::vector<MapPoint*> Map::GetAllMapPoints()
+{
+    return std::vector<MapPoint*>(msMapPoints.begin(), msMapPoints.end());
+}
+
+std::vector<KeyFrame*> Map::GetAllKeyFrames()
+{
+    return std::vector<KeyFrame*>(msKeyFrames.begin(), msKeyFrames.end());
+}
+
 void Map::Release()
 {
     msMapPoints.clear();
