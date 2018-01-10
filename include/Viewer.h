@@ -27,6 +27,7 @@ public:
 
     //! Start or Stop the system
     void RequestStart();
+    void RequestPause();
     void RequestStop();
 
     //! Check whether the stop menu is choosed
@@ -46,9 +47,11 @@ private:
 
     MapDrawer       *mMapDrawer;
     System          *mSystem;
+    Tracking        *mTracker;
 
     bool        mbStopped;
     bool        mbRequestStop;
+    bool        mbPaused;
 
 };
 

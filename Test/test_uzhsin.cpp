@@ -94,7 +94,7 @@ int main(int argc, char **argv)
     //FLAGS_stderrthreshold = 0;
     FLAGS_log_dir = "./log/test_uzhsin";
 
-    DSDTM::System *tSystem = new DSDTM::System(argv[1],DSDTM::Camera_Model::RGB_PinHole);
+    DSDTM::System *tSystem = new DSDTM::System(argv[1],DSDTM::Camera_Model::RGB_PinHole, true);
     DSDTM::CameraPtr tCamera = DSDTM::CameraPtr(new DSDTM::Camera(DSDTM::RGB_PinHole, 315.5, 315.5, 315.5, 376.0, 240.0));
 
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");

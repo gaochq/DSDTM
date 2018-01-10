@@ -9,7 +9,8 @@ namespace DSDTM
 {
 
 Viewer::Viewer(System *tSystem, Tracking *pTracking, MapDrawer *tMapDrawer):
-        mSystem(tSystem), mMapDrawer(tMapDrawer), mbStopped(true), mbRequestStop(false)
+        mSystem(tSystem), mTracker(pTracking), mMapDrawer(tMapDrawer), mbStopped(false),
+        mbRequestStop(false), mbPaused(true)
 {
     float fps = Config::Get<int>("Camera.fps");
     if(fps < 1)
@@ -38,7 +39,7 @@ void Viewer::Run()
     pangolin::Var<bool> menuFollowCamera("menu.Follow Camera",true,true);
     pangolin::Var<bool> menuShowPoints("menu.Show Points",true,true);
     pangolin::Var<bool> menuShowKeyFrames("menu.Show KeyFrames",true,true);
-    pangolin::Var<bool> menuStop("menu.Stop",true,true);
+    pangolin::Var<bool> menuPause("menu.Pause",true,true);
     pangolin::Var<bool> menuReset("menu.Reset",false,false);
 
     pangolin::OpenGlRenderState s_cam(pangolin::ProjectionMatrix(1024, 768, mViewerpointF, mViewerpointF, 512, 389, 0.1, 1000),
@@ -91,35 +92,35 @@ void Viewer::Run()
 
         pangolin::FinishFrame();
 
-        if(menuReset)
+
+        if(!menuPause)
         {
-            menuShowKeyFrames = true;
-            menuShowPoints = true;
-            menuStop = true;
-            menuReset = false;
-            menuFollowCamera = true;
-
-            tbFollow = true;
-            mbStopped = true;
-            mbRequestStop = false;
-
-            mSystem->Reset();
+            mSystem->RequestStart();
         }
+        else
+        {
+            mSystem->RequestPause();
+            if(menuReset)
+            {
+                menuShowKeyFrames = true;
+                menuShowPoints = true;
+                menuPause = true;
+                menuReset = false;
+                menuFollowCamera = true;
 
-        if(!menuStop && mbStopped)
-        {
-            RequestStart();
-        }
-        else if(menuStop && !mbStopped)
-        {
-            RequestStop();
+                tbFollow = true;
+                mbStopped = true;
+                mbRequestStop = false;
+
+                mTracker->Reset();
+            }
         }
 
         if(Stop())
         {
-            while(IsStopped() && menuStop)
+            while(IsStopped())
             {
-                usleep(3000);
+                std::this_thread::sleep_for(std::chrono::milliseconds(3));
             }
         }
     }
@@ -127,8 +128,14 @@ void Viewer::Run()
 
 void Viewer::RequestStart()
 {
-    if(mbStopped)
-        mbStopped = false;
+    if(mbPaused)
+        mbPaused = false;
+}
+
+void Viewer::RequestPause()
+{
+    if(!mbPaused)
+        mbPaused = true;
 }
 
 void Viewer::RequestStop()

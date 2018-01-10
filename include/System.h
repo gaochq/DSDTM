@@ -29,6 +29,10 @@ public:
 
     Sophus::SE3 TrackMonocular(cv::Mat &tColorImg, const double &timestamp);
 
+    //! Pause the System
+    void RequestPause();
+    void RequestStart();
+
     void Reset();
 
 protected:
@@ -36,6 +40,7 @@ protected:
 
     bool        mbUseViewer;
     bool        mbReseted;
+    bool        mbPaused;
 
     CameraPtr           mCamera;
     Map                 *mMap;

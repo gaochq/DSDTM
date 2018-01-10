@@ -220,7 +220,7 @@ bool Tracking::TrackWithLocalMap()
     int N = mCurrentFrame->mvFeatures.size();
     DLOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
-    //Optimizer::PoseOptimization(mCurrentFrame, 10);
+    Optimizer::PoseOptimization(mCurrentFrame, 10);
 
     if(N < 30)
     {
@@ -358,6 +358,7 @@ void Tracking::CraeteKeyframe()
         if(z < 0)
             continue;
 
+        //Eigen::Vector3d tPose = mCurrentFrame->UnProject(tFeature->mpx, z);
         Eigen::Vector3d tPose = tFeature->mNormal*z;
         tPose = mCurrentFrame->Get_Pose().inverse()*tPose;
 

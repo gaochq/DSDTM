@@ -9,7 +9,7 @@ namespace DSDTM
 {
 
 System::System(const std::string &Paramfile, const Camera_Model tSensor, const bool tbUseViewer):
-        mSensor(tSensor), mbUseViewer(tbUseViewer), mbReseted(false)
+        mSensor(tSensor), mbUseViewer(tbUseViewer), mbReseted(false), mbPaused(false)
 {
     std::cout << "DSDTM" << std::endl;
 
@@ -47,7 +47,7 @@ Sophus::SE3 System::TrackRGBD(cv::Mat &tColorImg, cv::Mat &tDepthImg, const doub
     }
 
 
-    while(mViewer->IsStopped())
+    while(mbPaused==true)
     {
         //TODO Set the LocalMapper to sleep
         std::this_thread::sleep_for(std::chrono::milliseconds(3));
@@ -60,5 +60,16 @@ void System::Reset()
 {
     mbReseted = true;
 }
+
+void System::RequestPause()
+{
+    mbPaused = true;
+}
+
+void System::RequestStart()
+{
+    mbPaused = false;
+}
+
 
 }

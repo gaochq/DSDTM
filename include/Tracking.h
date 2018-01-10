@@ -67,6 +67,9 @@ public:
     //! Set the Viewer
     void SetViewer(Viewer *tViewer);
 
+    //! Reset Tracker
+    void Reset();
+
 private:
 
     //! Create Keyframe and MapPoints after initialization
@@ -95,10 +98,6 @@ private:
 
     //! Create new Keyframe
     void CraeteKeyframe();
-
-    //! Reset Tracker
-    void Reset();
-
 
 public:
     CameraPtr               mCam;               //! Camera

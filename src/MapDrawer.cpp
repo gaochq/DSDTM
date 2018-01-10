@@ -86,16 +86,16 @@ void MapDrawer::DrawKeyframes()
         //! Draw the line between two frames
         if( i >=1)
         {
-            Sophus::SE3 tRelPose = tvKFrames[i-1]->Get_Pose()*tvKFrames[i]->Get_Pose().inverse();
-            Eigen::Vector3f tRelTrans = tRelPose.inverse().translation().cast<float>();
+            Eigen::Vector3f tCamcnt1 = tvKFrames[i-1]->Get_CameraCnt().cast<float>();
+            Eigen::Vector3f tCamcnt2 = tvKFrames[i]->Get_CameraCnt().cast<float>();
 
             glLineWidth(mfKeyFrameLineWidth);
             glColor3f(0.0f, 0.0f, 1.0f);
 
             glBegin(GL_LINES);
 
-            glVertex3f(0, 0, 0);
-            glVertex3d(tRelTrans(0), tRelTrans(1), tRelTrans(2));
+            glVertex3f(tCamcnt2(0), tCamcnt2(1),tCamcnt2(2));
+            glVertex3d(tCamcnt1(0), tCamcnt1(1), tCamcnt1(2));
 
             glEnd();
         }
