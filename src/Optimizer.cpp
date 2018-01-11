@@ -33,7 +33,7 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
 
     ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
     problem.AddParameterBlock(tT_c2rArray.data(), SIZE_POSE, local_parameterization);
-    problem.SetParameterBlockConstant(tT_c2rArray.data());
+    //problem.SetParameterBlockConstant(tT_c2rArray.data());
 
     size_t N = tCurFrame->mvFeatures.size();
     double tPointsets[N][3];
@@ -47,6 +47,7 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
 
         Eigen::Vector2d tObserves((*iter)->mpx.x,(*iter)->mpx.y);
 
+        /*
         tPointsets[tNum][0] = tPoint(0);
         tPointsets[tNum][1] = tPoint(1);
         tPointsets[tNum][2] = tPoint(2);
@@ -54,28 +55,33 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
         // only optimize camera pose
         TwoViewBA_Problem* p = new TwoViewBA_Problem((*iter), tCurFrame->mCamera);
         problem.AddResidualBlock(p, NULL, tT_c2rArray.data(), tPointsets[tNum]);
+        */
+        PoseSolver_Problem *p = new PoseSolver_Problem(tPoint, (*iter), tCurFrame->mCamera);
+        problem.AddResidualBlock(p, NULL, tT_c2rArray.data());
     }
 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::SPARSE_SCHUR;
-    //options.minimizer_progress_to_stdout = true;
+//    options.minimizer_progress_to_stdout = true;
     options.trust_region_strategy_type = ceres::DOGLEG;
     options.max_num_iterations = 100;
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-    std::cout<< "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
+    //std::cout<< "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
     tCurFrame->Set_Pose(Sophus::SE3(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>()));
 
+    /*
     tNum = 0;
     for (auto iter = tCurFrame->mvMapPoints.begin(); iter!=tCurFrame->mvMapPoints.end();++iter)
     {
         (*iter)->Set_Pose(Eigen::Map<Eigen::Matrix<double, 3, 1>>(tPointsets[tNum]));
     }
+     */
 
 //    std::vector<double> tvdResidual = GetReprojectReidual(problem);
-    //std::cout << summary.FullReport() << std::endl;
+//    std::cout << summary.FullReport() << std::endl;
 
 //    std::cout <<"Residual Sum: "<<std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
 }

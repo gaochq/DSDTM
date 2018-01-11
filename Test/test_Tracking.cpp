@@ -81,6 +81,11 @@ int main(int argc, char **argv)
         Sophus::SE3 tPose = tSystem->TrackRGBD(ColorImage, DepthIMage, vTimestamps[i]);
 
         //Image_tmp.release();
+
+        if(i > nImages - 10)
+        {
+            std::cout << vTimestamps[i] << "------" << tPose.translation().transpose() << std::endl;
+        }
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time << " us" << endl;

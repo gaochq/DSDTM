@@ -115,7 +115,7 @@ int main(int argc, char **argv)
         double start = static_cast<double>(cvGetTickCount());
         std::string img_name(Datasets_Dir + "/img/" + vstrImageFilenamesRGB[i] + "_0.png");
         ColorImage = cv::imread(img_name, 0);
-        DSDTM::TicToc tc;
+
         loadBlenderDepthmap(Datasets_Dir + "/depth/" + vstrImageFilenamesRGB[i] + "_0.depth", tCamera, DepthIMage);
 
 
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
         //double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
 //        cout << time << "us" << endl;
 
-
+        DSDTM::TicToc tc;
         Sophus::SE3 tPose = tSystem->TrackRGBD(ColorImage, DepthIMage, vTimestamps[i]);
         std::cout <<"  "<< tc.toc() <<"  ";
 

@@ -220,7 +220,7 @@ bool Tracking::TrackWithLocalMap()
     int N = mCurrentFrame->mvFeatures.size();
     DLOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
-    Optimizer::PoseOptimization(mCurrentFrame, 10);
+    //Optimizer::PoseOptimization(mCurrentFrame, 10);
     double inialError, finalError;
     //Optimizer::optimizeGaussNewton(2.0, 10, mCurrentFrame, inialError, finalError);
     if(N < 30)

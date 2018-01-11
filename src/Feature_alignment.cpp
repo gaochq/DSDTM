@@ -22,7 +22,7 @@ Feature_Alignment::~Feature_Alignment()
 void Feature_Alignment::GridInitalization()
 {
     mMax_pts = Config::Get<int>("Camera.Max_tkfts");
-    mPyr_levels  = Config::Get<int>("Camera.PyraLevels");
+    mPyr_levels  = Config::Get<int>("Camera.MaxPyraLevels");
     //mHalf_PatchSize = Config::Get<int>("Camera.Half_PatchSize");
 
     mGrid.mCell_size   = Config::Get<int>("Camera.CellSize");
@@ -135,7 +135,7 @@ bool Feature_Alignment::FindMatchDirect(const MapPoint *tMpPoint, const FramePtr
 
     Eigen::Matrix2d tA_c2r = SolveAffineMatrix(tRefKeyframe, tFrame, tReferFeature, tMpPoint);
 
-    int tBestLevel = GetBestSearchLevel(tA_c2r, mPyr_levels);
+    int tBestLevel = GetBestSearchLevel(tA_c2r, mPyr_levels-3);
 
     WarpAffine(tA_c2r, tRefKeyframe->mvImg_Pyr[tReferFeature->mlevel], tReferFeature, tBestLevel, mPatch_WithBoarder);
 
@@ -155,11 +155,11 @@ Eigen::Matrix2d Feature_Alignment::SolveAffineMatrix(KeyFrame *tReferKframe, con
                                                      const MapPoint *tMpPoint)
 {
     Eigen::Matrix2d tA_c2r;
-
     const int Half_PatchLarger = mHalf_PatchSize + 1;
     const int tLevel = tReferFeature->mlevel;
 
-    const Eigen::Vector3d tRefPoint = tReferKframe->Get_Pose() * tMpPoint->Get_Pose();
+    Eigen::Vector3d tRefPoint = (tReferKframe->Get_CameraCnt() - tReferFeature->mPoint).norm()*tReferFeature->mNormal;
+
     cv::Point2f tRefPx = tReferFeature->mpx;
 
     Eigen::Vector2d tRefPxU(tRefPx.x + Half_PatchLarger*(1 << tLevel), tRefPx.y);
@@ -167,15 +167,20 @@ Eigen::Matrix2d Feature_Alignment::SolveAffineMatrix(KeyFrame *tReferKframe, con
 
     Eigen::Vector3d tRefPointU = mCam->Pixel2Camera(tRefPxU, tRefPoint(2));
     Eigen::Vector3d tRefPointV = mCam->Pixel2Camera(tRefPxV, tRefPoint(2));
+    tRefPointU.normalize();
+    tRefPointV.normalize();
+    tRefPointU = tRefPointU*(tRefPoint(2)/tRefPointU(2));
+    tRefPointV = tRefPointV*(tRefPoint(2)/tRefPointV(2));
 
-    Sophus::SE3 tT_c2r = tCurFrame->Get_Pose()*tReferKframe->Get_Pose().inverse() ;
+    Sophus::SE3 tT_c2r = tCurFrame->Get_Pose()*tReferKframe->Get_Pose().inverse();
+    Eigen::Vector2d tCurPx = mCam->Camera2Pixel(tT_c2r * tRefPoint);
     Eigen::Vector2d tCurPxU = mCam->Camera2Pixel(tT_c2r * tRefPointU);
     Eigen::Vector2d tCurPxV = mCam->Camera2Pixel(tT_c2r * tRefPointV);
 
-    tA_c2r.col(0) = (tRefPxU - tCurPxU)/Half_PatchLarger;
-    tA_c2r.col(1) = (tRefPxV - tCurPxV)/Half_PatchLarger;
+    tA_c2r.col(0) = (tCurPxU - tCurPx)/Half_PatchLarger;
+    tA_c2r.col(1) = (tCurPxV - tCurPx)/Half_PatchLarger;
 
-    return  tA_c2r;
+    return tA_c2r;
 }
 
 int Feature_Alignment::GetBestSearchLevel(Eigen::Matrix2d tAffineMat, int tMaxLevel)
@@ -183,7 +188,7 @@ int Feature_Alignment::GetBestSearchLevel(Eigen::Matrix2d tAffineMat, int tMaxLe
     int tSearch_Level = 0;
     double D = tAffineMat.determinant();
 
-    while(D > 3.0 && tSearch_Level < tMaxLevel -1)
+    while(D > 3.0 && tSearch_Level < tMaxLevel)
     {
         tSearch_Level++;
         D = D*0.25;
