@@ -83,6 +83,9 @@ void Sprase_ImgAlign::GetJocabianMat(int tLevel)
     int tNum = 0;
     for (int i = 0; i < tnPts; ++i)
     {
+        if(!mRefFrame->mvFeatures[i]->mbInitial)
+            continue;
+
         tRefPts.col(tNum) << mRefFrame->mvFeatures[i]->mpx.x,
                              mRefFrame->mvFeatures[i]->mpx.y;
         tRefPts.col(tNum) = tRefPts.col(tNum)*tScale;

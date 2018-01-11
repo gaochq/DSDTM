@@ -25,7 +25,7 @@ public:
 
     //! Set and Get the world position of mappoint
     void Set_Pose(Eigen::Vector3d tPose);
-    Eigen::Vector3d Get_Pose();
+    Eigen::Vector3d Get_Pose() const;
 
     //! Add Mappoint observation
     void Add_Observation(KeyFrame *tKFrame, size_t tfID);
@@ -38,7 +38,7 @@ public:
     int Get_ObserveNums() const;
 
     //! Get the closest keyframe between cunrrent frame refer this MapPoint
-    bool Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *&tKframe);
+    bool Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *&tKframe) const;
 
     //! Increase the match times with frames
     void IncreaseFound(int n = 1);

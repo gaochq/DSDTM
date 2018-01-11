@@ -21,7 +21,7 @@ Feature_Alignment::~Feature_Alignment()
 
 void Feature_Alignment::GridInitalization()
 {
-    mMax_pts = Config::Get<int>("Camera.Max_fts");
+    mMax_pts = Config::Get<int>("Camera.Max_tkfts");
     mPyr_levels  = Config::Get<int>("Camera.PyraLevels");
     //mHalf_PatchSize = Config::Get<int>("Camera.Half_PatchSize");
 
@@ -87,6 +87,7 @@ bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
     //! Sort mappoint refer to their observation times
     tCell->sort(boost::bind(&Feature_Alignment::CellComparator, _1, _2));
 
+    int N = tCell->size();
     for (auto iter = tCell->begin(); iter != tCell->end(); iter++)
     {
         if(iter->mMpPoint->IsBad())
@@ -118,12 +119,13 @@ bool Feature_Alignment::CellComparator(Candidate &c1, Candidate &c2)
     return  c1.mMpPoint->Get_ObserveNums() > c2.mMpPoint->Get_ObserveNums();
 }
 
-bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const FramePtr tFrame, Eigen::Vector2d &tPt, int &tLevel)
+bool Feature_Alignment::FindMatchDirect(const MapPoint *tMpPoint, const FramePtr tFrame, Eigen::Vector2d &tPt, int &tLevel)
 {
     bool success = false;
 
     Feature *tReferFeature;
     KeyFrame *tRefKeyframe;
+
     if(!(tMpPoint->Get_ClosetObs(tFrame.get(), tReferFeature, tRefKeyframe)))
         return false;
 
@@ -150,7 +152,7 @@ bool Feature_Alignment::FindMatchDirect(MapPoint *tMpPoint, const FramePtr tFram
 }
 
 Eigen::Matrix2d Feature_Alignment::SolveAffineMatrix(KeyFrame *tReferKframe, const FramePtr tCurFrame, Feature *tReferFeature,
-                                                     MapPoint *tMpPoint)
+                                                     const MapPoint *tMpPoint)
 {
     Eigen::Matrix2d tA_c2r;
 

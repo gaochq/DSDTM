@@ -15,6 +15,7 @@
 #include <iterator>
 #include <utility>
 #include <thread>
+#include <mutex>
 
 #include "boost/bind.hpp"
 

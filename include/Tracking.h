@@ -84,6 +84,9 @@ private:
     //! Updata local map keyframes, I choose the 10 most closer to current frame
     void UpdateLocalMap();
 
+    //! Get frames have an overlapping field of current view
+    void GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame*, double> >& tClose_kfs) const;
+
     //! Add new features into the frame refer to the detection Grid
     void AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv::Point2f> &tLast_Pts);
 

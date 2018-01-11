@@ -28,6 +28,8 @@ public:
     static void PoseOptimization(FramePtr tCurFrame, int tIterations = 100);
     static double *se3ToDouble(Eigen::Matrix<double, 6, 1> tso3);
     static std::vector<double> GetReprojectReidual(const ceres::Problem &problem);
+    static void optimizeGaussNewton(const double reproj_thresh, const size_t n_iter, FramePtr &frame, double& error_init, double& error_final);
+    static void jacobian_xyz2uv(const Eigen::Vector3d& xyz_in_f, Eigen::Matrix<double,2,6>& J);
 };
 
 
@@ -107,8 +109,8 @@ protected:
 class TwoViewBA_Problem: public ceres::SizedCostFunction<2, 6, 3>
 {
 public:
-    TwoViewBA_Problem(const Eigen::Vector2d &tObservation, const Eigen::Matrix4d &tIntrinsic):
-            mObservation(tObservation), mIntrinsic(tIntrinsic)
+    TwoViewBA_Problem(const Feature* tFeature, const CameraPtr tCamera):
+                    mFeature(tFeature), mCamera(tCamera)
     {
         mfx = mIntrinsic(0, 0);
         mfy = mIntrinsic(1, 1);
@@ -128,15 +130,17 @@ public:
         Eigen::Vector3d mMapPoint;
         mMapPoint << parameters[1][0], parameters[1][1], parameters[1][2];
 
-        //! column major, in camera coordinate
         Eigen::Map<Eigen::Vector2d> mResidual(residuals);
         Eigen::Vector3d tCamPoint = mPose*mMapPoint;
 
-        Eigen::Vector2d tPixel;
-        tPixel << mfx*tCamPoint(0)/tCamPoint(2) + mcx,
-                mfy*tCamPoint(1)/tCamPoint(2) + mcy;
+        //! Don't need undistortion
+        Eigen::Vector2d tPrediction;
+        tPrediction << tCamPoint(0)/tCamPoint(2), tCamPoint(1)/tCamPoint(2);
 
-        mResidual = mObservation - tPixel;
+        Eigen::Vector2d tObservation;
+        tObservation << mFeature->mNormal(0)/mFeature->mNormal(2), mFeature->mNormal(1)/mFeature->mNormal(2);
+
+        mResidual = (tObservation - tPrediction)/(1<<mFeature->mlevel);
 
         if(mResidual(0)>10 || mResidual(1)>10)
             std::cout<< "error" <<std::endl;
@@ -155,19 +159,19 @@ public:
             {
                 Eigen::Map< Eigen::Matrix<double, 2, 6, Eigen::RowMajor> > mJacobians1(jacobians[0]);
 
-                mJacobians1(0, 0) = -z_inv*mfx;
+                mJacobians1(0, 0) = -z_inv;
                 mJacobians1(0, 1) = 0.0;
-                mJacobians1(0, 2) = x*z_inv2*mfx;
+                mJacobians1(0, 2) = x*z_inv2;
                 mJacobians1(0, 3) = y*mJacobians1(0,2);
-                mJacobians1(0, 4) = -(1.0*mfx + x*mJacobians1(0,2));
-                mJacobians1(0, 5) = y*z_inv*mfx;
+                mJacobians1(0, 4) = -(1.0 + x*mJacobians1(0,2));
+                mJacobians1(0, 5) = y*z_inv;
 
                 mJacobians1(1, 0) = 0.0;
-                mJacobians1(1, 1) = -z_inv*mfy;
-                mJacobians1(1, 2) = y*z_inv2*mfy;
-                mJacobians1(1, 3) = 1.0*mfy + y*mJacobians1(1,2);
+                mJacobians1(1, 1) = -z_inv;
+                mJacobians1(1, 2) = y*z_inv2;
+                mJacobians1(1, 3) = 1.0 + y*mJacobians1(1,2);
                 mJacobians1(1, 4) = -x*mJacobians1(1,2);
-                mJacobians1(1, 5) = -x*z_inv*mfy;
+                mJacobians1(1, 5) = -x*z_inv;
             }
 
             if(jacobians!=NULL && jacobians[1]!=NULL)
@@ -175,8 +179,8 @@ public:
                 Eigen::Map< Eigen::Matrix<double, 2, 3, Eigen::RowMajor> > mJacobians2(jacobians[1]);
 
                 Eigen::Matrix<double, 2, 3, Eigen::RowMajor> mJacob_tmp;
-                mJacob_tmp << mfx*z_inv, 0, -mfx*x*z_inv2,
-                            0, mfy*z_inv, -mfy*y*z_inv2;
+                mJacob_tmp << z_inv, 0, -x*z_inv2,
+                            0, z_inv, -y*z_inv2;
 
                 mJacobians2 = -1.0*mJacob_tmp*mPose.rotation_matrix();
             }
@@ -196,6 +200,9 @@ protected:
     double              mfy;
     double              mcx;
     double              mcy;
+
+    const Feature     *mFeature;
+    const CameraPtr   mCamera;
 };
 
 

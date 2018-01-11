@@ -26,7 +26,7 @@ void MapPoint::Set_Pose(Eigen::Vector3d tPose)
     mPose = tPose;
 }
 
-Eigen::Vector3d MapPoint::Get_Pose()
+Eigen::Vector3d MapPoint::Get_Pose() const
 {
     return mPose;
 }
@@ -56,7 +56,7 @@ int MapPoint::Get_ObserveNums() const
     return mnFound;
 }
 
-bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *&tKframe)
+bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *&tKframe) const
 {
     Eigen::Vector3d tPt_frame = mPose - tFrame->Get_CameraCnt();
     tPt_frame.normalize();

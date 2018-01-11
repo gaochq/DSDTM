@@ -30,6 +30,7 @@ Camera.MaxPyraLevels: 5
 Camera.MinPyraLevels: 0
 Camera.CellSize: 30
 Camera.Max_fts: 300
+Camera.Max_tkfts: 200
 Camera.Min_fts: 15
 Camera.Min_dist: 30
 

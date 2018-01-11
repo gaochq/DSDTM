@@ -52,10 +52,7 @@ int main(int argc, char **argv)
     //FLAGS_stderrthreshold = 0;
     FLAGS_log_dir = "./log/TUM/longhouse";
 
-    DSDTM::Map *mMap = new DSDTM::Map();
-    DSDTM::Config::setParameterFile(argv[1]);
-    DSDTM::CameraPtr camera(new DSDTM::Camera(DSDTM::Camera_Model::RGB_PinHole));
-    DSDTM::Tracking tracking(camera, mMap);
+    DSDTM::System *tSystem = new DSDTM::System(argv[1],DSDTM::Camera_Model::RGB_PinHole, true);
 
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");
     vector<string> vstrImageFilenamesRGB;
@@ -69,6 +66,8 @@ int main(int argc, char **argv)
     double start = static_cast<double>(cvGetTickCount());
     for (int i = 0; i < nImages; ++i)
     {
+        std::cout << i << std::endl;
+
         //! The single image cost almost 10ms on reading and clahe
         double start = static_cast<double>(cvGetTickCount());
         string Colorimg_path = Datasets_Dir + "/" + vstrImageFilenamesRGB[i];
@@ -76,15 +75,11 @@ int main(int argc, char **argv)
         ColorImage = cv::imread(Colorimg_path.c_str(), CV_LOAD_IMAGE_GRAYSCALE);
         DepthIMage = cv::imread(Depthimg_path.c_str(), CV_LOAD_IMAGE_UNCHANGED);
 
-
 //        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
 //        clahe->apply(ColorImage, Image_tmp);
-        double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
-//        cout << time << "us" << endl;
 
-        tracking.Track_RGBDCam(ColorImage, vTimestamps[i], DepthIMage);
+        Sophus::SE3 tPose = tSystem->TrackRGBD(ColorImage, DepthIMage, vTimestamps[i]);
 
-        std::cout << i << std::endl;
         //Image_tmp.release();
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();

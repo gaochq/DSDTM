@@ -20,33 +20,14 @@ Map::~Map()
 
 void Map::AddKeyFrame(KeyFrame *_frame)
 {
+    std::unique_lock<std::mutex> lock(mMapMutex);
     msKeyFrames.insert(_frame);
 }
 
 void Map::AddMapPoint(MapPoint *_point)
 {
+    std::unique_lock<std::mutex> lock(mMapMutex);
     msMapPoints.insert(_point);
-}
-
-void Map::GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame *, double> > &tClose_kfs) const
-{
-    //TODO improve the stragedy to choose the local keyframes
-
-    for (auto kf : msKeyFrames)
-    {
-        for (auto keypoint : kf->mvMapPoints)
-        {
-            if(keypoint->Get_Pose().isZero(0))
-                continue;
-
-            if(tFrame->isVisible(keypoint->Get_Pose()))
-            {
-                tClose_kfs.push_back(
-                        std::make_pair(kf, (tFrame->Get_Pose().translation() - kf->Get_Pose().translation()).norm()));
-                break;
-            }
-        }
-    }
 }
 
 KeyFrame* Map::Get_InitialKFrame()
@@ -56,11 +37,13 @@ KeyFrame* Map::Get_InitialKFrame()
 
 std::vector<MapPoint*> Map::GetAllMapPoints()
 {
+    std::unique_lock<std::mutex> lock(mMapMutex);
     return std::vector<MapPoint*>(msMapPoints.begin(), msMapPoints.end());
 }
 
 std::vector<KeyFrame*> Map::GetAllKeyFrames()
 {
+    std::unique_lock<std::mutex> lock(mMapMutex);
     return std::vector<KeyFrame*>(msKeyFrames.begin(), msKeyFrames.end());
 }
 
@@ -70,4 +53,4 @@ void Map::Release()
     msKeyFrames.clear();
 }
 
-}
+}// namespace DSDTM

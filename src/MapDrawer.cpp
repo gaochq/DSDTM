@@ -47,8 +47,9 @@ void MapDrawer::DrawKeyframes()
     const float z = w*0.6;
 
     const std::vector<KeyFrame*> tvKFrames = mMap->GetAllKeyFrames();
+    int N = tvKFrames.size();
 
-    for (size_t i = 0; i < tvKFrames.size(); ++i)
+    for (size_t i = 0; i < N; ++i)
     {
         KeyFrame *tKFrame = tvKFrames[i];
         Sophus::SE3 tKfPose = tKFrame->Get_Pose().inverse();
@@ -83,24 +84,33 @@ void MapDrawer::DrawKeyframes()
         glVertex3f(-w, -h, z);
         glEnd();
 
-        //! Draw the line between two frames
-        if( i >=1)
+        glPopMatrix();
+    }
+
+    //! Draw lines between two frames
+    if(N>=1)
+    {
+        Sophus::SE3 tRefPos = Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero());
+        Eigen::Matrix<float, 4, 4, Eigen::ColMajor> tRefPoseMat = tRefPos.matrix().cast<float>();
+        for (int i = 1; i < N; ++i)
         {
-            Eigen::Vector3f tCamcnt1 = tvKFrames[i-1]->Get_CameraCnt().cast<float>();
+            Eigen::Vector3f tCamcnt1 = tvKFrames[i - 1]->Get_CameraCnt().cast<float>();
             Eigen::Vector3f tCamcnt2 = tvKFrames[i]->Get_CameraCnt().cast<float>();
+
+            glPushMatrix();
+            glMultMatrixf(tRefPoseMat.data());
 
             glLineWidth(mfKeyFrameLineWidth);
             glColor3f(0.0f, 0.0f, 1.0f);
 
             glBegin(GL_LINES);
 
-            glVertex3f(tCamcnt2(0), tCamcnt2(1),tCamcnt2(2));
+            glVertex3f(tCamcnt2(0), tCamcnt2(1), tCamcnt2(2));
             glVertex3d(tCamcnt1(0), tCamcnt1(1), tCamcnt1(2));
 
             glEnd();
+            glPopMatrix();
         }
-
-        glPopMatrix();
     }
 }
 
@@ -143,6 +153,7 @@ void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)
     glEnd();
 
     glPopMatrix();
+
 }
 
 void MapDrawer::SetCurrentCameraPose(const Sophus::SE3 &Tcw)

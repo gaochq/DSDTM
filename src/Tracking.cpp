@@ -221,7 +221,8 @@ bool Tracking::TrackWithLocalMap()
     DLOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
     Optimizer::PoseOptimization(mCurrentFrame, 10);
-
+    double inialError, finalError;
+    //Optimizer::optimizeGaussNewton(2.0, 10, mCurrentFrame, inialError, finalError);
     if(N < 30)
     {
         DLOG(ERROR)<< "Too few Features tracked" << std::endl;
@@ -238,7 +239,7 @@ void Tracking::UpdateLocalMap()
 
     //! Update lcoal keyframes
     std::list<std::pair<KeyFrame *, double> > tClose_kfs;
-    mMap->GetCloseKeyFrames(mCurrentFrame.get(), tClose_kfs);
+    GetCloseKeyFrames(mCurrentFrame.get(), tClose_kfs);
 
     //! Sort kfs refer to the distance between current frame
     tClose_kfs.sort(boost::bind(&std::pair<KeyFrame*, double>::second, _1) <
@@ -277,9 +278,34 @@ void Tracking::UpdateLocalMap()
     }
 }
 
+void Tracking::GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame *, double> > &tClose_kfs) const
+{
+    std::vector<KeyFrame*> tvKeyFrames = mMap->GetAllKeyFrames();
+    //TODO improve the stragedy to choose the local keyframes
+
+    for (auto kf = tvKeyFrames.begin(); kf!= tvKeyFrames.end(); ++kf)
+    {
+        for (auto keypoint = (*kf)->mvMapPoints.begin(); keypoint!=(*kf)->mvMapPoints.end(); ++keypoint)
+        {
+            if(!(*keypoint))
+                continue;
+
+            if((*keypoint)->Get_Pose().isZero(0))
+                continue;
+
+            if(tFrame->isVisible((*keypoint)->Get_Pose()))
+            {
+                tClose_kfs.push_back(
+                        std::make_pair((*kf), (tFrame->Get_Pose().translation() - (*kf)->Get_Pose().translation()).norm()));
+                break;
+            }
+        }
+    }
+}
+
 bool Tracking::NeedKeyframe()
 {
-    if(mCurrentFrame->mvFeatures.size() < 30)
+    if(mCurrentFrame->mvFeatures.size() < 50)
         return true;
 
     //! This condition frome HeYijia / svo_edgelet

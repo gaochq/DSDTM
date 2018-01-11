@@ -66,10 +66,10 @@ public:
     static bool CellComparator(Candidate &c1, Candidate &c2);
 
     //! Find the match of MapPoint using Featurealignment
-    bool FindMatchDirect(MapPoint *tMpPoint, const FramePtr tFrame, Eigen::Vector2d &tPt, int &tLevel);
+    bool FindMatchDirect(const MapPoint *tMpPoint, const FramePtr tFrame, Eigen::Vector2d &tPt, int &tLevel);
 
     //! Get the affine matrix
-    Eigen::Matrix2d SolveAffineMatrix(KeyFrame *tReferKframe, const FramePtr tCurFrame, Feature *tReferFeature, MapPoint *tMpPoint);
+    Eigen::Matrix2d SolveAffineMatrix(KeyFrame *tReferKframe, const FramePtr tCurFrame, Feature *tReferFeature, const MapPoint *tMpPoint);
 
     //! Get the best search level refer to the determinate of affine matrix
     int GetBestSearchLevel(Eigen::Matrix2d tAffineMat, int tMaxLevel);

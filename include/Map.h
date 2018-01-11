@@ -30,9 +30,6 @@ public:
     void AddKeyFrame(KeyFrame *_frame);
     void AddMapPoint(MapPoint *_point);
 
-    //! Get frames have an overlapping field of current view
-    void GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame*, double> >& tClose_kfs) const;
-
     //! Get the initial Frame
     KeyFrame *Get_InitialKFrame();
 
@@ -49,6 +46,7 @@ protected:
     std::set<KeyFrame*>     msKeyFrames;
     std::set<MapPoint*>     msMapPoints;
 
+    std::mutex mMapMutex;
 };
 
 } //namespace DSDTM
