@@ -56,6 +56,29 @@ Sophus::SE3 System::TrackRGBD(cv::Mat &tColorImg, cv::Mat &tDepthImg, const doub
     return mTracker->Track_RGBDCam(tColorImg, tDepthImg, timestamp);
 }
 
+void System::SaveKeyFrameTrajectoryTUM(const string &filename)
+{
+    std::cout << "Saving camera trajectory!" <<std::endl;
+
+    std::vector<KeyFrame*> tvKeyframs = mMap->GetAllKeyFrames();
+    std::sort(tvKeyframs.begin(), tvKeyframs.end(), KeyFrame::CompareId);
+
+    ofstream f;
+    f.open(filename.c_str());
+    f << fixed;
+
+    for (size_t i = 0; i < tvKeyframs.size(); ++i)
+    {
+        KeyFrame *tkf = tvKeyframs[i];
+
+        Eigen::Quaterniond q = tkf->Get_Pose().inverse().unit_quaternion();
+        Eigen::Vector3f t = tkf->Get_CameraCnt().cast<float>();
+
+        f << setprecision(6) << tkf->mTimeStamp << setprecision(7) << " " << t(0) << " " << t(1) << " " << t(2)
+          << " " << float(q.x()) << " " << float(q.y()) << " " << float(q.z()) << " " << float(q.w()) << endl;
+    }
+}
+
 void System::Reset()
 {
     mbReseted = true;

@@ -107,13 +107,24 @@ void Frame::UndistortFeatures()
         tNum++;
     }
 
+    cv::Mat mat(tNum, 2, CV_32F);
+    for (int k = 0; k < tNum; ++k)
+    {
+        mat.at<float>(k, 0)=tSrc[k].x;
+        mat.at<float>(k, 1)=tSrc[k].y;
+    }
+
     //! the InputArray in undistortPoints should be 2 channels
-    cv::undistortPoints(tSrc, tmvFeaturesUn, mCamera->mInstrinsicMat,
+    mat=mat.reshape(2);
+    cv::undistortPoints(mat, mat, mCamera->mInstrinsicMat,
                         mCamera->mDistortionMat, cv::noArray(), mCamera->mInstrinsicMat);
+    mat=mat.reshape(1);
+
     int i = 0;
     for (int j = N - tNum; j < N; ++j, ++i)
     {
-        mvFeatures[j]->mpx = tmvFeaturesUn[i];
+        mvFeatures[j]->mpx.x = mat.at<float>(i, 0);
+        mvFeatures[j]->mpx.y = mat.at<float>(i, 1);
 
         mvFeatures[j]->mNormal = mCamera->Pixel2Camera(mvFeatures[j]->mpx, 1.0);
         mvFeatures[j]->mNormal.normalize();

@@ -56,8 +56,10 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
         TwoViewBA_Problem* p = new TwoViewBA_Problem((*iter), tCurFrame->mCamera);
         problem.AddResidualBlock(p, NULL, tT_c2rArray.data(), tPointsets[tNum]);
         */
+
         PoseSolver_Problem *p = new PoseSolver_Problem(tPoint, (*iter), tCurFrame->mCamera);
         problem.AddResidualBlock(p, NULL, tT_c2rArray.data());
+
     }
 
     ceres::Solver::Options options;
@@ -76,9 +78,14 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     tNum = 0;
     for (auto iter = tCurFrame->mvMapPoints.begin(); iter!=tCurFrame->mvMapPoints.end();++iter)
     {
+        if(!tCurFrame->mvFeatures[tNum]->mbInitial)
+            continue;
+
         (*iter)->Set_Pose(Eigen::Map<Eigen::Matrix<double, 3, 1>>(tPointsets[tNum]));
+        tCurFrame->mvFeatures[tNum]->mPoint = Eigen::Map<Eigen::Matrix<double, 3, 1>>(tPointsets[tNum]);
     }
      */
+
 
 //    std::vector<double> tvdResidual = GetReprojectReidual(problem);
 //    std::cout << summary.FullReport() << std::endl;

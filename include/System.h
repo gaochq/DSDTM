@@ -33,6 +33,9 @@ public:
     void RequestPause();
     void RequestStart();
 
+    //! Save camera trajectory
+    void SaveKeyFrameTrajectoryTUM(const string &filename);
+
     void Reset();
 
 protected:

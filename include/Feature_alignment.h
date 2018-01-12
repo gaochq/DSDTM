@@ -84,7 +84,6 @@ public:
     static bool Align2DCeres(const cv::Mat &tCurImg, uchar *tPatch_WithBoarder, uchar *tPatch,  int MaxIters, Eigen::Vector2d &tCurPx);
     static bool Align2DGaussNewton(const cv::Mat &tCurImg, uchar *tPatch_WithBoarder, uchar *tPatch,  int MaxIters, Eigen::Vector2d &tCurPx);
 
-
 private:
 
     CameraPtr  mCam;

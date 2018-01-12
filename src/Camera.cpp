@@ -59,7 +59,7 @@ void Camera::Init_CamParam()
     tInstrinsicMat.at<float>(1, 2) = mcy;
     tInstrinsicMat.copyTo(mInstrinsicMat);
 
-    cv::Mat tDistortMat(4, 1, CV_32F);
+    cv::Mat tDistortMat(5, 1, CV_32F);
     tDistortMat.at<float>(0) = mk1;
     tDistortMat.at<float>(1) = mk2;
     tDistortMat.at<float>(2) = mp1;

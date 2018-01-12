@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     int nImages = vstrImageFilenamesRGB.size();
     cv::Mat ColorImage, Image_tmp, DepthIMage;
     double start = static_cast<double>(cvGetTickCount());
-    for (int i = 0; i < nImages; ++i)
+    for (int i = 0; i < nImages-170; ++i)
     {
         std::cout <<"Frame " << i << "---->   ";
 
@@ -130,6 +130,7 @@ int main(int argc, char **argv)
 
         std::cout << "error: " << (tPose*mTransformSets[i].inverse()).translation().norm() <<"----"<< tPose.unit_quaternion().angularDistance(mTransformSets[i].unit_quaternion()) << std::endl;
     }
+    tSystem->SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time << " us" << endl;
     cout <<"Average "<< time/nImages << "us" << endl;

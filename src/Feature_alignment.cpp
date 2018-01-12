@@ -165,8 +165,8 @@ Eigen::Matrix2d Feature_Alignment::SolveAffineMatrix(KeyFrame *tReferKframe, con
     Eigen::Vector2d tRefPxU(tRefPx.x + Half_PatchLarger*(1 << tLevel), tRefPx.y);
     Eigen::Vector2d tRefPxV(tRefPx.x, tRefPx.y + Half_PatchLarger*(1 << tLevel));
 
-    Eigen::Vector3d tRefPointU = mCam->Pixel2Camera(tRefPxU, tRefPoint(2));
-    Eigen::Vector3d tRefPointV = mCam->Pixel2Camera(tRefPxV, tRefPoint(2));
+    Eigen::Vector3d tRefPointU = mCam->Pixel2Camera(tRefPxU, 1.0);
+    Eigen::Vector3d tRefPointV = mCam->Pixel2Camera(tRefPxV, 1.0);
     tRefPointU.normalize();
     tRefPointV.normalize();
     tRefPointU = tRefPointU*(tRefPoint(2)/tRefPointU(2));
@@ -200,6 +200,7 @@ int Feature_Alignment::GetBestSearchLevel(Eigen::Matrix2d tAffineMat, int tMaxLe
 void Feature_Alignment::WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &tImg_ref, Feature *tRefFeature,
                                    const int tSearchLevel, uchar *tPatchLarger)
 {
+
     int const tReferPh_Size = mHalf_PatchSize+2;
     Eigen::Matrix2f tA_r2c = tA_c2r.inverse().cast<float>();
 
@@ -248,6 +249,7 @@ void Feature_Alignment::WarpAffine(const Eigen::Matrix2d tA_c2r, const cv::Mat &
                          tCofficientW10(j)*tPtr[1] + tCofficientW11(j)*tPtr[tStep+1];
         }
     }
+
 }
 
 void Feature_Alignment::GetPatchNoBoarder()
@@ -270,23 +272,6 @@ bool Feature_Alignment::Align2DCeres(const cv::Mat &tCurImg, uchar *tPatch_WithB
 {
     const int tPatchSize = 2*mHalf_PatchSize;
     const int tLPatchSize = tPatchSize + 2;
-
-
-    //! This method cost more time on boarder patch
-    /*
-    float k1[] = {-1, 0, 1};
-    float k2[3][1] = {-1, 0, 1};
-    cv::Mat Kcore1(1, 3, CV_32FC1, k1);
-    cv::Mat Kcore2(3, 1, CV_32FC1, k2);
-    cv::Mat tPatchWithBoard(10, 10, CV_32FC1, mPatch_WithBoarder);
-
-    cv::Mat tRefBdx, tRefBdy;
-    cv::filter2D(tPatchWithBoard, tRefBdx, -1, Kcore1);
-    cv::filter2D(tPatchWithBoard, tRefBdy, -1, Kcore2);
-    cv::Rect tRoi(1, 1, tPatchSize, tPatchSize);
-    cv::Mat tRefdx = tRefBdx(tRoi);
-    cv::Mat tRefdy = tRefBdy(tRoi);
-    */
 
     Eigen::Matrix<double, tPatchSize*tPatchSize, 3, Eigen::RowMajor> tJacobians;
     int tNum = 0;
@@ -394,6 +379,7 @@ bool Feature_Alignment::Align2DGaussNewton(const cv::Mat &tCurImg, uchar *tPatch
             {
                 float tSearchPx = wTL*it[0] + wTR*it[1] + wBL*it[tCurImg_step] + wBR*it[tCurImg_step+1];
                 float tRes = tSearchPx - *it_ref + mean_diff;
+
                 Jres[0] -= tRes*(*itdx);
                 Jres[1] -= tRes*(*itdy);
                 Jres[2] -= tRes;
@@ -407,6 +393,13 @@ bool Feature_Alignment::Align2DGaussNewton(const cv::Mat &tCurImg, uchar *tPatch
 
         if(tUpdate(0)*tUpdate(0) + tUpdate(1)*tUpdate(1) < min_update_squared)
         {
+            /*
+            if(mean_diff > 3.0)
+            {
+                std::cout << "Alignment Error" << std::endl;
+            }
+             */
+
             tConverged = true;
             break;
         }

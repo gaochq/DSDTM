@@ -8,7 +8,7 @@ namespace DSDTM
 {
 long unsigned int KeyFrame::mlNextId=0;
 KeyFrame::KeyFrame(Frame *tframe):
-        mFrame(tframe), mvMapPoints(tframe->mvMapPoints),
+        mFrame(tframe), mvMapPoints(tframe->mvMapPoints), mTimeStamp(tframe->mdCloTimestamp),
         mvFeatures(tframe->mvFeatures), mnVaildMps(0), mCamera(tframe->mCamera),
         mClolorImg(tframe->mColorImg), mDepthImg(tframe->mDepthImg), mvImg_Pyr(tframe->mvImg_Pyr)
 {

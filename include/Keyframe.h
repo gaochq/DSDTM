@@ -41,10 +41,15 @@ public:
     Eigen::Vector3d Get_CameraCnt() const { return mOw; }
     Eigen::Vector2d World2Pixel(const Eigen::Vector3d &Point);
 
+    static bool CompareId(KeyFrame* pKF1, KeyFrame* pKF2)
+    {
+        return pKF1->mlId < pKF2->mlId;
+    }
 
 public:
     unsigned long           mlId;
     static unsigned long    mlNextId;
+    const double            mTimeStamp;
 
     Features                mvFeatures;
     std::vector<MapPoint*>  mvMapPoints;

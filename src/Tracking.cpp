@@ -220,7 +220,7 @@ bool Tracking::TrackWithLocalMap()
     int N = mCurrentFrame->mvFeatures.size();
     DLOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
-    //Optimizer::PoseOptimization(mCurrentFrame, 10);
+    Optimizer::PoseOptimization(mCurrentFrame, 10);
     double inialError, finalError;
     //Optimizer::optimizeGaussNewton(2.0, 10, mCurrentFrame, inialError, finalError);
     if(N < 30)
@@ -337,7 +337,7 @@ bool Tracking::NeedKeyframe()
     Sophus::SE3 tDeltaPose = mpLastKF->Get_Pose().inverse()*mCurrentFrame->Get_Pose();
     double tRotNorm = tDeltaPose.so3().log().norm();
     double tTransNorm = tDeltaPose.translation().norm();
-    if(tRotNorm >= mdMinRotParallax && tTransNorm >= mdMinTransParallax)
+    if(tRotNorm >= mdMinRotParallax || tTransNorm >= mdMinTransParallax)
     {
         return true;
     }
