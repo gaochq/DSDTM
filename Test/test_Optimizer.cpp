@@ -112,7 +112,7 @@ int main(int argc, char **argv)
     mFrames[1]->SetFeatures(tCur_Pts);
     mFrames[0]->Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
 
-    DSDTM::KeyFrame *KFrame = new DSDTM::KeyFrame(*mFrames[0]);
+    DSDTM::KeyFrame *KFrame = new DSDTM::KeyFrame(mFrames[0]);
     for (int i = 0; i <mFrames[0]->mvFeatures.size(); ++i)
     {
         float z = mFrames[0]->Get_FeatureDetph(mFrames[0]->mvFeatures[i]);
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
         }
     }
 
-    DSDTM::Optimizer::PoseOptimization(*mFrames[1]);
+    DSDTM::Optimizer::PoseOptimization(DSDTM::FramePtr(mFrames[1]));
 
     return  0;
 }

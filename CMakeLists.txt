@@ -53,6 +53,7 @@ add_library(${PROJECT_NAME} SHARED
 	src/LocalMapping.cpp
 	src/Moving_Detection.cpp)
 
+set(Sophus_LIBRARIES libSophus.so)
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}
 		${CERES_LIBRARIES}

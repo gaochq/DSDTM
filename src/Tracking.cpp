@@ -71,14 +71,14 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
         {
             bool bOK;
 
-            bOK = TrackWithLastFrame();
+            //bOK = TrackWithLastFrame();
 
             if(bOK)
             {
 
 
-                if (NeedKeyframe())
-                    CraeteKeyframe();
+                //if (NeedKeyframe())
+                //    CraeteKeyframe();
             }
             else
                 DLOG(ERROR)<< "Tracking lost with last frame" << std::endl;
@@ -87,9 +87,9 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
 
     }
 
-    mLastFrame->ResetFrame();
+    //mLastFrame->ResetFrame();
     mLastFrame = mCurrentFrame;
-    mCurrentFrame->ResetFrame();
+    //mCurrentFrame->ResetFrame();
     Reset_Status();
 }
 
@@ -108,7 +108,7 @@ void Tracking::Track()
 
         {
             // Motion outline remove, Method 1      Frame differ
-            mCurrentFrame->mDynamicMask = mMoving_detecter->Mod_FrameDiff(mCurrentFrame->mColorImg, mLastFrame->mColorImg,
+            mCurrentFrame->mDynamicMask = mMoving_detecter->Mod_FrameDiff(mCurrentFrame, mLastFrame,
                                                                          tCur_Pts, tLast_Pts);
 
             // Motion outline remove, Method 2      Rarsac
