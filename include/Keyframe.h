@@ -7,17 +7,17 @@
 
 #include "Camera.h"
 #include "Frame.h"
-#include "MapPoint.h"
 
 namespace DSDTM
 {
 
 class MapPoint;
+class Frame;
 
 class KeyFrame
 {
 public:
-    KeyFrame(Frame &_frame);
+    KeyFrame(Frame* tframe);
     ~KeyFrame();
 
     //! Add MapPoint and the observation between mappoint and features

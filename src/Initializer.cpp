@@ -8,7 +8,7 @@
 namespace DSDTM
 {
 
-Initializer::Initializer(Frame &frame, Camera* camera, Map *map):
+Initializer::Initializer(FramePtr frame, Camera* camera, Map *map):
         mCam(camera), mbInitSuccess(false), mMap(map)
 {
 
@@ -37,26 +37,26 @@ void Initializer::ReduceFeatures(std::vector<cv::Point2f> &_points, std::vector<
     }
 }
 
-bool Initializer::Init_RGBDCam(Frame &frame)
+bool Initializer::Init_RGBDCam(FramePtr frame)
 {
     mFeature_detector = new Feature_detector();
 
     if(!mbInitSuccess)
     {
-        mFeature_detector->detect(&frame, 20, false);
-        if (frame.Get_FeatureSize() < 50)
+        mFeature_detector->detect(frame.get(), 20, false);
+        if (frame->Get_FeatureSize() < 50)
         {
             std::cout << "Too few features in Initalizr" << std::endl;
 
             return false;
         }
 
-        mReferFrame = Frame(frame);
+        mReferFrame = frame;
 
         //! Show first frame
         cv::namedWindow("Feature_Detect");
-        cv::Mat tFeatureImg(mReferFrame.mColorImg);
-        mCam->Draw_Features(tFeatureImg, mReferFrame.mvFeatures, 0);
+        cv::Mat tFeatureImg(mReferFrame->mColorImg);
+        mCam->Draw_Features(tFeatureImg, mReferFrame->mvFeatures, 0);
         cv::imshow("Feature_Detect", tFeatureImg);
         cv::waitKey(1);
 
@@ -70,8 +70,8 @@ bool Initializer::Init_RGBDCam(Frame &frame)
         std::vector<cv::Point2f> tCur_Pts, tLast_Pts;
 
         //! LKT TRACKING
-        mReferFrame.Get_Features(tLast_Pts);
-        cv::calcOpticalFlowPyrLK(mReferFrame.mColorImg, frame.mColorImg,
+        mReferFrame->Get_Features(tLast_Pts);
+        cv::calcOpticalFlowPyrLK(mReferFrame->mColorImg, frame->mColorImg,
                                  tLast_Pts, tCur_Pts, tvStatus, tPyrLK_error,
                                  cv::Size(21, 21), 3);
 
@@ -93,19 +93,19 @@ bool Initializer::Init_RGBDCam(Frame &frame)
 
 
         //! The initial two frames have same features
-        mReferFrame.ResetFrame();
-        mReferFrame.SetFeatures(tLast_Pts);
-        frame.SetFeatures(tCur_Pts);
+        mReferFrame->ResetFrame();
+        mReferFrame->SetFeatures(tLast_Pts);
+        frame->SetFeatures(tCur_Pts);
 
-        for (auto &feature : frame.mvFeatures)
+        for (auto &feature : frame->mvFeatures)
         {
             feature.mTrack_cnt++;
         }
 
         //! Show first frame
-        cv::Mat tFeatureImg(frame.mColorImg);
-        mCam->Draw_Lines(tFeatureImg, frame.mvFeatures, mReferFrame.mvFeatures);
-        mCam->Draw_Features(tFeatureImg, frame.mvFeatures, cv::Scalar(0, 255, 0));
+        cv::Mat tFeatureImg(frame->mColorImg);
+        mCam->Draw_Lines(tFeatureImg, frame->mvFeatures, mReferFrame->mvFeatures);
+        mCam->Draw_Features(tFeatureImg, frame->mvFeatures, cv::Scalar(0, 255, 0));
         cv::imshow("Feature_Detect", tFeatureImg);
         cv::waitKey(1);
 
@@ -117,32 +117,32 @@ bool Initializer::Init_RGBDCam(Frame &frame)
         }
         else
         {
-            mReferFrame.UndistortFeatures();
-            KeyFrame *tKFrame = new KeyFrame(mReferFrame);
+            mReferFrame->UndistortFeatures();
+            KeyFrame *tKFrame = new KeyFrame(mReferFrame.get());
             mMap->AddKeyFrame(tKFrame);
 
-            mReferFrame.Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
+            mReferFrame->Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
 
-            for (int i = 0; i < mReferFrame.mvFeatures.size(); ++i)
+            for (int i = 0; i < mReferFrame->mvFeatures.size(); ++i)
             {
-                mReferFrame.mvFeatures[i].mlId = i;
-                frame.mvFeatures[i].mlId = i;
+                mReferFrame->mvFeatures[i].mlId = i;
+                frame->mvFeatures[i].mlId = i;
                 tKFrame->mvFeatures[i].mlId = i;
 
 
-                float z = mReferFrame.Get_FeatureDetph(mReferFrame.mvFeatures[i].mUnpx);
+                float z = mReferFrame->Get_FeatureDetph(mReferFrame->mvFeatures[i].mUnpx);
                 if (z>0)
                 {
-                    Eigen::Vector3d tPose = mCam->Pixel2Camera(mReferFrame.mvFeatures[i].mUnpx, z);
+                    Eigen::Vector3d tPose = mCam->Pixel2Camera(mReferFrame->mvFeatures[i].mUnpx, z);
                     MapPoint *tMPoint = new MapPoint(tPose, tKFrame);
 
                     tMPoint->Add_Observation(tKFrame, i);
                     tKFrame->Add_MapPoint(tMPoint);
                     tKFrame->Add_Observations(i, tMPoint);
 
-                    mReferFrame.Add_MapPoint(i, tMPoint);
+                    mReferFrame->Add_MapPoint(i, tMPoint);
 
-                    frame.mvFeatures[i].mf = tPose;
+                    frame->mvFeatures[i].mf = tPose;
 
                     mMap->AddMapPoint(tMPoint);
                 }
@@ -161,7 +161,7 @@ bool Initializer::Init_RGBDCam(Frame &frame)
                     DLOG(INFO)<< "--" << iter->first << "--" << tKFrame->mvFeatures[it->second].mpx << "--" << iter->second;
             }
             */
-            frame.UndistortFeatures();
+            frame->UndistortFeatures();
 
             TicToc tc;
             Optimizer::PoseOptimization(frame);

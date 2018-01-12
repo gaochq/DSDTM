@@ -52,11 +52,10 @@ cv::Mat Moving_Detecter::Mod_FrameDiff(const cv::Mat tImgA, const cv::Mat tImgB,
     cv::morphologyEx(mMask, mMask, MORPH_OPEN, element);
     //cv::dilate(mMask, mMask, element);
 
-    /*
+
     cv::namedWindow("Depth");
     cv::imshow("Depth", mMask);
     cv::waitKey(1);
-    */
 
     return mMask;
 }

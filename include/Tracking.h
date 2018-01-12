@@ -115,9 +115,9 @@ protected:
     Initializer             *mInitializer;
 
     Tracking_State          mState;             //! Tracking state
-    Frame                   mLastFrame;
-    Frame                   mCurrentFrame;
-    Frame                   mInitFrame;
+    FramePtr                mLastFrame;
+    FramePtr                mCurrentFrame;
+    FramePtr                mInitFrame;
     KeyFrame*               mpReferenceKF;
 
     Map                     *mMap;

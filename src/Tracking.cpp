@@ -45,7 +45,7 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
     }
     //! Be sure the depth image should be sacled
     tDImg.convertTo(tDImg, CV_32F, 1.0f/mDepthScale);
-    mCurrentFrame = Frame(mCam, colorImg, ctimestamp, tDImg);
+    mCurrentFrame = FramePtr( new Frame(mCam, colorImg, ctimestamp, tDImg));
 
     if(mState==Not_Init)
     {
@@ -56,11 +56,11 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
         if(mInitializer->Init_RGBDCam(mCurrentFrame))
         {
             mState = OK;
-            mCurrentFrame.Reset_Gridproba();
-            mInitFrame = Frame(mInitializer->mReferFrame);
+            mCurrentFrame->Reset_Gridproba();
+            mInitFrame = mInitializer->mReferFrame;
 
             mpReferenceKF = mMap->Get_InitialKFrame();
-            mlNextID = mInitFrame.mvFeatures.size();
+            mlNextID = mInitFrame->mvFeatures.size();
         }
     }
     else 
@@ -87,16 +87,16 @@ void Tracking::Track_RGBDCam(const cv::Mat &colorImg, const double ctimestamp, c
 
     }
 
-    mLastFrame.ResetFrame();
-    mLastFrame = Frame(mCurrentFrame);
-    mCurrentFrame.ResetFrame();
+    mLastFrame->ResetFrame();
+    mLastFrame = mCurrentFrame;
+    mCurrentFrame->ResetFrame();
     Reset_Status();
 }
 
 void Tracking::Track()
 {
     std::vector<cv::Point2f> tCur_Pts, tLast_Pts, tPts_tmp, tBad_PtsA, tBad_PtsB, tPts_new;
-    mLastFrame.Get_Features(tLast_Pts);
+    mLastFrame->Get_Features(tLast_Pts);
 
     if(tLast_Pts.size()>0)
     {
@@ -108,8 +108,8 @@ void Tracking::Track()
 
         {
             // Motion outline remove, Method 1      Frame differ
-            //mCurrentFrame.mDynamicMask = mMoving_detecter->Mod_FrameDiff(mCurrentFrame.mColorImg, mLastFrame.mColorImg,
-                                                                         //tCur_Pts, tLast_Pts);
+            mCurrentFrame->mDynamicMask = mMoving_detecter->Mod_FrameDiff(mCurrentFrame->mColorImg, mLastFrame->mColorImg,
+                                                                         tCur_Pts, tLast_Pts);
 
             // Motion outline remove, Method 2      Rarsac
             //Rarsac_F(tCur_Pts, tLast_Pts, tBad_PtsA);
@@ -129,10 +129,10 @@ void Tracking::Track()
     }
 
     AddNewFeatures(tCur_Pts, tBad_PtsA);
-    mCurrentFrame.Get_Features(tPts_tmp);
+    mCurrentFrame->Get_Features(tPts_tmp);
     std::vector<cv::Point2f> tvNewFeatures(tPts_tmp.begin()+tCur_Pts.size(), tPts_tmp.end());
     std::vector<cv::Point2f> tvGoodFeatures(tPts_tmp.begin(), tPts_tmp.begin()+tCur_Pts.size());
-    mCam->Show_Features(mCurrentFrame.mColorImg, tBad_PtsA, tvGoodFeatures, tvNewFeatures);
+    mCam->Show_Features(mCurrentFrame->mColorImg, tBad_PtsA, tvGoodFeatures, tvNewFeatures);
 }
 
 void Tracking::LKT_Track(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Point2f> &_cur_Pts)
@@ -140,7 +140,7 @@ void Tracking::LKT_Track(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Po
     std::vector<uchar> status;
     std::vector<float> tPyrLK_error;
 
-    cv::calcOpticalFlowPyrLK(mLastFrame.mColorImg, mCurrentFrame.mColorImg,
+    cv::calcOpticalFlowPyrLK(mLastFrame->mColorImg, mCurrentFrame->mColorImg,
                              _last_Pts, _cur_Pts, status, tPyrLK_error,
                              cv::Size(21, 21), mPyra_levels);
 
@@ -162,8 +162,8 @@ void Tracking::Rarsac_F(std::vector<cv::Point2f> &_last_Pts, std::vector<cv::Poi
                         std::vector<cv::Point2f> &_bad_Pts)
 {
     std::vector<uchar> status;
-    mCurrentFrame.mvGrid_probability = mLastFrame.mvGrid_probability;
-    mRarsac_base = Rarsac_base(&mCurrentFrame, _cur_Pts, _last_Pts);
+    mCurrentFrame->mvGrid_probability = mLastFrame->mvGrid_probability;
+    mRarsac_base = Rarsac_base(mCurrentFrame.get(), _cur_Pts, _last_Pts);
     status = mRarsac_base.RejectFundamental();
 
     //ReduceFeatures(mLastFrame.mvFeatures, tvStatus);
@@ -191,34 +191,34 @@ void Tracking::AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv
 {
     std::vector<cv::Point2f>tPts_tmp, tBad_Pts;
 
-    mCurrentFrame.SetFeatures(tCur_Pts, mvcStatus, mvsTrack_cnt);
-    UpdateID(mCurrentFrame.mvFeatures);
-    mCurrentFrame.Set_Mask(mvcStatus, mvsTrack_cnt, tBadPts);
+    mCurrentFrame->SetFeatures(tCur_Pts, mvcStatus, mvsTrack_cnt);
+    UpdateID(mCurrentFrame->mvFeatures);
+    mCurrentFrame->Set_Mask(mvcStatus, mvsTrack_cnt, tBadPts);
 
     tCur_Pts.clear();
-    mCurrentFrame.Get_Features(tCur_Pts);
+    mCurrentFrame->Get_Features(tCur_Pts);
     //mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
     //mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
-    mFeature_detector->detect(&mCurrentFrame, 10);
+    mFeature_detector->detect(mCurrentFrame.get(), 10);
 }
 
 bool Tracking::TrackWithLastFrame()
 {
-    mCurrentFrame.UndistortFeatures();
+    mCurrentFrame->UndistortFeatures();
 
-    size_t N = mLastFrame.mvFeatures.size();
+    size_t N = mLastFrame->mvFeatures.size();
     for (int i = 0; i < N; ++i)
     {
-        Feature tFeature = mLastFrame.mvFeatures[i];
-        float z = mLastFrame.Get_FeatureDetph(tFeature.mUnpx);
+        Feature tFeature = mLastFrame->mvFeatures[i];
+        float z = mLastFrame->Get_FeatureDetph(tFeature.mUnpx);
         if(z<0 || tFeature.mlId==-1)
             continue;
 
-        auto it = std::find_if(mCurrentFrame.mvFeatures.begin(), mCurrentFrame.mvFeatures.end(),
+        auto it = std::find_if(mCurrentFrame->mvFeatures.begin(), mCurrentFrame->mvFeatures.end(),
                                boost::bind(&Feature::mlId, _1) == tFeature.mlId);
 
         std::vector<std::pair<Eigen::Vector3d, cv::Point2f>> test;
-        if(it != mCurrentFrame.mvFeatures.end())
+        if(it != mCurrentFrame->mvFeatures.end())
         {
             Eigen::Vector3d tCamPoint = mCam->Pixel2Camera(tFeature.mUnpx, z);
             it->mf = tCamPoint;
@@ -227,7 +227,7 @@ bool Tracking::TrackWithLastFrame()
     }
 
     Optimizer::PoseOptimization(mCurrentFrame);
-    mCurrentFrame.Set_Pose(mpReferenceKF->Get_Pose()*mCurrentFrame.Get_Pose());
+    mCurrentFrame->Set_Pose(mpReferenceKF->Get_Pose()*mCurrentFrame->Get_Pose());
 
     return true;
 }
@@ -235,20 +235,19 @@ bool Tracking::TrackWithLastFrame()
 void Tracking::TrackWithLocalMap()
 {
     UpdateLocalMap();
-
-
-
 }
 
 void Tracking::UpdateLocalMap()
 {
     //! Update lcoal keyframes
     std::list<std::pair<KeyFrame *, double> > tClose_kfs;
-    mMap->GetCLoseKeyFrames(&mCurrentFrame, tClose_kfs);
+    mMap->GetCLoseKeyFrames(mCurrentFrame, tClose_kfs);
 
     //! Sort kfs refer to the distance between current frame
+    /*
     tClose_kfs.sort(boost::bind(&std::pair<FramePtr, double>::second, _1) <
                     boost::bind(&std::pair<FramePtr, double>::second, _1));
+    */
 
     mvpLocalKeyFrames.reserve(10);
 
@@ -272,11 +271,11 @@ void Tracking::UpdateLocalMap()
             if(tMP->Get_Pose().isZero(0))
                 continue;
 
-            if(tMP->mReferenceProjectedFrameId == mCurrentFrame.mlId)
+            if(tMP->mReferenceProjectedFrameId == mCurrentFrame->mlId)
                 continue;
-            tMP->mReferenceProjectedFrameId = mCurrentFrame.mlId;
+            tMP->mReferenceProjectedFrameId = mCurrentFrame->mlId;
 
-            if(mCurrentFrame.isVisible(tMP->Get_Pose()))
+            if(mCurrentFrame->isVisible(tMP->Get_Pose()))
                 mvpLocalMapPoints.push_back(tMP);
         }
     }
@@ -285,13 +284,13 @@ void Tracking::UpdateLocalMap()
 void Tracking::SearchLocalPoints()
 {
     //! Mark MapPoints alreadly have been added in current frame
-    for(std::vector<MapPoint*>::const_iterator itMP = mCurrentFrame.mvMapPoints.begin(); itMP != mCurrentFrame.mvMapPoints.end(); itMP++)
+    for(std::vector<MapPoint*>::const_iterator itMP = mCurrentFrame->mvMapPoints.begin(); itMP != mCurrentFrame->mvMapPoints.end(); itMP++)
     {
         MapPoint *tMP = *itMP;
         if(tMP->Get_Pose().isZero(0))
             continue;
 
-        tMP->mLastSeenFrameId = mCurrentFrame.mlId;
+        tMP->mLastSeenFrameId = mCurrentFrame->mlId;
     }
 
     //! Add MapPoints refer to local mappoints
@@ -303,13 +302,13 @@ bool Tracking::NeedKeyframe()
 {
     double tMinDepth, tMeanDepth;
     //mCurrentFrame.Get_SceneDepth(tMinDepth, tMeanDepth);
-    if(mCurrentFrame.mvFeatures.size() < 30)
+    if(mCurrentFrame->mvFeatures.size() < 30)
         return true;
 
     if(mProcessedFrames<10)
         return false;
 
-    Sophus::SE3 tDeltaPose = mpReferenceKF->Get_Pose().inverse()*mCurrentFrame.Get_Pose();
+    Sophus::SE3 tDeltaPose = mpReferenceKF->Get_Pose().inverse()*mCurrentFrame->Get_Pose();
     double tRotNorm = tDeltaPose.so3().log().norm();
     double tTransNorm = tDeltaPose.translation().norm();
 
@@ -323,22 +322,22 @@ bool Tracking::NeedKeyframe()
 
 void Tracking::CraeteKeyframe()
 {
-    KeyFrame *tKFrame = new KeyFrame(mCurrentFrame);
+    KeyFrame *tKFrame = new KeyFrame(mCurrentFrame.get());
     mpReferenceKF = tKFrame;
 
     size_t tNum = 0;
-    for(auto it = mCurrentFrame.mvFeatures.begin(); it!=mCurrentFrame.mvFeatures.end();it++, tNum++)
+    for(auto it = mCurrentFrame->mvFeatures.begin(); it!=mCurrentFrame->mvFeatures.end();it++, tNum++)
     {
-        float z = mCurrentFrame.Get_FeatureDetph(mCurrentFrame.mvFeatures[tNum].mUnpx);
-        if (z<=0 && mCurrentFrame.Find_Observations(tNum))
+        float z = mCurrentFrame->Get_FeatureDetph(mCurrentFrame->mvFeatures[tNum].mUnpx);
+        if (z<=0 && mCurrentFrame->Find_Observations(tNum))
             continue;
 
-        Eigen::Vector3d tPose = mCurrentFrame.UnProject(mCurrentFrame.mvFeatures[tNum].mUnpx, z);
+        Eigen::Vector3d tPose = mCurrentFrame->UnProject(mCurrentFrame->mvFeatures[tNum].mUnpx, z);
         MapPoint *tMPoint = new MapPoint(tPose, tKFrame);
 
         tMPoint->Add_Observation(tKFrame, tNum);
 
-        mCurrentFrame.Add_MapPoint(tNum, tMPoint);
+        mCurrentFrame->Add_MapPoint(tNum, tMPoint);
 
         tKFrame->Add_MapPoint(tMPoint);
         tKFrame->Add_Observations(tNum, tMPoint);
@@ -411,10 +410,10 @@ void Tracking::Reset_Status()
 {
     mvcStatus.clear();
     mvsTrack_cnt.clear();
-    for (size_t i = 0; i < mLastFrame.mvFeatures.size(); ++i)
+    for (size_t i = 0; i < mLastFrame->mvFeatures.size(); ++i)
     {
-        mvcStatus.push_back(mLastFrame.mvFeatures[i].mlId);
-        mvsTrack_cnt.push_back(mLastFrame.mvFeatures[i].mTrack_cnt);
+        mvcStatus.push_back(mLastFrame->mvFeatures[i].mlId);
+        mvsTrack_cnt.push_back(mLastFrame->mvFeatures[i].mTrack_cnt);
     }
 }
 

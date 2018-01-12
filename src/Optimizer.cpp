@@ -17,34 +17,34 @@ Optimizer::~Optimizer()
 
 }
 
-void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
+void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
 {
     Eigen::Matrix<double, 4, 4, Eigen::RowMajor> tIntrinsic;
-    tIntrinsic = tCurFrame.mCamera->Return_Intrinsic();
+    tIntrinsic = tCurFrame->mCamera->Return_Intrinsic();
 
     ceres::Problem problem;
 
     ceres::LossFunction *loss_function;
     loss_function = new ceres::CauchyLoss(1.0);
 
-    double *mTransform = se3ToDouble(tCurFrame.Get_Pose().log());
+    double *mTransform = se3ToDouble(tCurFrame->Get_Pose().log());
 
     ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
     problem.AddParameterBlock(mTransform, SIZE_POSE, local_parameterization);
 
-    std::map<size_t, MapPoint*> tObservations = tCurFrame.Get_Observations();
+    std::map<size_t, MapPoint*> tObservations = tCurFrame->Get_Observations();
     size_t N = tObservations.size();
     double tPointsets[N][3];
     size_t tNum = 0;
-    for (auto iter = tCurFrame.mvFeatures.begin(); iter!=tCurFrame.mvFeatures.end(); ++iter, ++tNum)
+    for (auto iter = tCurFrame->mvFeatures.begin(); iter!=tCurFrame->mvFeatures.end(); ++iter, ++tNum)
     {
         Eigen::Vector3d tPoint(iter->mf);
 
         if(tPoint.isZero(0))
             continue;
 
-        Eigen::Vector2d tObserves(tCurFrame.mvFeatures[tNum].mUnpx.x,
-                                  tCurFrame.mvFeatures[tNum].mUnpx.y);
+        Eigen::Vector2d tObserves(tCurFrame->mvFeatures[tNum].mUnpx.x,
+                                  tCurFrame->mvFeatures[tNum].mUnpx.y);
         //DLOG(INFO)<< "--" << tCurFrame.mvFeatures[tNum].mlId << "--" << tObserves << "--" << tPoint <<"--" << tPoint;
 
         // only optimize camera pose
@@ -79,7 +79,7 @@ void Optimizer::PoseOptimization(Frame &tCurFrame, int tIterations)
     ceres::Solve(options, &problem, &summary);
 
     Eigen::Map< Eigen::Matrix<double, 6, 1> > tFinalPose(mTransform);
-    tCurFrame.Set_Pose(Sophus::SE3::exp(tFinalPose));
+    tCurFrame->Set_Pose(Sophus::SE3::exp(tFinalPose));
 
     std::vector<double> tvdResidual = GetReprojectReidual(problem);
     tNum = 0;

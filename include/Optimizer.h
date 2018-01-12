@@ -23,7 +23,7 @@ public:
     Optimizer();
     ~Optimizer();
 
-    static void PoseOptimization(Frame &tCurFrame, int tIterations = 100);
+    static void PoseOptimization(FramePtr tCurFrame, int tIterations = 100);
     static double *se3ToDouble(Eigen::Matrix<double, 6, 1> tso3);
     static std::vector<double> GetReprojectReidual(const ceres::Problem &problem);
 };
