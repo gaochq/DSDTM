@@ -200,32 +200,68 @@ double Camera::GetMedian(std::vector<double> tdVector) const
     return *iter;
 }
 
-void Camera::Draw_Features(cv::Mat &_image, const Features _features, cv::Scalar _color)
+void Camera::VarWithMAD(const std::vector<double> tErrors, std::vector<double> *tWeights)
 {
-    if(_image.channels() < 3)
-        cv::cvtColor(_image, _image, CV_GRAY2BGR);
+    std::vector<double> tAbsErrors;
+    double tmedian = 0;
+    double tDegree = 10;
 
-    std::for_each(_features.begin(), _features.end(), [&](Feature *feature)
+    for (int i = 0; i < tErrors.size(); ++i)
     {
-        cv::rectangle(_image,
-                      cv::Point2f(feature->mpx.x - 2, feature->mpx.y - 2),
-                      cv::Point2f(feature->mpx.x + 2, feature->mpx.y + 2),
-                      _color);
-    });
+        tAbsErrors.push_back(std::abs(tErrors[i] - tmedian));
+    }
+
+    std::sort(tAbsErrors.begin(), tAbsErrors.end());
+
+    double tVariance = 1.4826*GetMedian(tAbsErrors);
+
+    for (int j = 0; j < tErrors.size(); ++j)
+    {
+        double tWeight = (tDegree + 1)/(tDegree + std::pow((tErrors[j] - tVariance), 2));
+        tWeights->push_back(tWeight);
+    }
 }
 
-void Camera::Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, cv::Scalar _color)
+void Camera::Draw_Features(cv::Mat &_image, const Features _features)
+{
+    if (_image.channels() < 3)
+        cv::cvtColor(_image, _image, CV_GRAY2BGR);
+
+    for (int i = 0; i < _features.size(); ++i)
+    {
+            cv::rectangle(_image,
+                          cv::Point2f(_features[i]->mpx.x - 2, _features[i]->mpx.y - 2),
+                          cv::Point2f(_features[i]->mpx.x + 2, _features[i]->mpx.y + 2),
+                          cv::Scalar(0, 0, 255));
+    };
+
+    cv::namedWindow("Feature_Detect");
+    cv::imshow("Feature_Detect", _image);
+    cv::waitKey(1);
+}
+
+void Camera::Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, std::vector<uchar> tStatus)
 {
     if(_image.channels() < 3)
         cv::cvtColor(_image, _image, CV_GRAY2BGR);
 
-    std::for_each(_features.begin(), _features.end(), [&](cv::Point2f feature)
+    for (int i = 0; i < _features.size(); ++i)
     {
-        cv::rectangle(_image,
-                      cv::Point2f(feature.x - 2, feature.y - 2),
-                      cv::Point2f(feature.x + 2, feature.y + 2),
-                      _color);
-    });
+        if(tStatus[i]==0)
+            cv::rectangle(_image,
+                          cv::Point2f(_features[i].x - 2, _features[i].y - 2),
+                          cv::Point2f(_features[i].x + 2, _features[i].y + 2),
+                          cv::Scalar(0, 0, 255));
+        else
+            cv::rectangle(_image,
+                          cv::Point2f(_features[i].x - 2, _features[i].y - 2),
+                          cv::Point2f(_features[i].x + 2, _features[i].y + 2),
+                          cv::Scalar(0, 255, 0));
+    };
+
+    cv::namedWindow("Feature_Detect");
+    cv::imshow("Feature_Detect", _image);
+    cv::waitKey(1);
 }
 
 void Camera::Draw_Lines(cv::Mat _image, const Features _featuresA, const Features _featuresB)
@@ -239,9 +275,7 @@ void Camera::Draw_Lines(cv::Mat _image, const Features _featuresA, const Feature
     }
 }
 
-void Camera::Draw_Lines(cv::Mat _image, const std::vector<cv::Point2f> _featuresA,
-                        std::vector<cv::Point2f> _featuresB, const std::vector<cv::Point2f> _tBadA,
-                        std::vector<cv::Point2f> _tBadB)
+void Camera::Draw_Lines(cv::Mat _image, const std::vector<cv::Point2f> _featuresA, std::vector<cv::Point2f> _featuresB)
 {
     if(_image.channels() < 3)
         cv::cvtColor(_image, _image, CV_GRAY2BGR);
@@ -252,16 +286,7 @@ void Camera::Draw_Lines(cv::Mat _image, const std::vector<cv::Point2f> _features
                       cv::Point2f(_featuresA[i].x - 2, _featuresA[i].y - 2),
                       cv::Point2f(_featuresA[i].x + 2, _featuresA[i].y + 2),
                       cv::Scalar(0, 255, 0));
-        cv::line(_image, _featuresA[i], _featuresB[i]+45*(_featuresA[i]- _featuresB[i]), cv::Scalar(255, 0, 0), 2);
-    }
-
-    for (int i = 0; i < _tBadA.size(); ++i)
-    {
-        cv::rectangle(_image,
-                      cv::Point2f(_tBadA[i].x - 2, _tBadA[i].y - 2),
-                      cv::Point2f(_tBadA[i].x + 2, _tBadA[i].y + 2),
-                      cv::Scalar(0, 0, 255));
-        //cv::line(_image, _tBadA[i], _tBadB[i], cv::Scalar(255, 0, 0), 2);
+        cv::line(_image, _featuresA[i], _featuresB[i]+10*(_featuresA[i]- _featuresB[i]), cv::Scalar(255, 0, 0), 2);
     }
 
     cv::namedWindow("Feature_Detect");
@@ -269,33 +294,11 @@ void Camera::Draw_Lines(cv::Mat _image, const std::vector<cv::Point2f> _features
     cv::waitKey(1);
 }
 
-void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, int _color)
-{
-    cv::Mat Image_new = _image.clone();
-    Draw_Features(Image_new, _features, _color);
-
-    cv::namedWindow("Feature_Detect");
-    cv::imshow("Feature_Detect", Image_new);
-    cv::waitKey(1);
-}
-
-void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features1,
-                           const std::vector<cv::Point2f> _features2, const std::vector<cv::Point2f> _features3)
-{
-    cv::Mat Image_new = _image.clone();
-    Draw_Features(Image_new, _features1, cv::Scalar(0, 0, 255));    //red
-    Draw_Features(Image_new, _features2, cv::Scalar(0, 255, 0));    //green
-    Draw_Features(Image_new, _features3, cv::Scalar(255, 0, 0));    //blue
-
-    cv::namedWindow("Feature_Detect");
-    cv::imshow("Feature_Detect", Image_new);
-    cv::waitKey(1);
-}
 
 void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, const std::vector<uchar> lables, uchar flag)
 {
     std::vector<cv::Scalar> tColors;
-    tColors.push_back(cv::Scalar(0, 0, 255));
+    tColors.push_back(cv::Scalar(0, 0, 255));       //bgr
     tColors.push_back(cv::Scalar(0, 255, 0));
     tColors.push_back(cv::Scalar(255, 0, 0));
     tColors.push_back(cv::Scalar(255, 0, 255));
@@ -311,6 +314,19 @@ void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> 
         cv::cvtColor(Image_new, Image_new, CV_GRAY2BGR);
     for (int i = 0; i < _features.size(); ++i)
     {
+        /*
+        if(lables[i]==flag)
+            cv::rectangle(Image_new,
+                          cv::Point2f(_features[i].x - 2, _features[i].y - 2),
+                          cv::Point2f(_features[i].x + 2, _features[i].y + 2),
+                          tColors[0]);
+        else
+            cv::rectangle(Image_new,
+                          cv::Point2f(_features[i].x - 2, _features[i].y - 2),
+                          cv::Point2f(_features[i].x + 2, _features[i].y + 2),
+                          tColors[1]);
+        */
+
         if(lables[i]==0)
         {
             if(0==flag)
@@ -368,9 +384,9 @@ void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> 
             d++;
         }
     }
-    std::cout << a <<" " <<b <<" "<< c<< " "<< d<<std::endl;
     cv::namedWindow("Feature_Detect");
     cv::imshow("Feature_Detect", Image_new);
     cv::waitKey(1);
 }
+
 }// namespace DSDTM

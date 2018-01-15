@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     google::InstallFailureSignalHandler();
 
     DSDTM::Config::setParameterFile(argv[1]);
-    DSDTM::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
+    DSDTM::CameraPtr camera(new DSDTM::Camera(DSDTM::Camera_Model::RGB_PinHole));
 
     string Datasets_Dir = DSDTM::Config::Get<string>("dataset_dir");
     vector<string> vstrImageFilenamesRGB;

@@ -37,26 +37,36 @@ cv::Mat Moving_Detecter::Mod_FastMCD(const cv::Mat tImg, std::vector<cv::Point2f
 
 }
 
-cv::Mat Moving_Detecter::Mod_FrameDiff(const cv::Mat tImgA, const cv::Mat tImgB, std::vector<cv::Point2f> tPointsA,
+cv::Mat Moving_Detecter::Mod_FrameDiff(FramePtr tframeA, FramePtr tframeB, std::vector<cv::Point2f> tPointsA,
                                        std::vector<cv::Point2f> tPointsB)
 {
-    cv::Mat mMask;
+    cv::Mat tImgCA = tframeA->mColorImg;
+    cv::Mat tImgCB = tframeB->mColorImg;
+    cv::Mat tImgDA = tframeA->mDepthImg;
+    cv::Mat tImgDB = tframeB->mDepthImg;
+
+    cv::Mat mMask, mMask1;
     cv::Mat tAffine = cv::findHomography(tPointsB, tPointsA, CV_RANSAC);
-    cv::warpPerspective(tImgB, mMask, tAffine, mMask.size());
 
-    mMask = tImgA - mMask;
+    cv::warpPerspective(tImgCB, mMask, tAffine, mMask.size());
+    cv::warpPerspective(tImgDB, mMask1, tAffine, mMask1.size());
 
-    cv::threshold(mMask, mMask, 30, 200.0, CV_THRESH_BINARY);
+    mMask = tImgCA - mMask;
+    mMask1 = tImgDA - mMask1;
 
-    cv::Mat element = getStructuringElement(MORPH_RECT, Size(5, 5));
-    cv::morphologyEx(mMask, mMask, MORPH_OPEN, element);
+    cv::imwrite("depth.png", mMask);
+
+    cv::threshold(mMask, mMask, 70, 255.0, CV_THRESH_TOZERO);
+    cv::threshold(mMask, mMask, 80, 255.0, CV_THRESH_TOZERO_INV);
+    cv::threshold(mMask1, mMask1, 1, 200.0, CV_THRESH_TOZERO);
+
+    //cv::Mat element = getStructuringElement(MORPH_RECT, Size(5, 5));
+    //cv::morphologyEx(mMask, mMask, MORPH_OPEN, element);
     //cv::dilate(mMask, mMask, element);
 
-    /*
     cv::namedWindow("Depth");
     cv::imshow("Depth", mMask);
     cv::waitKey(1);
-    */
 
     return mMask;
 }

@@ -2,6 +2,7 @@
 // Created by buyi on 17-12-2.
 //
 #include "Camera.h"
+#include "Frame.h"
 #include "MCDWrapper.h"
 
 
@@ -22,7 +23,7 @@ public:
                           std::vector<cv::Point2f> tPointsB);
 
     //! Motion Detection with Frame diff
-    cv::Mat Mod_FrameDiff(const cv::Mat tImgA, const cv::Mat tImgB, std::vector<cv::Point2f> tPointsA,
+    cv::Mat Mod_FrameDiff(FramePtr tframeA, FramePtr tframeB, std::vector<cv::Point2f> tPointsA,
                           std::vector<cv::Point2f> tPointsB);
 
 

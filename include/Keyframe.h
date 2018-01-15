@@ -7,17 +7,16 @@
 
 #include "Camera.h"
 #include "Frame.h"
-#include "MapPoint.h"
 
 namespace DSDTM
 {
-
 class MapPoint;
+typedef std::shared_ptr<Frame> FramePtr;
 
 class KeyFrame
 {
 public:
-    KeyFrame(Frame *_frame);
+    KeyFrame(const FramePtr _frame);
     ~KeyFrame();
 
     //! Add MapPoint and the observation between mappoint and features
@@ -49,6 +48,7 @@ public:
 public:
     unsigned long           mlId;
     static unsigned long    mlNextId;
+    const long              mRefId;
     const double            mTimeStamp;
 
     Features                mvFeatures;
@@ -57,7 +57,7 @@ public:
     std::map<long int, MapPoint*>   mpObservation;     //Feaure_id ---> Mappoint
     std::map<long int, size_t>      mpFFObservation;   //Feature_id ---> feature order in mvFeatures
 
-    Frame                   *mFrame;
+    FramePtr                mFrame;
 
     cv::Mat                 mClolorImg;
     cv::Mat                 mDepthImg;

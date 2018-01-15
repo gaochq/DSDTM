@@ -93,10 +93,12 @@ void Frame::Add_Feature(Feature *tfeature, bool tbNormal)
 
 void Frame::UndistortFeatures()
 {
+    int N = mvFeatures.size();
+    mvMapPoints.resize(N);
+
     std::vector<cv::Point2f> tSrc;
     std::vector<cv::Point2f> tmvFeaturesUn;           //Features undistorted
 
-    int N = mvFeatures.size();
     int tNum = 0;
     for (auto it = mvFeatures.begin(); it!=mvFeatures.end(); ++it)
     {
@@ -224,9 +226,14 @@ float Frame::Get_FeatureDetph(const cv::Point2f feature)
 }
 
 //! Add MapPoint to do BA optimize frame pose
-void Frame::Add_MapPoint(MapPoint *tPoint)
+void Frame::Add_MapPoint(MapPoint *tMPoint, int tIdx)
 {
-    mvMapPoints.push_back(tPoint);
+    mvMapPoints[tIdx] = tMPoint;
+}
+
+void Frame::Add_MapPoint(MapPoint *tMPoint)
+{
+    mvMapPoints.push_back(tMPoint);
 }
 
 void Frame::Add_Observations(const KeyFrame &tKframe)
@@ -326,6 +333,11 @@ Eigen::Vector2d Frame::World2Pixel(const Eigen::Vector3d &Point)
     Eigen::Vector3d tPoint = mT_c2w*Point;
 
     return mCamera->Camera2Pixel(tPoint);
+}
+
+void Frame::GetCorrespondMp()
+{
+
 }
 
 }

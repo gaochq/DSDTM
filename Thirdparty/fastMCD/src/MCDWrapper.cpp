@@ -98,7 +98,7 @@ cv::Mat MCDWrapper::Run(const cv::Mat ColorImg, double *H, cv::Mat tMask)
 
 
     cv::Mat matimg = cv::Mat(detect_img);
-    cv::Mat element = getStructuringElement(MORPH_RECT, Size(15, 15));
+    cv::Mat element = getStructuringElement(MORPH_RECT, Size(9, 9));
     cv::morphologyEx(matimg, matimg, MORPH_OPEN, element);
 
     cv::namedWindow("Moving_Detect");

@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 
     DSDTM::Map *mMap = new DSDTM::Map();
     DSDTM::Config::setParameterFile(argv[1]);
-    DSDTM::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
+    DSDTM::CameraPtr camera(new DSDTM::Camera(DSDTM::Camera_Model::RGB_PinHole));
     DSDTM::Tracking tracking(camera, mMap);
 
     // Retrieve paths to images
@@ -64,7 +64,7 @@ int main(int argc, char **argv)
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
         clahe->apply(color, last_color);
 
-        tracking.Track_RGBDCam(last_color, 0, color);
+        tracking.Track_RGBDCam(last_color, color, 0);
         last_color.release();
     }
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();

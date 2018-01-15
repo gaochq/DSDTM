@@ -12,6 +12,7 @@ unsigned long MapPoint::mlNextId = 0;
 MapPoint::MapPoint()
 {
     mbOutlier = false;
+    mdStaticWeight = 1.0;
 }
 
 MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame):
@@ -19,6 +20,7 @@ MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame):
 {
     mlID = mlNextId++;
     mbOutlier = false;
+    mdStaticWeight = 1.0;
 }
 
 void MapPoint::Set_Pose(Eigen::Vector3d tPose)
@@ -87,6 +89,17 @@ void MapPoint::IncreaseFound(int n)
 {
     mnFound = mnFound + n;
 }
+
+void MapPoint::SetStaticWeight(double tWeight)
+{
+    mdStaticWeight = 0.5*mdStaticWeight + 0.5*tWeight;
+}
+
+double MapPoint::GetStaticWeight()
+{
+    return mdStaticWeight;
+}
+
 
 
 } // namespace DSDTM

@@ -43,6 +43,10 @@ public:
     //! Increase the match times with frames
     void IncreaseFound(int n = 1);
 
+    //! Set and Get static weight
+    void SetStaticWeight(double tWeight);
+    double GetStaticWeight();
+
 protected:
 
 public:
@@ -52,6 +56,8 @@ public:
     unsigned long           mLastProjectedFrameId;
 
     bool                    mbOutlier;
+
+    double                  mdStaticWeight;
 
 protected:
 

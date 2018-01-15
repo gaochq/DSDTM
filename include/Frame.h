@@ -63,7 +63,8 @@ public:
     float Get_FeatureDetph(const cv::Point2f feature);
 
     //! Add mappoint and observation into frame
-    void Add_MapPoint(MapPoint *tPoint);
+    void Add_MapPoint(MapPoint *tMPoint, int tIdx);
+    void Add_MapPoint(MapPoint *tMPoint);
 
     //! Add Feature-Mappoint observations
     void Add_Observations(const KeyFrame &tKframe);
@@ -92,6 +93,9 @@ public:
 
     //! World to camera
     Eigen::Vector2d World2Pixel(const Eigen::Vector3d &Point);
+
+    //! Get common MapPoints and Features
+    void GetCorrespondMp();
 
 
 public:

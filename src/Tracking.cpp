@@ -142,7 +142,7 @@ void Tracking::AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv
 bool Tracking::CreateInitialMapRGBD()
 {
     mInitFrame->UndistortFeatures();
-    KeyFrame *tKFrame = new KeyFrame(mInitFrame.get());
+    KeyFrame *tKFrame = new KeyFrame(mInitFrame);
 
     //TODO detect orb Feature and compute the BOW vector
 
@@ -167,7 +167,7 @@ bool Tracking::CreateInitialMapRGBD()
 
         //Add MapPoint into Current Frame for image alignment and BA
         mInitFrame->mvFeatures[i]->SetPose(tPose);
-        mInitFrame->Add_MapPoint(pMp);
+        mInitFrame->Add_MapPoint(pMp, i);
 
         mMap->AddMapPoint(pMp);
     }
@@ -219,6 +219,9 @@ bool Tracking::TrackWithLocalMap()
 
     int N = mCurrentFrame->mvFeatures.size();
     DLOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
+
+    MotionRemovalTest1();
+    //SetMpWeights();
 
     Optimizer::PoseOptimization(mCurrentFrame, 10);
     double inialError, finalError;
@@ -364,7 +367,7 @@ void Tracking::CraeteKeyframe()
     mFeature_detector->detect(mCurrentFrame.get(), 20);
     mCurrentFrame->UndistortFeatures();
 
-    KeyFrame *tKFrame = new KeyFrame(mCurrentFrame.get());
+    KeyFrame *tKFrame = new KeyFrame(mCurrentFrame);
     mMap->AddKeyFrame(tKFrame);
 
     int tNum = 0;
@@ -395,7 +398,7 @@ void Tracking::CraeteKeyframe()
         tMp->Add_Observation(tKFrame, i);
 
         tFeature->SetPose(tPose);
-        mCurrentFrame->Add_MapPoint(tMp);
+        mCurrentFrame->Add_MapPoint(tMp, i);
 
         mMap->AddMapPoint(tMp);
         tNum++;
@@ -403,6 +406,230 @@ void Tracking::CraeteKeyframe()
     mpLastKF = tKFrame;
 
     DLOG(INFO)<< "Create new Keyframe " << tKFrame->mlId << " with " << tNum << " new MapPoints" <<std::endl;
+}
+
+void Tracking::MotionRemoval()
+{
+    int N = mCurrentFrame->mvMapPoints.size();
+
+    Eigen::Matrix<double, 3, Eigen::Dynamic> tCurMps, tLastMps;
+    tCurMps.resize(Eigen::NoChange, N);
+    tLastMps.resize(Eigen::NoChange, N);
+
+    std::vector<MapPoint*> tLastMapPoints = mLastFrame->mvMapPoints;
+    Sophus::SE3 tT_c2r = mCurrentFrame->Get_Pose()*mLastFrame->Get_Pose().inverse();
+    double tRelDist = tT_c2r.translation().norm();
+
+    std::vector<cv::Point2f> tFeaturesA, tFeaturesB;
+    std::vector<double> tAngles, tDistSets;
+    std::vector<uchar> tStatus;
+
+    int tNum = 0, tNum1 = 0;
+    for (auto iter = mCurrentFrame->mvMapPoints.begin(); iter!=mCurrentFrame->mvMapPoints.end(); iter++, ++tNum)
+    {
+        std::vector<MapPoint*>::iterator result = std::find(tLastMapPoints.begin(), tLastMapPoints.end(), (*iter));
+        if(result!=tLastMapPoints.end())
+        {
+            float z = mCurrentFrame->Get_FeatureDetph(mCurrentFrame->mvFeatures[tNum]);
+
+            if(z < 0)
+                continue;
+
+            Eigen::Vector3d tCurMp = mCurrentFrame->mvFeatures[tNum]->mNormal*z;
+            cv::Point2f tCurPx = mCurrentFrame->mvFeatures[tNum]->mpx;
+
+            int it = result - tLastMapPoints.begin();
+            Feature *tLastPt = mLastFrame->mvFeatures[it];
+            Eigen::Vector3d tLastMp = tT_c2r*(tLastPt->mNormal*mLastFrame->Get_FeatureDetph(tLastPt));
+
+            Eigen::Vector3d tMpdiff = tLastMp - tCurMp;
+
+            cv::Point2f tLastPx = cv::Point2f(mCam->Camera2Pixel(tLastMp)(0), mCam->Camera2Pixel(tLastMp)(1));
+            //cv::Point2f tLastPx = tLastPt->mpx;
+            tFeaturesA.push_back(tCurPx);
+            tFeaturesB.push_back(tLastPx);
+
+            Eigen::Vector2d tFlow(tCurPx.x - tLastPx.x, tCurPx.y - tLastPx.y);
+            tFlow.normalize();
+
+            double tAngle = atan(tFlow(1)/tFlow(0));
+            /*
+            if(tAngle < 0)
+                tAngle += 2*M_PI;
+            */
+
+            tAngles.push_back(tAngle);
+            tDistSets.push_back(std::abs(tMpdiff.norm() - tRelDist));
+            if(tDistSets.back() > 0.1)
+                tStatus.push_back(1);
+            else
+                tStatus.push_back(0);
+
+            tNum1++;
+        }
+    }
+    mMoving_detecter->Mod_FastMCD(mCurrentFrame->mColorImg, tFeaturesA, tFeaturesB);
+    //mMoving_detecter->Mod_FrameDiff(mCurrentFrame, mLastFrame, tFeaturesA, tFeaturesB);
+    //mCam->Draw_Lines(mCurrentFrame->mColorImg, tFeaturesA, tFeaturesB);
+    /*
+    tCurMps.conservativeResize(Eigen::NoChange, tNum1);
+    tLastMps.conservativeResize(Eigen::NoChange, tNum1);
+
+    Eigen::MatrixXd tMpDiffer = tCurMps - tLastMps;
+    tMpDiffer.colwise().normalize();
+
+    cv::Mat tSamples(tNum1, 3, CV_32FC1, cv::Scalar::all(0.0));
+    for (size_t i = 0; i < tNum1; ++i)
+    {
+        tSamples.at<float>(i, 0) = tMpDiffer(0, i);
+        tSamples.at<float>(i, 1) = tMpDiffer(1, i);
+        tSamples.at<float>(i, 2) = tMpDiffer(2, i);
+    }
+    tSamples.reshape(1, 0);
+    */
+
+    /*
+    TicToc tc;
+    cv::Mat tSamples(tAngles, false);
+    std::vector<uchar> labels;
+    cv::EM em_model;
+    em_model.set("nclusters", 4);
+    em_model.set("covMatType", EM::COV_MAT_SPHERICAL);
+    em_model.train(tSamples, noArray(), labels, noArray());
+
+    cv::Mat means = em_model.getMat("means");
+    vector<Mat> cov = em_model.getMatVector("covs");
+    double time = tc.toc();
+
+    std::cout << means <<std::endl;
+    double *tvmean = means.ptr<double>(0);
+    //double taverge = tvmean[0];
+    double taverge = tvmean[0];
+    uchar flag = 0;
+    for (int j = 1; j < 3; ++j)
+    {
+        if(taverge < tvmean[j])
+        {
+            taverge = tvmean[j];
+            flag = j;
+        }
+    }
+    //mCam->Show_Features(mCurrentFrame->mColorImg, tFeaturesA, labels, flag);
+
+    mCam->Draw_Features(mCurrentFrame->mColorImg, tFeaturesA, tStatus);
+     */
+    tNum = 0;
+}
+
+void Tracking::MotionRemovalTest1()
+{
+    Sophus::SE3 tT_c2r = mCurrentFrame->Get_Pose()*mLastFrame->Get_Pose().inverse();
+
+    int tRows = mCurrentFrame->mColorImg.rows/24;
+    int tClos = mCurrentFrame->mColorImg.cols/32;
+
+    std::vector<cv::Point2f> tCurPts, tLastPts;
+    std::vector<double> tAngleSets;
+    int n = 0;
+    for (int i = 0; i < tRows; ++i)
+    {
+        for (int j = 0; j < tClos; ++j, ++n)
+        {
+            int x = j*32 + 16;
+            int y = i*24 + 12;
+
+            cv::Point2f tCurPx(x, y);
+
+            float z = mLastFrame->Get_FeatureDetph(tCurPx);
+            if(z < 0)
+                continue;
+
+            Eigen::Vector3d tPt = tT_c2r*mCam->Pixel2Camera(tCurPx, z);
+            tPt = tT_c2r*tPt;
+            Eigen::Vector2d tLastPx = mCam->Camera2Pixel(tPt);
+
+            double angle = atan( (tLastPx(1) - tCurPx.y) / (tLastPx(0) - tCurPx.x) );
+
+            tAngleSets.push_back(angle);
+
+            tCurPts.push_back(tCurPx);
+            tLastPts.push_back(cv::Point2f(tLastPx(0), tLastPx(1)));
+        }
+    }
+    //mCam->Draw_Lines(mCurrentFrame->mColorImg, tCurPts, tLastPts);
+
+    cv::Mat tSamples(tAngleSets, false);
+    std::vector<uchar> labels;
+    cv::EM em_model;
+    em_model.set("nclusters", 5);
+    em_model.set("covMatType", EM::COV_MAT_SPHERICAL);
+    em_model.train(tSamples, noArray(), labels, noArray());
+
+    cv::Mat means = em_model.getMat("means");
+    vector<Mat> cov = em_model.getMatVector("covs");
+
+    double *tvmean = means.ptr<double>(0);
+    //double taverge = tvmean[0];
+    double taverge = tvmean[0];
+    uchar flag = 0;
+    for (int j = 1; j < 3; ++j)
+    {
+        if(taverge < tvmean[j])
+        {
+            taverge = tvmean[j];
+            flag = j;
+        }
+    }
+
+    std::cout << means <<std::endl;
+    mCam->Show_Features(mCurrentFrame->mColorImg, tCurPts, labels, flag);
+    n = 0;
+}
+
+void Tracking::SetMpWeights()
+{
+    int N = mCurrentFrame->mvMapPoints.size();
+
+    Eigen::Matrix<double, 3, Eigen::Dynamic> tCurMps, tLastMps;
+    tCurMps.resize(Eigen::NoChange, N);
+    tLastMps.resize(Eigen::NoChange, N);
+
+    std::vector<MapPoint*> tLastMapPoints = mLastFrame->mvMapPoints;
+
+    Sophus::SE3 tT_c2w = mCurrentFrame->Get_Pose();
+    Sophus::SE3 tT_c2r = tT_c2w*mLastFrame->Get_Pose().inverse();
+
+    std::vector<MapPoint*> tUpdataMps;
+    std::vector<double> tDistSets;
+    int tNum = 0, tNum1 = 0;
+    for (auto iter = mCurrentFrame->mvMapPoints.begin(); iter!=mCurrentFrame->mvMapPoints.end(); iter++, ++tNum)
+    {
+        std::vector<MapPoint*>::iterator result = std::find(tLastMapPoints.begin(), tLastMapPoints.end(), (*iter));
+        if(result!=tLastMapPoints.end())
+        {
+            Eigen::Vector3d tCurMp = mCurrentFrame->mvFeatures[tNum]->mNormal*mCurrentFrame->Get_FeatureDetph(mCurrentFrame->mvFeatures[tNum]);
+
+            int it = result - tLastMapPoints.begin();
+            Feature *tLastPt = mLastFrame->mvFeatures[it];
+            Eigen::Vector3d tMpdiff = tT_c2r*(tLastPt->mNormal*mLastFrame->Get_FeatureDetph(tLastPt)) - tCurMp;
+
+            tDistSets.push_back(tMpdiff.norm());
+            tUpdataMps.push_back((*iter));
+
+            tNum1++;
+        }
+    }
+
+    std::vector<double> Weights;
+    mCam->VarWithMAD(tDistSets, &Weights);
+    tNum = 0;
+    for (auto it = tUpdataMps.begin(); it!=tUpdataMps.end(); ++it, ++tNum)
+    {
+        (*it)->SetStaticWeight(Weights[tNum]);
+    }
+
+    mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
+    std::cout << "Finish" << std::endl;
 }
 
 void Tracking::SetViewer(Viewer *tViewer)

@@ -102,6 +102,13 @@ private:
     //! Create new Keyframe
     void CraeteKeyframe();
 
+    //! Motion removal using scene flow
+    void MotionRemoval();
+    void MotionRemovalTest1();
+
+    //! Set the static weight refer to DVO
+    void SetMpWeights();
+
 public:
     CameraPtr               mCam;               //! Camera
     int                     mMaxPyra_levels;

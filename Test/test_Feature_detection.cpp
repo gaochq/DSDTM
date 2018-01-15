@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     FLAGS_log_dir = "./log/FeatureDetection";
 
     DSDTM::Config::setParameterFile(argv[1]);
-    DSDTM::CameraPtr camera(new DSDTM::Camera(argv[1],DSDTM::Camera_Model::RGB_PinHole));
+    DSDTM::CameraPtr camera(new DSDTM::Camera(DSDTM::Camera_Model::RGB_PinHole));
 
     vector<double> dTimestamps;
     vector<string> dImageNames;

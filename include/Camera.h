@@ -97,20 +97,18 @@ public:
     //! Get the median value of the vector
     double GetMedian(const std::vector<double> tdVector) const;
 
+    //! Calculate the variance using median absolute deviation
+    void VarWithMAD(const std::vector<double> tErrors, std::vector<double> *tWeights);
+
     //! Draw features in image
-    void Draw_Features(cv::Mat &_image, const Features _features, cv::Scalar _color);
-    void Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, cv::Scalar _color);
+    void Draw_Features(cv::Mat &_image, const Features _features);
+    void Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _features, std::vector<uchar> tStatus);
 
     //! Draw lines in image (mainly in the initialization)
     void Draw_Lines(cv::Mat _image, const Features _featuresA, const Features _featuresB);
-    void Draw_Lines(cv::Mat _image, const std::vector<cv::Point2f> _featuresA,
-                    std::vector<cv::Point2f> _featuresB, const std::vector<cv::Point2f> _tBadA,
-                    std::vector<cv::Point2f> _tBadB);
+    void Draw_Lines(cv::Mat _image, const std::vector<cv::Point2f> _featuresA, std::vector<cv::Point2f> _featuresB);
 
     //! Draw features in current image
-    void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, int _color);
-    void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features1,
-                       const std::vector<cv::Point2f> _features2, const std::vector<cv::Point2f> _features3);
     void Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> _features, const std::vector<uchar> lables, uchar flag);
 
     //! Return Intrinsic matrix
@@ -124,6 +122,17 @@ public:
                     mp1, mp2,   0,   0;
         return tIntrinsic;
     }
+
+    Eigen::Matrix3d Return_IntrinsicK()
+    {
+        Eigen::Matrix3d K;
+        K  <<   mfx, 0, mcx,
+                0, mfy, mcy,
+                0,   0,   1;
+
+        return K;
+    }
+
 
 public:
 

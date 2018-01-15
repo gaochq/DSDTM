@@ -1,16 +1,15 @@
-//
-// Created by buyi on 17-10-17.
-//
-
-#include "Camera.h"
-#include "Frame.h"
-#include "Feature_detection.h"
-#include "Feature.h"
-#include "Tracking.h"
-#include "Map.h"
-
+#include <stdio.h>
+#include <iostream>
 #include <fstream>
+#include <iomanip>
+#include <deque>
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/imgproc.hpp"
 
+using namespace cv;
 using namespace std;
 
 void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageFilenamesRGB,
@@ -39,423 +38,234 @@ void LoadImages(const string &strAssociationFilename, vector<string> &vstrImageF
     }
 }
 
-#include <iostream>
-#include <cstdio>
-#include "opencv2/opencv.hpp"
-#include <cstring>
 
-using namespace cv;
-using namespace std;
-
-#define UNKNOWN_FLOW_THRESH 1e9
-
-const int N = 1500;
-int flag[N][N];
-
-Mat prevgray, gray, flow, cflow, frame, pre_frame, img_scale, img_temp, mask = Mat(Size(1, 300), CV_8UC1);;
-Size dsize;
-vector<Point2f> prepoint, nextpoint;
-vector<Point2f> F_prepoint, F_nextpoint;
-vector<uchar> state;
-vector<float> err;
-double dis[N];
-int cal = 0;
-int width = 100, height = 100;
-int rec_width = 40;
-int Harris_num = 0;
-int flag2 = 0;
-
-///调参点
-string file_name = //"C:\\Users\\Administrator\\Desktop\\datasets\\123.avi";
-//"C:\\Users\\Administrator\\Desktop\\VID_20151130_201047.mp4";
-        "C:\\Users\\Administrator\\Desktop\\mod_datasets\\set00\\V001.seq";
-//"C:\\Users\\Administrator\\Desktop\\datasets\\set08\\V004.seq";
-
-
-double vehicle_speed = 1;
-double limit_of_check = 2120;
-double scale = 1; //设置缩放倍数
-int margin = 1; //帧间隔
-double limit_dis_epi =2; //距离极线的距离
-///
-
-// 将int 转换成string
-string itos(int i)
+void addImageToComposition(Mat& composedImage, Mat& image, const bool isGrayscale, const int quarter)
 {
-    stringstream s;
-    s << i;
-    return s.str();
+    const auto width = composedImage.size().width;
+    const auto height = composedImage.size().height;
+    const auto halfWidth = width / 2;
+    const auto halfHeight = height / 2;
+
+    resize(image, image, Size(halfWidth, halfHeight));
+    if (isGrayscale) {
+        cvtColor(image, image, COLOR_GRAY2RGB);
+    }
+
+    Range rowsRange, colsRange;
+    if (quarter == 1) {
+        rowsRange = Range(0, halfHeight);
+        colsRange = Range(halfWidth, width);
+    } else if (quarter == 2) {
+        rowsRange = Range(0, halfHeight);
+        colsRange = Range(0, halfWidth);
+    } else if (quarter == 3) {
+        rowsRange = Range(halfHeight, height);
+        colsRange = Range(0, halfWidth);
+    } else if (quarter == 4) {
+        rowsRange = Range(halfHeight, height);
+        colsRange = Range(halfWidth, width);
+    }
+
+    image.copyTo(Mat(composedImage, rowsRange, colsRange));
 }
 
-
-bool ROI_mod(int x1, int y1)
-{
-    if (x1 >= width / 16 && x1 <= width - width / 16 && y1 >= height / 3 && y1 <= height - height / 6) return 1;
-    return 0;
-}
-
-void ready()
-{
-    //图像预处理
-    Harris_num = 0;
-    F_prepoint.clear();
-    F_nextpoint.clear();
-    height = frame.rows*scale;
-    width = frame.cols*scale;
-    dsize = Size(frame.cols*scale, frame.rows*scale);
-    img_scale = Mat(dsize, CV_32SC3);
-    img_temp = Mat(dsize, CV_32SC3);
-    resize(frame, img_scale, dsize);
-    resize(frame, img_temp, dsize);
-    cvtColor(img_scale, gray, CV_BGR2GRAY);
-    //框框大小
-    rec_width = frame.cols / 15;
-
-    cout << " cal :   " << cal << endl;
-    cout << "行: " << img_scale.rows << "    列: " << img_scale.cols << endl;
-    //equalizeHist(gray, gray); //直方图均衡
-    return;
-}
-
-void optical_flow_check()
-{
-    int limit_edge_corner = 5;
-    for (int i = 0; i < state.size(); i++)
-        if (state[i] != 0)
-        {
-
-            int dx[10] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
-            int dy[10] = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
-            int x1 = prepoint[i].x, y1 = prepoint[i].y;
-            int x2 = nextpoint[i].x, y2 = nextpoint[i].y;
-            if ((x1 < limit_edge_corner || x1 >= gray.cols - limit_edge_corner || x2 < limit_edge_corner || x2 >= gray.cols - limit_edge_corner
-                 || y1 < limit_edge_corner || y1 >= gray.rows - limit_edge_corner || y2 < limit_edge_corner || y2 >= gray.rows - limit_edge_corner))
-            {
-                state[i] = 0;
+void uniteRectangles(vector<Rect>& rectangles) {
+    vector<char> useRectangles(rectangles.size(), 1);
+    while (true) {
+        auto wasChange = false;
+        for (int i = 0; i < rectangles.size(); ++i) {
+            if (!useRectangles[i]) {
                 continue;
             }
-            double sum_check = 0;
-            for (int j = 0; j < 9; j++)
-                sum_check += abs(prevgray.at<uchar>(y1 + dy[j], x1 + dx[j]) - gray.at<uchar>(y2 + dy[j], x2 + dx[j]));
-            if (sum_check>limit_of_check) state[i] = 0;
-
-            if (state[i])
-            {
-                Harris_num++;
-                F_prepoint.push_back(prepoint[i]);
-                F_nextpoint.push_back(nextpoint[i]);
+            for (int j = i + 1; j < rectangles.size(); ++j) {
+                if (useRectangles[j] && ((rectangles[i] & rectangles[j]).area() > 0)) {
+                    rectangles[i] |= rectangles[j];
+                    useRectangles[j] = false;
+                    wasChange = true;
+                }
             }
         }
-    return;
-}
-
-bool stable_judge()
-{
-    int stable_num = 0;
-    double limit_stalbe = 0.5;
-    for (int i = 0; i < state.size(); i++)
-        if (state[i])
-        {
-            if (sqrt((prepoint[i].x - nextpoint[i].x)*(prepoint[i].x - nextpoint[i].x) + (prepoint[i].y - nextpoint[i].y)*(prepoint[i].y - nextpoint[i].y)) < limit_stalbe) stable_num++;
+        if (!wasChange) {
+            break;
         }
-    if (stable_num*1.0 / Harris_num > 0.2) return 1;
-    return 0;
+    }
+    vector<Rect> resultRectangles;
+    for (int i = 0; i < rectangles.size(); ++i) {
+        if (useRectangles[i]) {
+            resultRectangles.push_back(rectangles[i]);
+        }
+    }
+    rectangles = resultRectangles;
 }
 
+void processVideo() {
+    VideoCapture capture(0);
+    Mat colorFrame, frame, prevFrame;
+    ORB orb;
+    std::vector<KeyPoint> prevKeypoints, keypoints;
+    Mat prevDescriptors, descriptors;
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
+    deque<Point> movementCenters;
+    deque<Point> motionVectors;
 
-int main(int, char**)
-{
-    VideoCapture cap;
-    //cap.open(0);
-    cap.open(file_name);
+    const double firstTwoCloseMatchesDiff = 0.8;
+    const double maxMatchHeightDiff = 50;
+    const double maxMatchHorizontalDiff = 70;
+    const int binaryThreshold = 70;
+    Mat erodeElement = getStructuringElement(MORPH_RECT, Size(4, 4));
+    Mat dilateElement = getStructuringElement(MORPH_RECT, Size(24, 24));
+    const int movementCentersQueueSize = 4;
+    const double movingFramesFract = 0.5;
 
-    //if (!cap.isOpened())
-    //    return -1;
-
-    string Datasets_Dir ="/home/buyi/Datasets/rgbd_dataset_freiburg3_walking_xyz";
+    //rgbd_dataset_freiburg3_walking_xyz
+    string Datasets_Dir ="/home/buyi/Datasets/longhouse";
     vector<string> vstrImageFilenamesRGB;
     vector<string> vstrImageFilenamesD;
     vector<double> vTimestamps;
     string strAssociationFilename = Datasets_Dir + "/associations.txt";
     LoadImages(strAssociationFilename, vstrImageFilenamesRGB, vstrImageFilenamesD, vTimestamps);
 
-    CvVideoWriter *writer = cvCreateVideoWriter("out.avi",CV_FOURCC('X','V','I','D'),30,cvSize(640,480),1);
     int nImages = vstrImageFilenamesRGB.size();
+    double start = static_cast<double>(cvGetTickCount());
     for (int i = 0; i < nImages; ++i)
     {
-        double t = (double)cvGetTickCount();
-
+        //capture.read(colorFrame);
         string Colorimg_path = Datasets_Dir + "/" + vstrImageFilenamesRGB[i];
-        frame = cv::imread(Colorimg_path.c_str());
-        //cap >> frame;
-        if (frame.empty()) break;
-        cal++;
-        //if (cal <= 3000) continue;
+        colorFrame = imread(Colorimg_path);
 
-        //图像预处理
-        ready();
+        resize(colorFrame, colorFrame, Size(colorFrame.size().width / 2, colorFrame.size().height / 2));
+        frame = colorFrame.clone();
+        cvtColor(frame, frame, CV_BGR2GRAY);
 
-        //隔margin帧处理一次
-        if (cal % margin != 0)
-        {
-            continue;
+        if (prevFrame.rows == 0) {
+            prevFrame = frame.clone();
         }
 
+        orb.detect(prevFrame, prevKeypoints);
+        orb.detect(frame, keypoints);
+        orb.compute(prevFrame, prevKeypoints, prevDescriptors);
+        orb.compute(frame, keypoints, descriptors);
 
-        if (prevgray.data)
-        {
-            //calcOpticalFlowPyrLK光流
-            goodFeaturesToTrack(prevgray, prepoint, 200, 0.01, 8, Mat(), 3, true, 0.04);
-            cornerSubPix(prevgray, prepoint, Size(10, 10), Size(-1, -1), TermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.03));
-            calcOpticalFlowPyrLK(prevgray, gray, prepoint, nextpoint, state, err, Size(22, 22), 5, TermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.01));
+        vector<vector<DMatch>> matches;
+        matcher->knnMatch(prevDescriptors, descriptors, matches, 2);
 
-            optical_flow_check();
-
-            if (stable_judge())
-            {
-                //stable_way();
-                cout << 1 << endl;
+        vector<Point2f> prevFilteredPoints, filteredPoints;
+        for (int i = 0; i < matches.size(); ++i) {
+            if (matches[i][0].distance > firstTwoCloseMatchesDiff * matches[i][1].distance) {
+                continue;
             }
-            else
-            {
-                cout << 0 << endl;
+            const auto &prevPoint = prevKeypoints[matches[i][0].queryIdx].pt;
+            const auto &point = keypoints[matches[i][0].trainIdx].pt;
+            if (fabs(point.y - prevPoint.y) > maxMatchHeightDiff ||
+                fabs(point.x - prevPoint.x) > maxMatchHorizontalDiff) {
+                continue;
             }
-
-            //找角点
-            for (int i = 0; i < state.size(); i++)
-            {
-
-                double x1 = prepoint[i].x, y1 = prepoint[i].y;
-                double x2 = nextpoint[i].x, y2 = nextpoint[i].y;
-                if (state[i] != 0)
-                {
-
-                    //画出所有角点
-                    circle(img_scale, nextpoint[i], 3, Scalar(255, 0, 255));
-                    circle(pre_frame, prepoint[i], 2, Scalar(255, 0, 255));
-                }
-            }
-            cout << Harris_num << endl;
-
-
-
-            //-----------------------------计算 F-Matrix
-            Mat F = Mat(3, 3, CV_32FC1);
-            //F = findFundamentalMat(F_prepoint, F_nextpoint, mask, FM_RANSAC, 2, 0.99);
-
-            double ppp = 110;
-            Mat L = Mat(1000, 3, CV_32FC1);
-            while (ppp > 5)
-            {
-                vector<Point2f> F2_prepoint, F2_nextpoint;
-                F2_prepoint.clear();
-                F2_nextpoint.clear();
-                ppp = 0;
-                F = findFundamentalMat(F_prepoint, F_nextpoint, mask, FM_RANSAC, 0.1, 0.99);
-                //cout << F << endl;
-                //computeCorrespondEpilines(F_prepoint,1,F,L);
-                for (int i = 0; i < mask.rows; i++)
-                {
-                    if (mask.at<uchar>(i, 0) == 0);
-                    else
-                    {
-                        ///circle(pre_frame, F_prepoint[i], 6, Scalar(255, 255, 0), 3);
-                        double A = F.at<double>(0, 0)*F_prepoint[i].x + F.at<double>(0, 1)*F_prepoint[i].y + F.at<double>(0, 2);
-                        double B = F.at<double>(1, 0)*F_prepoint[i].x + F.at<double>(1, 1)*F_prepoint[i].y + F.at<double>(1, 2);
-                        double C = F.at<double>(2, 0)*F_prepoint[i].x + F.at<double>(2, 1)*F_prepoint[i].y + F.at<double>(2, 2);
-                        double dd = fabs(A*F_nextpoint[i].x + B*F_nextpoint[i].y + C) / sqrt(A*A + B*B);
-                        cout << "------:" << dd << "   " << F_prepoint[i].x << "   " << F_prepoint[i].y << endl;
-                        //cout << "A:  " << A << "   B: " << B << "   C:  " << C << endl;
-                        ppp += dd;
-                        if (dd > 0.1)
-                        {
-                            circle(pre_frame, F_prepoint[i], 6, Scalar(255, 0, 0), 3);
-                        }
-                        else
-                        {
-                            F2_prepoint.push_back(F_prepoint[i]);
-                            F2_nextpoint.push_back(F_nextpoint[i]);
-                        }
-                    }
-                }
-
-                F_prepoint = F2_prepoint;
-                F_nextpoint = F2_nextpoint;
-                cout << "--------------       " << ppp << "      ---------------" << endl;
-            }
-
-
-
-
-
-
-
-
-
-            //T：异常角点集
-            vector<Point2f> T;
-            T.clear();
-
-
-
-            for (int i = 0; i < prepoint.size(); i++)
-            {
-                if (state[i] != 0)
-                {
-                    double A = F.at<double>(0, 0)*prepoint[i].x + F.at<double>(0, 1)*prepoint[i].y + F.at<double>(0, 2);
-                    double B = F.at<double>(1, 0)*prepoint[i].x + F.at<double>(1, 1)*prepoint[i].y + F.at<double>(1, 2);
-                    double C = F.at<double>(2, 0)*prepoint[i].x + F.at<double>(2, 1)*prepoint[i].y + F.at<double>(2, 2);
-                    double dd = fabs(A*nextpoint[i].x + B*nextpoint[i].y + C) / sqrt(A*A + B*B);
-
-                    //画光流
-                    int x1 = (int)prepoint[i].x, y1 = (int)prepoint[i].y;
-                    int x2 = (int)nextpoint[i].x, y2 = (int)nextpoint[i].y;
-                    //if (sqrt((x2 - x1)*(x2 - x1) + (y2 - y1)*(y2 - y1)) < limit_flow) continue;
-                    line(img_scale, Point((int)prepoint[i].x, (int)prepoint[i].y), Point((int)nextpoint[i].x, (int)nextpoint[i].y), Scalar{ 255, 255, 0 }, 2);
-                    line(pre_frame, Point((int)prepoint[i].x, (int)prepoint[i].y), Point((int)nextpoint[i].x, (int)nextpoint[i].y), Scalar{ 0, 255, 0 }, 1);
-
-
-                    //距离的极线阈值
-                    if (dd <= limit_dis_epi) continue;
-                    cout << "dis: " << dd << endl;
-                    dis[T.size()] = dd;
-                    T.push_back(nextpoint[i]);
-
-
-                    //画异常角点
-                    //circle(img_scale, nextpoint[i], 7, Scalar(255, 255, 255),3);
-                    circle(pre_frame, prepoint[i], 3, Scalar(255, 255, 255), 2);
-
-                    //画极线
-                    if (fabs(B) < 0.0001)
-                    {
-                        double xx = C / A, yy = 0;
-                        double xxx = C / A, yyy = gray.cols;
-                        line(pre_frame, Point(xx, yy), Point(xxx, yyy), Scalar::all(-1), 0.01);
-                        flag2++;
-                        continue;
-                    }
-                    double xx = 0, yy = -C / B;
-                    double xxx = gray.cols, yyy = -(C + A*gray.cols) / B;
-                    if (fabs(yy) > 12345 || fabs(yyy) > 12345)
-                    {
-                        yy = 0;
-                        xx = -C / A;
-                        yyy = gray.rows;
-                        xxx = -(C + B*yyy) / A;
-                    }
-                    line(img_scale, Point(xx, yy), Point(xxx, yyy), Scalar::all(-1), 0.01);
-                    line(pre_frame, Point(xx, yy), Point(xxx, yyy), Scalar::all(-1), 0.01);
-
-
-                }
-            }
-
-
-            //画框(一） 异常点
-            /*
-            int flag[1000];
-            memset(flag, 0, sizeof(flag));
-            for (int i = 0; i < T.size();i++)
-            if (!flag[i] && IOI(T[i].x,T[i].y) )
-            {
-            int num_t = 0;
-            for (int j = 0; j < T.size(); j++)
-            {
-            double dd = sqrt((T[j].x - T[i].x)*(T[j].x - T[i].x) + (T[j].y - T[i].y)*(T[j].y - T[i].y));
-            if (j!=i && dd < rec_width) num_t++;
-            }
-            if (num_t < 5) continue;
-            rectangle(frame, Point(T[i].x * (1 / scale) - rec_width, T[i].y * (1 / scale) + rec_width), Point(T[i].x * (1 / scale) + rec_width, T[i].y * (1 / scale) - rec_width), Scalar(255, 255, 255), 3);
-            for (int j = 0; j < T.size(); j++)
-            {
-            double dd = sqrt((T[j].x - T[i].x)*(T[j].x - T[i].x) + (T[j].y - T[i].y)*(T[j].y - T[i].y));
-            if (dd < rec_width) flag[j] = 1;
-            }
-
-            }
-            */
-            if (1)
-            {
-                //画框(二） 枚举 mod
-                int tt = 10;
-                double flag_meiju[100][100];
-                memset(flag_meiju, 0, sizeof(flag_meiju));
-                for (int i = 0; i < gray.rows / tt; i++)
-                    for (int j = 0; j < gray.cols / tt; j++)
-                    {
-                        double x1 = i*tt + tt / 2;
-                        double y1 = j*tt + tt / 2;
-                        for (int k = 0; k < T.size(); k++)
-                            if (ROI_mod(T[k].x, T[k].y) && sqrt((T[k].x - y1)*(T[k].x - y1) + (T[k].y - x1)*(T[k].y - x1)) < tt*sqrt(2)) flag_meiju[i][j]++;//flag_meiju[i][j] += dis[k];
-                    }
-                double mm = 0;
-                int mark_i = 0, mark_j = 0;
-                for (int i = 0; i < gray.rows / tt; i++)
-                    for (int j = 0; j < gray.cols / tt; j++)
-                        if (ROI_mod(j*tt, i*tt) && flag_meiju[i][j] > mm)
-                        {
-                            mark_i = i;
-                            mark_j = j;
-                            mm = flag_meiju[i][j];
-                            if (mm < 2) continue;
-                            rectangle(frame, Point(mark_j*tt / scale - rec_width, mark_i*tt / scale + rec_width), Point(mark_j*tt / scale + rec_width, mark_i*tt / scale - rec_width), Scalar(0, 255, 255), 3);
-
-                        }
-                if (mm > 1111) rectangle(frame, Point(mark_j*tt / scale - rec_width, mark_i*tt / scale + rec_width), Point(mark_j*tt / scale + rec_width, mark_i*tt / scale - rec_width), Scalar(0, 255, 255), 3);
-                else
-                {
-                    //画框(三）
-                    /*
-                    memset(flag_meiju, 0, sizeof(flag_meiju));
-                    for (int i = 0; i < gray.rows / tt; i++)
-                    for (int j = 0; j < gray.cols / tt; j++)
-                    {
-                    double x1 = i*tt + tt / 2;
-                    double y1 = j*tt + tt / 2;
-                    for (int k = 0; k < T.size(); k++)
-                    if (ROI_obscale(T[k].x, T[k].y) && sqrt((T[k].x - y1)*(T[k].x - y1) + (T[k].y - x1)*(T[k].y - x1)) < tt*sqrt(2)) flag_meiju[i][j] ++;
-                    }
-                    mm = 0;
-                    mark_i = 0, mark_j = 0;
-                    for (int i = 0; i < gray.rows / tt; i++)
-                    for (int j = 0; j < gray.cols / tt; j++)
-                    if (flag_meiju[i][j] > mm)
-                    {
-                    mark_i = i;
-                    mark_j = j;
-                    mm = flag_meiju[i][j];
-                    }
-                    //rectangle(frame, Point(mark_j*tt / scale - rec_width, mark_i*tt / scale + rec_width), Point(mark_j*tt / scale + rec_width, mark_i*tt / scale - rec_width), Scalar(255, 0, 0), 3);
-                    */
-                }
-            }
-            //绘制ROI
-            rectangle(frame, Point(width / 16 / scale, height * 5 / 6 / scale), Point((width - width / 16) / scale, height / 3 / scale), Scalar(255, 0, 0), 1, 0);
-
-
-            //输出结果图
-            string a = itos(cal / margin), b = ".jpg";
-            imwrite("F:\\data\\result2_" + a + b, pre_frame);
-            imwrite("F:\\data\\result3_" + a + b, frame);
-            cvNamedWindow("img_scale", 0);
-            imshow("img_scale", img_scale);
-            cvNamedWindow("pre", 0);
-            imshow("pre", pre_frame);
-            cvNamedWindow("frame", 0);
-            imshow("frame", frame);
-
+            prevFilteredPoints.push_back(prevPoint);
+            filteredPoints.push_back(point);
         }
 
+        Mat vectorsImage = colorFrame.clone();
+        vector<double> horizontalDiffs;
+        for (int i = 0; i < filteredPoints.size(); ++i) {
+            arrowedLine(vectorsImage, prevFilteredPoints[i], filteredPoints[i], Scalar(0, 0, 255), 2);
+            horizontalDiffs.push_back(filteredPoints[i].x - prevFilteredPoints[i].x);
+        }
+        vector<double> mean;
+        vector<double> stdDev;
+        meanStdDev(horizontalDiffs, mean, stdDev);
+        cout << "mean: " << setprecision(3) << setw(4) << int(mean[0]) << " stdDev: " << stdDev[0] << endl;
 
-        if (waitKey(27) >= 0)
+
+        Mat mask(frame.size(), CV_8U, Scalar(255));
+        if (filteredPoints.size() >= 5) {
+            Mat homography = findHomography(prevFilteredPoints, filteredPoints, CV_RANSAC);
+            warpPerspective(prevFrame, prevFrame, homography, prevFrame.size());
+            warpPerspective(mask, mask, homography, mask.size());
+        }
+
+        Mat diff;
+        subtract(frame, prevFrame, diff, mask);
+
+        Mat movement;
+        threshold(diff, movement, binaryThreshold, 255, THRESH_BINARY);
+        erode(movement, movement, erodeElement);
+        dilate(movement, movement, dilateElement, Point(-1, -1), 2);
+
+        Moments movementMoments = moments(movement, true);
+        if (movementMoments.m00 > 0) {
+            const auto movementCenter = Point(movementMoments.m10 / movementMoments.m00,
+                                              movementMoments.m01 / movementMoments.m00);
+            movementCenters.push_back(movementCenter);
+        } else {
+            movementCenters.push_back(Point(-1, -1));
+        }
+        if (movementCenters.size() > movementCentersQueueSize) {
+            movementCenters.pop_front();
+        }
+
+        Point averageCenter(0, 0);
+        int movingFrames = 0;
+        for (const auto& center: movementCenters) {
+            if (center.x != -1) {
+                ++movingFrames;
+                averageCenter.x += center.x;
+                averageCenter.y += center.y;
+            }
+        }
+        if (double(movingFrames) / movementCenters.size() >= movingFramesFract) {
+            averageCenter.x /= movingFrames;
+            averageCenter.y /= movingFrames;
+
+            circle(
+                    colorFrame,
+                    averageCenter,
+                    10,
+                    Scalar(0, 255, 0),
+                    -1
+            );
+        }
+
+        Mat contoursImage = movement.clone();
+
+        vector<vector<Point>> contours;
+        vector<Vec4i> hierarchy;
+        findContours(contoursImage, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+        vector<Rect> rectangles;
+        contoursImage = Mat::zeros(contoursImage.size(), CV_8UC3);
+        for(int i = 0; i < contours.size(); ++i) {
+            drawContours(contoursImage, contours, i, Scalar(255, 0, 0), 2, 8, hierarchy, 0);
+            const auto rect = boundingRect(contours[i]);
+            rectangles.push_back(rect);
+        }
+
+        uniteRectangles(rectangles);
+
+        for (const auto& rect : rectangles) {
+            rectangle(colorFrame, rect, Scalar(0, 255, 0), 3);
+        }
+
+        Mat composedImage(colorFrame.rows * 2, colorFrame.cols * 2, colorFrame.type(), Scalar(0, 0, 0));
+
+        addImageToComposition(composedImage, vectorsImage, false, 2);
+        addImageToComposition(composedImage, diff, true, 1);
+        addImageToComposition(composedImage, movement, true, 3);
+        addImageToComposition(composedImage, colorFrame, false, 4);
+
+        imshow("Scene", composedImage);
+
+        prevFrame = frame;
+
+        int c = waitKey(30);
+        if (c == 27)
             break;
-        std::swap(prevgray, gray);
-        resize(img_temp, pre_frame, dsize);
-        t = (double)cvGetTickCount() - t;
-        cout << "cost time: " << t / ((double)cvGetTickFrequency()*1000.) << "ms" << endl;
-        cout << "-----" << flag2 << endl;
     }
-    return 0;
+    capture.release();
 }
 
+int main( int argc, char** argv ) {
+    processVideo();
+    destroyAllWindows();
+
+    return EXIT_SUCCESS;
+}
