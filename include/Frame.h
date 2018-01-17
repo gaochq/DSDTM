@@ -82,8 +82,7 @@ public:
     Eigen::Vector3d UnProject(const cv::Point2f tPixel, const float d);
 
     //! Set the image mask for feature extraction and filter
-    void Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt,
-                  std::vector<cv::Point2f> tBadPts);
+    void Set_Mask();
 
     //! Check if this point is visible in current frame
     bool isVisible(const Eigen::Vector3d tPose, int tBoundary = 0) const;

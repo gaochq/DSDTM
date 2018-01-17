@@ -27,7 +27,7 @@
 KLTWrapper::KLTWrapper(void)
 {
     // For LK funciton in opencv
-    win_size = 30;
+    win_size = 10;
     points[0] = points[1] = 0;
     status = 0;
     count = 0;
@@ -183,8 +183,7 @@ void KLTWrapper::MakeHomoGraphy(int *pnMatch, int nCnt)
         return;
     }
 
-    for (i = 0; i < 9; i++)
-    {
+    for (i = 0; i < 9; i++) {
         matH[i] = h[i];
     }
 }

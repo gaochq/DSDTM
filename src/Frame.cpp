@@ -279,35 +279,15 @@ bool Frame::Find_Observations(size_t tID)
 }
 
 
-void Frame::Set_Mask(std::vector<long int> &tlId, std::vector<long int> &tTrackCnt,
-                     std::vector<cv::Point2f> tBadPts)
+void Frame::Set_Mask()
 {
-    tlId.clear();
-    tTrackCnt.clear();
-    mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(255));
 
-    //! Sort features refer to tracking times
-    std::sort(mvFeatures.begin(), mvFeatures.end());
-
-    mImgMask = mImgMask - mDynamicMask;
-    int j = 0;
-    for (int i = 0; i < mvFeatures.size(); ++i)
+    for (int k = 0; k < mvFeatures.size(); ++k)
     {
-        if(mImgMask.at<uchar>(mvFeatures[i]->mpx)==255)
-        {
-            mvFeatures[j++] = mvFeatures[i];
-            tlId.push_back(mvFeatures[i]->mlId);
-            tTrackCnt.push_back(mvFeatures[i]->mTrack_cnt);
-
-            cv::circle(mImgMask, mvFeatures[i]->mpx, mMin_Dist, 0, -1);
-        }
+        if(mvMapPoints[k])
+            cv::circle(mImgMask, mvFeatures[k]->mpx, mMin_Dist, 0, -1);
     }
 
-    for (int k = 0; k < tBadPts.size(); ++k)
-    {
-        cv::circle(mImgMask, tBadPts[k], mMin_Dist, 0, -1);
-    }
-    mvFeatures.resize(j);
 }
 
 bool Frame::isVisible(const Eigen::Vector3d tPose, int tBoundary) const

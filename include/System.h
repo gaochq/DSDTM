@@ -38,6 +38,8 @@ public:
 
     void Reset();
 
+    int ReturnKeyFrameSize() { return mMap->GetAllKeyFrames().size(); }
+
 protected:
     Camera_Model    mSensor;
 

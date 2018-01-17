@@ -5,7 +5,7 @@
 #rgbd_dataset_freiburg2_desk_with_person
 #rgbd_dataset_freiburg3_walking_static
 #rgbd_dataset_freiburg2_desk
-dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_walking_xyz
+dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg2_desk
 
 Camera.width: 640
 Camera.height: 480
@@ -58,7 +58,7 @@ Camera.CellSize: 20
 Camera.Max_fts: 400
 Camera.Max_tkfts: 200
 Camera.Min_fts: 15
-Camera.Min_dist: 30
+Camera.Min_dist: 20
 
 Camera.Half_PatchSize: 4
 

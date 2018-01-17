@@ -49,7 +49,6 @@ int gettimeofday(struct timeval *tp, int *tz)
 
 MCDWrapper::MCDWrapper():frm_cnt(0)
 {
-
 }
 
 MCDWrapper::~MCDWrapper()
@@ -57,16 +56,14 @@ MCDWrapper::~MCDWrapper()
 }
 
 void
-MCDWrapper::Init()
+MCDWrapper::Init(IplImage * in_imgIpl)
 {
     frm_cnt = 0;
     BGModel.init(imgGray);
 }
 
-cv::Mat MCDWrapper::Run(const cv::Mat ColorImg, double *H, cv::Mat tMask)
+cv::Mat MCDWrapper::Run(const cv::Mat ColorImg, double *H)
 {
-    BGModel.mMask = tMask;
-
     if(frm_cnt==0)
     {
         imgGray = cvCreateImage(cvSize(ColorImg.cols, ColorImg.rows), IPL_DEPTH_8U, 1);
@@ -74,6 +71,8 @@ cv::Mat MCDWrapper::Run(const cv::Mat ColorImg, double *H, cv::Mat tMask)
         imgGrayPrev = cvCreateImage(cvSize(ColorImg.cols, ColorImg.rows), IPL_DEPTH_8U, 1);
 
         BGModel.init(imgGray);
+
+        m_LucasKanade.Init(imgGray);
     }
 
     frm_cnt++;
@@ -82,7 +81,7 @@ cv::Mat MCDWrapper::Run(const cv::Mat ColorImg, double *H, cv::Mat tMask)
     float rt_preProc;	// pre Processing time
     float rt_motionComp;	// motion Compensation time
     float rt_modelUpdate;	// model update time
-    float rt_total;		// Background Subtraction tim
+    float rt_total;		// Background Subtraction time
 
     IplImage copy = ColorImg;
     IplImage *tIpltmp = &copy;
@@ -90,12 +89,7 @@ cv::Mat MCDWrapper::Run(const cv::Mat ColorImg, double *H, cv::Mat tMask)
 
     BGModel.motionCompensate(H);
 
-    //gettimeofday(&tic, NULL);
     BGModel.update(detect_img);
-    //gettimeofday(&toc, NULL);
-    //rt_modelUpdate = (float)(toc.tv_usec - tic.tv_usec) / 1000.0;
-    //std::cout<< rt_modelUpdate << "ms" << std::endl;
-
 
     cv::Mat matimg = cv::Mat(detect_img);
     cv::Mat element = getStructuringElement(MORPH_RECT, Size(9, 9));
@@ -105,11 +99,9 @@ cv::Mat MCDWrapper::Run(const cv::Mat ColorImg, double *H, cv::Mat tMask)
     cv::imshow("Moving_Detect", matimg);
     cv::waitKey(1);
 
-
-
     cvCopy(imgGray, imgGrayPrev);
 
     return matimg;
 }
 
-#endif				// _MCDWRAPPER_CPP
+#endif				// _MCDWRAPPER_CPP_

@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Kwang Moo Yi
+// Copyright (c) 2016 Kwang Moo Yi.
 // All rights reserved.
 
 // This  software  is  strictly   for  non-commercial  use  only.  For
@@ -19,21 +19,20 @@
 // SOFTWARE IS PROVIDED ``AS IS''  AND WITHOUT ANY WARRANTIES.  USE AT
 // YOUR OWN RISK!
 
-
 #ifndef	_PARAMS_H_
 #define	_PARAMS_H_
 
-#define BLOCK_SIZE				(2.0)
+#define BLOCK_SIZE				(4.0)
 #define BLOCK_SIZE_SQR				(4.0)
 #define VARIANCE_INTERPOLATE_PARAM	        (1.0)
 
-#define MAX_BG_AGE				(2.0)                   // 消除背景误判 2.0
-#define VAR_MIN_NOISE_T			        (20.0*20.0) //110
+#define MAX_BG_AGE				(5.0)
+#define VAR_MIN_NOISE_T			        (50.0*50.0)
 #define VAR_DEC_RATIO			        (0.001)
-#define MIN_BG_VAR				(5.0*5.0)	//15*15 70
-#define INIT_BG_VAR				(5.0*5.0)	//15*15 110
+#define MIN_BG_VAR				(30.0*30.0)	//15*15
+#define INIT_BG_VAR				(15.0*15.0)	//15*15
 
 #define NUM_MODELS		        (2)
-#define VAR_THRESH_FG_DETERMINE		(20)
+#define VAR_THRESH_FG_DETERMINE		(2.0)
 #define VAR_THRESH_MODEL_MATCH		(2.0)
 #endif				// _PARAMS_H_

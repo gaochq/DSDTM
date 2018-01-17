@@ -26,7 +26,6 @@ public:
     cv::Mat Mod_FrameDiff(FramePtr tframeA, FramePtr tframeB, std::vector<cv::Point2f> tPointsA,
                           std::vector<cv::Point2f> tPointsB);
 
-
 };
 
 

@@ -232,7 +232,7 @@ void Camera::Draw_Features(cv::Mat &_image, const Features _features)
             cv::rectangle(_image,
                           cv::Point2f(_features[i]->mpx.x - 2, _features[i]->mpx.y - 2),
                           cv::Point2f(_features[i]->mpx.x + 2, _features[i]->mpx.y + 2),
-                          cv::Scalar(0, 0, 255));
+                          cv::Scalar(0, 255, 0));
     };
 
     cv::namedWindow("Feature_Detect");
@@ -251,12 +251,12 @@ void Camera::Draw_Features(cv::Mat &_image, const std::vector<cv::Point2f> _feat
             cv::rectangle(_image,
                           cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                           cv::Point2f(_features[i].x + 2, _features[i].y + 2),
-                          cv::Scalar(0, 0, 255));
+                          cv::Scalar(0, 0, 255)); //r
         else
             cv::rectangle(_image,
                           cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                           cv::Point2f(_features[i].x + 2, _features[i].y + 2),
-                          cv::Scalar(0, 255, 0));
+                          cv::Scalar(0, 255, 0)); //g
     };
 
     cv::namedWindow("Feature_Detect");
@@ -289,8 +289,8 @@ void Camera::Draw_Lines(cv::Mat _image, const std::vector<cv::Point2f> _features
         cv::line(_image, _featuresA[i], _featuresB[i]+10*(_featuresA[i]- _featuresB[i]), cv::Scalar(255, 0, 0), 2);
     }
 
-    cv::namedWindow("Feature_Detect");
-    cv::imshow("Feature_Detect", _image);
+    cv::namedWindow("Optical_flow");
+    cv::imshow("Optical_flow", _image);
     cv::waitKey(1);
 }
 
@@ -334,11 +334,13 @@ void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> 
                               cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                               cv::Point2f(_features[i].x + 2, _features[i].y + 2),
                               tColors[0]);
+
             else
                 cv::rectangle(Image_new,
                               cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                               cv::Point2f(_features[i].x + 2, _features[i].y + 2),
                               tColors[1]);
+
             a++;
         }
         else if(lables[i]==1)
@@ -348,11 +350,13 @@ void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> 
                               cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                               cv::Point2f(_features[i].x + 2, _features[i].y + 2),
                               tColors[0]);
+
             else
                 cv::rectangle(Image_new,
                               cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                               cv::Point2f(_features[i].x + 2, _features[i].y + 2),
                               tColors[1]);
+
             b++;
         }
         else if(lables[i]==2)
@@ -362,11 +366,13 @@ void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> 
                               cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                               cv::Point2f(_features[i].x + 2, _features[i].y + 2),
                               tColors[0]);
+
             else
                 cv::rectangle(Image_new,
                               cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                               cv::Point2f(_features[i].x + 2, _features[i].y + 2),
                               tColors[1]);
+
             c++;
         }
         else
@@ -376,11 +382,13 @@ void Camera::Show_Features(const cv::Mat _image, const std::vector<cv::Point2f> 
                               cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                               cv::Point2f(_features[i].x + 2, _features[i].y + 2),
                               tColors[0]);
+
             else
                 cv::rectangle(Image_new,
                               cv::Point2f(_features[i].x - 2, _features[i].y - 2),
                               cv::Point2f(_features[i].x + 2, _features[i].y + 2),
                               tColors[1]);
+
             d++;
         }
     }

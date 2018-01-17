@@ -39,14 +39,11 @@
 
 #include "params.h"
 
-class ProbModel
-{
+class ProbModel {
 
 public:
 
     IplImage * m_Cur;
-    cv::Mat mMask;
-
     float *m_DistImg;
 
     float *m_Mean[NUM_MODELS];
@@ -83,8 +80,7 @@ public:
         uninit();
     }
 
-    void uninit(void)
-    {
+    void uninit(void) {
         if (m_DistImg != 0) {
             delete m_DistImg;
             m_DistImg = 0;
@@ -122,8 +118,8 @@ public:
 
     }
 
-    void init(IplImage * pInputImg)
-    {
+    void init(IplImage * pInputImg) {
+
         uninit();
 
         m_Cur = pInputImg;
@@ -138,8 +134,7 @@ public:
         // Initialize Storage
         m_DistImg = new float[obsWidth * obsHeight];
 
-        for (int i = 0; i < NUM_MODELS; ++i)
-        {
+        for (int i = 0; i < NUM_MODELS; ++i) {
             m_Mean[i] = new float[modelWidth * modelHeight];
             m_Var[i] = new float[modelWidth * modelHeight];
             m_Age[i] = new float[modelWidth * modelHeight];
@@ -171,8 +166,8 @@ public:
 
     }
 
-    void motionCompensate(double *h)
-    {
+    void motionCompensate(double h[9]) {
+
         int curModelWidth = modelWidth;
         int curModelHeight = modelHeight;
 
@@ -181,21 +176,16 @@ public:
         int obsWidthStep = m_Cur->widthStep;
 
         // compensate models for the current view
-        for (int j = 0; j < curModelHeight; ++j)
-        {
-            for (int i = 0; i < curModelWidth; ++i)
-            {
+        for (int j = 0; j < curModelHeight; ++j) {
+            for (int i = 0; i < curModelWidth; ++i) {
+
                 // x and y coordinates for current model
                 float X, Y;
                 float W = 1.0;
                 X = BLOCK_SIZE * i + BLOCK_SIZE / 2.0;
                 Y = BLOCK_SIZE * j + BLOCK_SIZE / 2.0;
 
-                //if(mMask.at<uchar>(X, Y)!=255)
-                //    continue;
                 // transformed coordinates with h
-                cv::Point3f tPoint(X, Y, 1);
-
                 float newW = h[6] * X + h[7] * Y + h[8];
                 float newX = (h[0] * X + h[1] * Y + h[2]) / newW;
                 float newY = (h[3] * X + h[4] * Y + h[5]) / newW;
@@ -227,13 +217,11 @@ public:
                     memset(temp_age, 0, sizeof(float) * 4 * NUM_MODELS);
 #ifdef WARP_MIX
                     // Horizontal Neighbor
-                    if (di != 0)
-                    {
+                    if (di != 0) {
                         int idx_new_i = idxNewI;
                         int idx_new_j = idxNewJ;
                         idx_new_i += di > 0 ? 1 : -1;
-                        if (idx_new_i >= 0 && idx_new_i < curModelWidth && idx_new_j >= 0 && idx_new_j < curModelHeight)
-                        {
+                        if (idx_new_i >= 0 && idx_new_i < curModelWidth && idx_new_j >= 0 && idx_new_j < curModelHeight) {
                             w_H = fabs(di) * (1.0 - fabs(dj));
                             sumW += w_H;
                             int idxNew = idx_new_i + idx_new_j * modelWidth;
@@ -293,7 +281,7 @@ public:
                             m_Age_Temp[m][idxNow] = (temp_age[0][m] + temp_age[1][m] + temp_age[2][m] + temp_age[3][m]) / sumW;
 #else
                             m_Mean_Temp[m][idxNow] = temp_mean[3][m] / sumW;
-						m_Age_Temp[m][idxNow] = temp_age[3][m] / sumW;
+							m_Age_Temp[m][idxNow] = temp_age[3][m] / sumW;
 #endif
                         }
                     }
@@ -382,12 +370,10 @@ public:
 
     }
 
-    void update(IplImage * pOutputImg)
-    {
+    void update(IplImage * pOutputImg) {
 
         BYTE *pOut;
-        if (pOutputImg != NULL)
-        {
+        if (pOutputImg != NULL) {
             cvSet(pOutputImg, CV_RGB(0, 0, 0));
             pOut = (BYTE *) pOutputImg->imageData;
         }
@@ -403,10 +389,8 @@ public:
         // Find Matching Model
         memset(m_ModelIdx, 0, sizeof(int) * modelHeight * modelWidth);
 
-        for (int bIdx_j = 0; bIdx_j < curModelHeight; bIdx_j++)
-        {
-            for (int bIdx_i = 0; bIdx_i < curModelWidth; bIdx_i++)
-            {
+        for (int bIdx_j = 0; bIdx_j < curModelHeight; bIdx_j++) {
+            for (int bIdx_i = 0; bIdx_i < curModelWidth; bIdx_i++) {
 
                 // base (i,j) for this block
                 int idx_base_i;
@@ -414,15 +398,10 @@ public:
                 idx_base_i = ((float)bIdx_i) * BLOCK_SIZE;
                 idx_base_j = ((float)bIdx_j) * BLOCK_SIZE;
 
-                //if(mMask.at<uchar>(idx_base_i, idx_base_j)!=255)
-                //    continue;
-
                 float cur_mean = 0;
                 float elem_cnt = 0;
-                for (int jj = 0; jj < BLOCK_SIZE; ++jj)
-                {
-                    for (int ii = 0; ii < BLOCK_SIZE; ++ii)
-                    {
+                for (int jj = 0; jj < BLOCK_SIZE; ++jj) {
+                    for (int ii = 0; ii < BLOCK_SIZE; ++ii) {
 
                         int idx_i = idx_base_i + ii;
                         int idx_j = idx_base_j + jj;
@@ -475,17 +454,14 @@ public:
                 }
 
             }
-        }
-        // loop for models
+        }		// loop for models
 
         // update with current observation
         float obs_mean[NUM_MODELS];
         float obs_var[NUM_MODELS];
 
-        for (int bIdx_j = 0; bIdx_j < curModelHeight; bIdx_j++)
-        {
-            for (int bIdx_i = 0; bIdx_i < curModelWidth; bIdx_i++)
-            {
+        for (int bIdx_j = 0; bIdx_j < curModelHeight; bIdx_j++) {
+            for (int bIdx_i = 0; bIdx_i < curModelWidth; bIdx_i++) {
 
                 // base (i,j) for this block
                 int idx_base_i;
@@ -493,19 +469,14 @@ public:
                 idx_base_i = ((float)bIdx_i) * BLOCK_SIZE;
                 idx_base_j = ((float)bIdx_j) * BLOCK_SIZE;
 
-                //if(mMask.at<uchar>(idx_base_i, idx_base_j)!=255)
-                //    continue;
-
                 int nMatchIdx = m_ModelIdx[bIdx_i + bIdx_j * modelWidth];
 
                 // obtain observation mean
                 memset(obs_mean, 0, sizeof(float) * NUM_MODELS);
                 int nElemCnt[NUM_MODELS];
                 memset(nElemCnt, 0, sizeof(int) * NUM_MODELS);
-                for (int jj = 0; jj < BLOCK_SIZE; ++jj)
-                {
-                    for (int ii = 0; ii < BLOCK_SIZE; ++ii)
-                    {
+                for (int jj = 0; jj < BLOCK_SIZE; ++jj) {
+                    for (int ii = 0; ii < BLOCK_SIZE; ++ii) {
 
                         int idx_i = idx_base_i + ii;
                         int idx_j = idx_base_j + jj;
@@ -517,27 +488,20 @@ public:
                         ++nElemCnt[nMatchIdx];
                     }
                 }
-                for (int m = 0; m < NUM_MODELS; ++m)
-                {
+                for (int m = 0; m < NUM_MODELS; ++m) {
 
-                    if (nElemCnt[m] <= 0)
-                    {
+                    if (nElemCnt[m] <= 0) {
                         m_Mean[m][bIdx_i + bIdx_j * modelWidth] = m_Mean_Temp[m][bIdx_i + bIdx_j * modelWidth];
-                    }
-                    else
-                    {
+                    } else {
                         // learning rate for this block
                         float age = m_Age_Temp[m][bIdx_i + bIdx_j * modelWidth];
                         float alpha = age / (age + 1.0);
 
                         obs_mean[m] /= ((float)nElemCnt[m]);
                         // update with this mean
-                        if (age < 1)
-                        {
+                        if (age < 1) {
                             m_Mean[m][bIdx_i + bIdx_j * modelWidth] = obs_mean[m];
-                        }
-                        else
-                        {
+                        } else {
                             m_Mean[m][bIdx_i + bIdx_j * modelWidth] = alpha * m_Mean_Temp[m][bIdx_i + bIdx_j * modelWidth] + (1.0 - alpha) * obs_mean[m];
                         }
 
@@ -545,10 +509,8 @@ public:
                 }
             }
         }
-        for (int bIdx_j = 0; bIdx_j < curModelHeight; bIdx_j++)
-        {
-            for (int bIdx_i = 0; bIdx_i < curModelWidth; bIdx_i++)
-            {
+        for (int bIdx_j = 0; bIdx_j < curModelHeight; bIdx_j++) {
+            for (int bIdx_i = 0; bIdx_i < curModelWidth; bIdx_i++) {
                 // TODO: OPTIMIZE THIS PART SO THAT WE DO NOT CALCULATE THIS (LUT)
                 // base (i,j) for this block
                 int idx_base_i;
@@ -556,26 +518,20 @@ public:
                 idx_base_i = ((float)bIdx_i) * BLOCK_SIZE;
                 idx_base_j = ((float)bIdx_j) * BLOCK_SIZE;
 
-                //if(mMask.at<uchar>(idx_base_i, idx_base_j)!=255)
-                //    continue;
-
                 int nMatchIdx = m_ModelIdx[bIdx_i + bIdx_j * modelWidth];
 
                 // obtain observation variance
                 memset(obs_var, 0, sizeof(float) * NUM_MODELS);
                 int nElemCnt[NUM_MODELS];
                 memset(nElemCnt, 0, sizeof(int) * NUM_MODELS);
-                for (int jj = 0; jj < BLOCK_SIZE; ++jj)
-                {
-                    for (int ii = 0; ii < BLOCK_SIZE; ++ii)
-                    {
+                for (int jj = 0; jj < BLOCK_SIZE; ++jj) {
+                    for (int ii = 0; ii < BLOCK_SIZE; ++ii) {
 
                         int idx_i = idx_base_i + ii;
                         int idx_j = idx_base_j + jj;
                         nElemCnt[nMatchIdx]++;
 
-                        if (idx_i < 0 || idx_i >= obsWidth || idx_j < 0 || idx_j >= obsHeight)
-                        {
+                        if (idx_i < 0 || idx_i >= obsWidth || idx_j < 0 || idx_j >= obsHeight) {
                             continue;
                         }
 
@@ -583,41 +539,29 @@ public:
                         float fDiff = pCur[idx_i + idx_j * obsWidthStep] - m_Mean[nMatchIdx][bIdx_i + bIdx_j * modelWidth];
                         pixelDist += pow(fDiff, (int)2);
 
-                        //! 观测方差
-                        obs_var[nMatchIdx] = MAX(obs_var[nMatchIdx], pixelDist);
-
-                        //if(mMask.at<uchar>(idx_j, idx_i)!=255)
-                        //    continue;
-
                         m_DistImg[idx_i + idx_j * obsWidthStep] = pow(pCur[idx_i + idx_j * obsWidthStep] - m_Mean[0][bIdx_i + bIdx_j * modelWidth], (int)2);
 
-                        if (pOutputImg != NULL && m_Age_Temp[0][bIdx_i + bIdx_j * modelWidth] > 1)
-                        {
+                        if (pOutputImg != NULL && m_Age_Temp[0][bIdx_i + bIdx_j * modelWidth] > 1) {
 
-                            //! 与方差值比较，判断其是否属于动态点
                             BYTE valOut = m_DistImg[idx_i + idx_j * obsWidthStep] > VAR_THRESH_FG_DETERMINE * m_Var_Temp[0][bIdx_i + bIdx_j * modelWidth] ? 255 : 0;
-                            pOut[idx_i + idx_j * obsWidthStep] = valOut;
 
+                            pOut[idx_i + idx_j * obsWidthStep] = valOut;
                         }
 
+                        obs_var[nMatchIdx] = MAX(obs_var[nMatchIdx], pixelDist);
                     }
                 }
 
-                for (int m = 0; m < NUM_MODELS; ++m)
-                {
+                for (int m = 0; m < NUM_MODELS; ++m) {
 
-                    if (nElemCnt[m] > 0)
-                    {
+                    if (nElemCnt[m] > 0) {
                         float age = m_Age_Temp[m][bIdx_i + bIdx_j * modelWidth];
                         float alpha = age / (age + 1.0);
 
                         // update with this variance
-                        if (age == 0)
-                        {
+                        if (age == 0) {
                             m_Var[m][bIdx_i + bIdx_j * modelWidth] = MAX(obs_var[m], INIT_BG_VAR);
-                        }
-                        else
-                        {
+                        } else {
                             float alpha_var = alpha;	//MIN(alpha, 1.0 - MIN_NEW_VAR_OBS_PORTION);
                             m_Var[m][bIdx_i + bIdx_j * modelWidth] = alpha_var * m_Var_Temp[m][bIdx_i + bIdx_j * modelWidth] + (1.0 - alpha_var) * obs_var[m];
                             m_Var[m][bIdx_i + bIdx_j * modelWidth] = MAX(m_Var[m][bIdx_i + bIdx_j * modelWidth], MIN_BG_VAR);
@@ -626,9 +570,7 @@ public:
                         // Update Age
                         m_Age[m][bIdx_i + bIdx_j * modelWidth] = m_Age_Temp[m][bIdx_i + bIdx_j * modelWidth] + 1.0;
                         m_Age[m][bIdx_i + bIdx_j * modelWidth] = MIN(m_Age[m][bIdx_i + bIdx_j * modelWidth], MAX_BG_AGE);
-                    }
-                    else
-                    {
+                    } else {
                         m_Var[m][bIdx_i + bIdx_j * modelWidth] = m_Var_Temp[m][bIdx_i + bIdx_j * modelWidth];
                         m_Age[m][bIdx_i + bIdx_j * modelWidth] = m_Age_Temp[m][bIdx_i + bIdx_j * modelWidth];
                     }

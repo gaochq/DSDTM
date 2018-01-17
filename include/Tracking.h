@@ -87,9 +87,6 @@ private:
     //! Get frames have an overlapping field of current view
     void GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame*, double> >& tClose_kfs) const;
 
-    //! Add new features into the frame refer to the detection Grid
-    void AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv::Point2f> &tLast_Pts);
-
     //! Reset mvcStatus
     void Reset_Status();
 
@@ -105,6 +102,7 @@ private:
     //! Motion removal using scene flow
     void MotionRemoval();
     void MotionRemovalTest1();
+    void MotionRemovalTest2();
 
     //! Set the static weight refer to DVO
     void SetMpWeights();

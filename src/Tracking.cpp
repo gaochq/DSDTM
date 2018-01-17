@@ -124,21 +124,6 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
     return mCurrentFrame->Get_Pose().inverse();
 }
 
-void Tracking::AddNewFeatures(std::vector<cv::Point2f> &tCur_Pts, std::vector<cv::Point2f> &tBadPts)
-{
-    std::vector<cv::Point2f>tPts_tmp, tBad_Pts;
-
-    mCurrentFrame->SetFeatures(tCur_Pts, mvcStatus, mvsTrack_cnt);
-    UpdateID(mCurrentFrame->mvFeatures);
-    mCurrentFrame->Set_Mask(mvcStatus, mvsTrack_cnt, tBadPts);
-
-    tCur_Pts.clear();
-    mCurrentFrame->Get_Features(tCur_Pts);
-    //mFeature_detector->Set_ExistingFeatures(mLastFrame.mvFeatures);
-    //mFeature_detector->Set_ExistingFeatures(mCurrentFrame.mvFeatures);
-    mFeature_detector->detect(mCurrentFrame.get(), 10);
-}
-
 bool Tracking::CreateInitialMapRGBD()
 {
     mInitFrame->UndistortFeatures();
@@ -220,12 +205,16 @@ bool Tracking::TrackWithLocalMap()
     int N = mCurrentFrame->mvFeatures.size();
     DLOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
-    MotionRemovalTest1();
+    //MotionRemovalTest1();
     //SetMpWeights();
+    //MotionRemoval();
+    //MotionRemovalTest2();
+
+    mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
 
     Optimizer::PoseOptimization(mCurrentFrame, 10);
     double inialError, finalError;
-    //Optimizer::optimizeGaussNewton(2.0, 10, mCurrentFrame, inialError, finalError);
+    //Optimizer::optimizeGaussNewton(2.0, 10, mCurre                     ntFrame, inialError, finalError);
     if(N < 30)
     {
         DLOG(ERROR)<< "Too few Features tracked" << std::endl;
@@ -308,8 +297,8 @@ void Tracking::GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFra
 
 bool Tracking::NeedKeyframe()
 {
-    if(mCurrentFrame->mvFeatures.size() < 50)
-        return true;
+    //if(mCurrentFrame->mvFeatures.size() < 50)
+    //    return true;
 
     //! This condition frome HeYijia / svo_edgelet
     //! https://github.com/HeYijia/svo_edgelet/blob/master/src/frame_handler_mono.cpp#L501
@@ -340,10 +329,10 @@ bool Tracking::NeedKeyframe()
     Sophus::SE3 tDeltaPose = mpLastKF->Get_Pose().inverse()*mCurrentFrame->Get_Pose();
     double tRotNorm = tDeltaPose.so3().log().norm();
     double tTransNorm = tDeltaPose.translation().norm();
-    if(tRotNorm >= mdMinRotParallax || tTransNorm >= mdMinTransParallax)
-    {
-        return true;
-    }
+    //if(tRotNorm >= mdMinRotParallax || tTransNorm >= mdMinTransParallax)
+    //{
+    //    return true;
+    //}
 
     //! This condition from SVO, and only consider translation in keyframe selection
     double tMinDepth, tMeanDepth;
@@ -366,6 +355,7 @@ void Tracking::CraeteKeyframe()
     mFeature_detector->Set_ExistingFeatures(mCurrentFrame->mvFeatures);
     mFeature_detector->detect(mCurrentFrame.get(), 20);
     mCurrentFrame->UndistortFeatures();
+
 
     KeyFrame *tKFrame = new KeyFrame(mCurrentFrame);
     mMap->AddKeyFrame(tKFrame);
@@ -412,124 +402,37 @@ void Tracking::MotionRemoval()
 {
     int N = mCurrentFrame->mvMapPoints.size();
 
-    Eigen::Matrix<double, 3, Eigen::Dynamic> tCurMps, tLastMps;
-    tCurMps.resize(Eigen::NoChange, N);
-    tLastMps.resize(Eigen::NoChange, N);
-
     std::vector<MapPoint*> tLastMapPoints = mLastFrame->mvMapPoints;
-    Sophus::SE3 tT_c2r = mCurrentFrame->Get_Pose()*mLastFrame->Get_Pose().inverse();
-    double tRelDist = tT_c2r.translation().norm();
-
     std::vector<cv::Point2f> tFeaturesA, tFeaturesB;
-    std::vector<double> tAngles, tDistSets;
-    std::vector<uchar> tStatus;
 
-    int tNum = 0, tNum1 = 0;
+    int tNum = 0;
     for (auto iter = mCurrentFrame->mvMapPoints.begin(); iter!=mCurrentFrame->mvMapPoints.end(); iter++, ++tNum)
     {
         std::vector<MapPoint*>::iterator result = std::find(tLastMapPoints.begin(), tLastMapPoints.end(), (*iter));
         if(result!=tLastMapPoints.end())
         {
-            float z = mCurrentFrame->Get_FeatureDetph(mCurrentFrame->mvFeatures[tNum]);
+            tFeaturesA.push_back(mCurrentFrame->mvFeatures[tNum]->mpx);
 
-            if(z < 0)
-                continue;
-
-            Eigen::Vector3d tCurMp = mCurrentFrame->mvFeatures[tNum]->mNormal*z;
-            cv::Point2f tCurPx = mCurrentFrame->mvFeatures[tNum]->mpx;
-
-            int it = result - tLastMapPoints.begin();
-            Feature *tLastPt = mLastFrame->mvFeatures[it];
-            Eigen::Vector3d tLastMp = tT_c2r*(tLastPt->mNormal*mLastFrame->Get_FeatureDetph(tLastPt));
-
-            Eigen::Vector3d tMpdiff = tLastMp - tCurMp;
-
-            cv::Point2f tLastPx = cv::Point2f(mCam->Camera2Pixel(tLastMp)(0), mCam->Camera2Pixel(tLastMp)(1));
-            //cv::Point2f tLastPx = tLastPt->mpx;
-            tFeaturesA.push_back(tCurPx);
-            tFeaturesB.push_back(tLastPx);
-
-            Eigen::Vector2d tFlow(tCurPx.x - tLastPx.x, tCurPx.y - tLastPx.y);
-            tFlow.normalize();
-
-            double tAngle = atan(tFlow(1)/tFlow(0));
-            /*
-            if(tAngle < 0)
-                tAngle += 2*M_PI;
-            */
-
-            tAngles.push_back(tAngle);
-            tDistSets.push_back(std::abs(tMpdiff.norm() - tRelDist));
-            if(tDistSets.back() > 0.1)
-                tStatus.push_back(1);
-            else
-                tStatus.push_back(0);
-
-            tNum1++;
+            int n = result - tLastMapPoints.begin();
+            tFeaturesB.push_back(mLastFrame->mvFeatures[n]->mpx);
         }
     }
+
     mMoving_detecter->Mod_FastMCD(mCurrentFrame->mColorImg, tFeaturesA, tFeaturesB);
-    //mMoving_detecter->Mod_FrameDiff(mCurrentFrame, mLastFrame, tFeaturesA, tFeaturesB);
-    //mCam->Draw_Lines(mCurrentFrame->mColorImg, tFeaturesA, tFeaturesB);
-    /*
-    tCurMps.conservativeResize(Eigen::NoChange, tNum1);
-    tLastMps.conservativeResize(Eigen::NoChange, tNum1);
-
-    Eigen::MatrixXd tMpDiffer = tCurMps - tLastMps;
-    tMpDiffer.colwise().normalize();
-
-    cv::Mat tSamples(tNum1, 3, CV_32FC1, cv::Scalar::all(0.0));
-    for (size_t i = 0; i < tNum1; ++i)
-    {
-        tSamples.at<float>(i, 0) = tMpDiffer(0, i);
-        tSamples.at<float>(i, 1) = tMpDiffer(1, i);
-        tSamples.at<float>(i, 2) = tMpDiffer(2, i);
-    }
-    tSamples.reshape(1, 0);
-    */
-
-    /*
-    TicToc tc;
-    cv::Mat tSamples(tAngles, false);
-    std::vector<uchar> labels;
-    cv::EM em_model;
-    em_model.set("nclusters", 4);
-    em_model.set("covMatType", EM::COV_MAT_SPHERICAL);
-    em_model.train(tSamples, noArray(), labels, noArray());
-
-    cv::Mat means = em_model.getMat("means");
-    vector<Mat> cov = em_model.getMatVector("covs");
-    double time = tc.toc();
-
-    std::cout << means <<std::endl;
-    double *tvmean = means.ptr<double>(0);
-    //double taverge = tvmean[0];
-    double taverge = tvmean[0];
-    uchar flag = 0;
-    for (int j = 1; j < 3; ++j)
-    {
-        if(taverge < tvmean[j])
-        {
-            taverge = tvmean[j];
-            flag = j;
-        }
-    }
-    //mCam->Show_Features(mCurrentFrame->mColorImg, tFeaturesA, labels, flag);
-
-    mCam->Draw_Features(mCurrentFrame->mColorImg, tFeaturesA, tStatus);
-     */
-    tNum = 0;
 }
 
 void Tracking::MotionRemovalTest1()
 {
-    Sophus::SE3 tT_c2r = mCurrentFrame->Get_Pose()*mLastFrame->Get_Pose().inverse();
+    Sophus::SE3 tPose1 = Sophus::SE3(Eigen::Quaterniond(0.6388, -0.7682, -0.0432, 0.0006 ), Eigen::Vector3d(-0.6518, -3.1123, 1.4229)).inverse();
+    Sophus::SE3 tPose2 = Sophus::SE3(Eigen::Quaterniond(0.6388, -0.7680, -0.0452, 0.0010), Eigen::Vector3d(-0.6600, -3.1136, 1.4237)).inverse();
+    Sophus::SE3 tT_c2r = tPose1*tPose2.inverse();
+    //Sophus::SE3 tT_c2r = mCurrentFrame->Get_Pose()*mLastFrame->Get_Pose().inverse();
 
     int tRows = mCurrentFrame->mColorImg.rows/24;
     int tClos = mCurrentFrame->mColorImg.cols/32;
 
     std::vector<cv::Point2f> tCurPts, tLastPts;
-    std::vector<double> tAngleSets;
+    std::vector<float> tAngleSets;
     int n = 0;
     for (int i = 0; i < tRows; ++i)
     {
@@ -544,24 +447,50 @@ void Tracking::MotionRemovalTest1()
             if(z < 0)
                 continue;
 
-            Eigen::Vector3d tPt = tT_c2r*mCam->Pixel2Camera(tCurPx, z);
+            Eigen::Vector3d tPt = mCam->Pixel2Camera(tCurPx, z);
             tPt = tT_c2r*tPt;
             Eigen::Vector2d tLastPx = mCam->Camera2Pixel(tPt);
 
-            double angle = atan( (tLastPx(1) - tCurPx.y) / (tLastPx(0) - tCurPx.x) );
+            float angle = atan( (tLastPx(1) - tCurPx.y) / (tLastPx(0) - tCurPx.x) );
+            if(angle < 0)
+                angle += 1*M_PI;
 
             tAngleSets.push_back(angle);
 
-            tCurPts.push_back(tCurPx);
-            tLastPts.push_back(cv::Point2f(tLastPx(0), tLastPx(1)));
+
+            tCurPts.push_back(cv::Point2f(tLastPx(0), tLastPx(1)));
+            tLastPts.push_back(tCurPx);
         }
     }
-    //mCam->Draw_Lines(mCurrentFrame->mColorImg, tCurPts, tLastPts);
+    mCam->Draw_Lines(mCurrentFrame->mColorImg, tCurPts, tLastPts);
+    //mMoving_detecter->Mod_FrameDiff(mCurrentFrame, mLastFrame, tCurPts, tLastPts);
+
+    /*
+    // Kmeans
+    Mat points=Mat(tAngleSets, false);
+    points.convertTo(points, CV_32FC1);
+    //points.reshape(1);
+
+    cv::Mat labels;
+    cv::Mat centers;
+    cv::Mat Points = cv::Mat(tAngleSets).reshape(1, tAngleSets.size());
+    cv::kmeans(Points, 3, labels, cv::TermCriteria( TermCriteria::EPS+TermCriteria::COUNT, 10, 1.0), 3, KMEANS_PP_CENTERS, centers);
+    std::vector<uchar> tLabels;
+    for (int k = 0; k < tAngleSets.size(); ++k)
+    {
+        uchar clusterIdx = labels.at<int>(k);
+
+        tLabels.push_back(clusterIdx);
+    }
+    std::cout << centers <<std::endl;
+     mCam->Show_Features(mCurrentFrame->mColorImg, tCurPts, tLabels, 1);
+     */
+
 
     cv::Mat tSamples(tAngleSets, false);
     std::vector<uchar> labels;
     cv::EM em_model;
-    em_model.set("nclusters", 5);
+    em_model.set("nclusters", 4);
     em_model.set("covMatType", EM::COV_MAT_SPHERICAL);
     em_model.train(tSamples, noArray(), labels, noArray());
 
@@ -583,7 +512,110 @@ void Tracking::MotionRemovalTest1()
 
     std::cout << means <<std::endl;
     mCam->Show_Features(mCurrentFrame->mColorImg, tCurPts, labels, flag);
+
     n = 0;
+}
+
+void Tracking::MotionRemovalTest2()
+{
+    cv::Mat imageA = mCurrentFrame->mColorImg;
+    cv::Mat imageB = mLastFrame->mColorImg;
+
+    vector<cv::KeyPoint> KeyPointA, KeyPointB;
+    cv::ORB orb;
+
+    orb.detect(imageA, KeyPointA);
+    orb.detect(imageB, KeyPointB);
+
+    cv::Mat DescriptorsA, DescriptorsB;
+    orb.compute(imageA, KeyPointA, DescriptorsA);
+    orb.compute(imageB, KeyPointB, DescriptorsB);
+
+    // match the keypoints
+    cv::BFMatcher matcher(cv::NORM_HAMMING);
+    vector<cv::DMatch> matches, Good_matches;
+    matcher.match(DescriptorsA, DescriptorsB, matches);
+
+    double mini_dist = 1000, max_dist = 0;
+    for (int i = 0; i < DescriptorsA.rows ; ++i)
+    {
+        double dist = matches[i].distance;
+        if(dist < mini_dist)  mini_dist = dist;
+        if(dist > max_dist)     max_dist =dist;
+    }
+
+    for (int j = 0; j < DescriptorsA.rows; ++j)
+    {
+        if(matches[j].distance <= max(2*mini_dist, 30.0))
+            Good_matches.push_back(matches[j]);
+    }
+
+    vector<int> PointIndexA, PointIndexB;
+    for (int i = 0; i < Good_matches.size(); ++i)
+    {
+        cv::DMatch it = Good_matches[i];
+        PointIndexA.push_back(it.queryIdx);
+        PointIndexB.push_back(it.trainIdx);
+    }
+
+    cv::vector<cv::Point2f> PointsA, PointsB;
+    cv::KeyPoint::convert(KeyPointA, PointsA, PointIndexA);
+    cv::KeyPoint::convert(KeyPointB, PointsB, PointIndexB);
+
+    Sophus::SE3 tT_c2r = mCurrentFrame->Get_Pose()*mLastFrame->Get_Pose().inverse();
+
+    std::vector<double> tAngleSets;
+    std::vector<cv::Point2f> tFeaturesA, tFeaturesB;
+    for (int k = 0; k < PointsA.size(); ++k)
+    {
+        float z = mLastFrame->Get_FeatureDetph(PointsB[k]);
+        if(z < 0)
+            continue;
+
+        Eigen::Vector3d tLastPt = mCam->Pixel2Camera(PointsB[k], 1.0);
+        tLastPt.normalize();
+        tLastPt = tT_c2r*(tLastPt*z);
+        Eigen::Vector2d t_C2LPx = mCam->Camera2Pixel(tLastPt);
+
+        double angle = atan( (t_C2LPx(1) - PointsA[k].y)/(t_C2LPx(0) - PointsA[k].x) );
+        if(angle < 0 )
+            angle += M_PI;
+        tAngleSets.push_back(angle);
+
+        tFeaturesA.push_back(PointsA[k]);
+        tFeaturesB.push_back(cv::Point2f(t_C2LPx(0), t_C2LPx(1)));
+    }
+
+    mCam->Draw_Lines(mCurrentFrame->mColorImg, tFeaturesA, tFeaturesB);
+
+    cv::Mat tSamples(tAngleSets, false);
+    std::vector<uchar> labels;
+    cv::EM em_model;
+    em_model.set("nclusters", 4);
+    em_model.set("covMatType", EM::COV_MAT_SPHERICAL);
+    em_model.train(tSamples, noArray(), labels, noArray());
+
+    cv::Mat means = em_model.getMat("means");
+    vector<Mat> cov = em_model.getMatVector("covs");
+
+    double *tvmean = means.ptr<double>(0);
+    //double taverge = tvmean[0];
+    double taverge = tvmean[0];
+    uchar flag = 0;
+    for (int j = 1; j < 3; ++j)
+    {
+        if(taverge < tvmean[j])
+        {
+            taverge = tvmean[j];
+            flag = j;
+        }
+    }
+
+    std::cout << means <<std::endl;
+    mCam->Show_Features(mCurrentFrame->mColorImg, tFeaturesA, labels, flag);
+
+
+    mini_dist = 0;
 }
 
 void Tracking::SetMpWeights()

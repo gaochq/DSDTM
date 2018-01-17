@@ -40,9 +40,6 @@
 // Inlcludes for this wrapper
 #include "KLTWrapper.h"
 #include "prob_model.h"
-#include "prob_model.h"
-
-#include <Eigen/Core>
 
 using namespace std;
 using namespace cv;
@@ -60,17 +57,13 @@ public:
 
     /* Note that the variable names are legacy */
     KLTWrapper m_LucasKanade;
+    IplImage *imgIpl;
+    IplImage *imgIplTemp;
+    IplImage *imgGray;
+    IplImage *imgGrayPrev;
 
-    cv::Mat     *mImage;
-
-    IplImage    *imgIpl;
-    IplImage    *imgIplTemp;
-    IplImage    *imgGray;
-    IplImage    *imgGrayPrev;
-
-
-    IplImage    *debugCopy;
-    IplImage    *debugDisp;
+    IplImage *debugCopy;
+    IplImage *debugDisp;
 
     ProbModel BGModel;
 
@@ -84,8 +77,8 @@ public:
     MCDWrapper();
     ~MCDWrapper();
 
-    void Init();
-    cv::Mat Run(const cv::Mat ColorImg, double *H, cv::Mat tMask);
+    void Init(IplImage * in_imgIpl);
+    cv::Mat Run(const cv::Mat ColorImg, double *H);
 
 };
 

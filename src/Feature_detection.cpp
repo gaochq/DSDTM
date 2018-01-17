@@ -117,6 +117,10 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold, co
             frame->mvFeatures.push_back(Feature(frame, cv::Point2f(c.x, c.y), c.level));
     });
      */
+    if(frame->mvFeatures.size() > 0)
+    {
+        frame->Set_Mask();
+    }
 
     for (int iter = 0; iter < corners.size(); ++iter)
     {
@@ -135,8 +139,11 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold, co
             Set_CellIndexOccupy(cv::Point2f(tCorner.x, tCorner.y));
             cv::circle(frame->mImgMask, cv::Point2f(tCorner.x, tCorner.y), mCell_size, 0, -1);
             */
-            frame->Add_Feature(new Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level), 0);
+            if(frame->mImgMask.at<uchar>(cv::Point2f(tCorner.x, tCorner.y))!=255)
+                continue;
 
+            frame->Add_Feature(new Feature(frame, cv::Point2f(tCorner.x, tCorner.y), tCorner.level), 0);
+            cv::circle(frame->mImgMask, cv::Point2f(tCorner.x, tCorner.y), mCell_size, 0, -1);
         }
         if(frame->mvFeatures.size()>=mMax_fts)
             break;
@@ -144,18 +151,6 @@ void Feature_detector::detect(Frame* frame, const double detection_threshold, co
 
     ResetGrid();
     frame->mImgMask.release();
-    /*
-    std::vector<cv::Point2f> kps;
-    cv::Mat Tset_img = frame->mColorImg;
-    int tPts_Num = mMax_fts-frame->mvFeatures.size();
-    if(tPts_Num>0)
-    {
-        cv::goodFeaturesToTrack(Tset_img, kps, mMax_fts - frame->mvFeatures.size(), 0.1, 30, frame->mImgMask);
-        std::for_each(kps.begin(), kps.end(), [&](cv::Point2f tPoint) {
-            frame->Add_Feature(Feature(frame, cv::Point2f(tPoint.x, tPoint.y), 1));
-        });
-    }
-     */
 }
 
 //! http://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_feature2d/py_shi_tomasi/py_shi_tomasi.html

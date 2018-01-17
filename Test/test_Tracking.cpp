@@ -91,6 +91,7 @@ int main(int argc, char **argv)
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time << " us" << endl;
     cout <<"Average "<< time/nImages << "us" << endl;
+    cout << tSystem->ReturnKeyFrameSize() << endl;
 
     return  0;
 }

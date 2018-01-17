@@ -26,6 +26,12 @@ int main(int argc, char **argv)
     double aa = ceil(tTestCeil(0));
     double bb = ceil(tTestCeil(1));
 
+    cv::Mat tImage1, tImage2;
+    tImage1 = cv::imread("1.png");
+    tImage2 = cv::imread("2.png");
+    cv::imwrite("1.ppm", tImage1);
+    cv::imwrite("2.ppm", tImage2);
+
     /*
     Eigen::MatrixXd tMatTest(10000, 10000);
     for (int k = 0; k < 10000; ++k)
