@@ -33,7 +33,7 @@ int Sprase_ImgAlign::Run(FramePtr tCurFrame, FramePtr tRefFrame)
 
     if(tRefFrame->mvFeatures.size() < mnMinfts)
     {
-        DLOG(ERROR)<<"Too few features to track" << std::endl;
+        LOG(ERROR)<<"Too few features to track" << std::endl;
         return 0;
     }
 
@@ -320,7 +320,7 @@ void Sprase_ImgAlign::GaussNewtonSolver(Sophus::SE3 &tT_c2r, int level, int & tn
         //! Failed solver
         if(bool(std::isnan(x(0))))
         {
-            DLOG(ERROR) << "Matrix is close to singular!" << std::endl;
+            LOG(ERROR) << "Matrix is close to singular!" << std::endl;
             std::cout<< "error" << std::endl;
             stop = true;
         }

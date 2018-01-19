@@ -40,14 +40,26 @@ public:
     Eigen::Vector3d Get_CameraCnt() const { return mOw; }
     Eigen::Vector2d World2Pixel(const Eigen::Vector3d &Point);
 
+    //! Update conection between other KeyFrames
+    void UpdateConnection();
+
+    //! Update connection between the
+    void AddConnection(KeyFrame *tKF, int tWeight);
+
+    //! Update Covisibility Graph
+    void UpdateCovGraph(KeyFrame *tKF, int tWeight);
+
+    //! Return Covisibility Keyframes
+    std::vector<std::pair<int, KeyFrame*>> GetCovKFrames();
+
     static bool CompareId(KeyFrame* pKF1, KeyFrame* pKF2)
     {
         return pKF1->mlId < pKF2->mlId;
     }
 
 public:
-    unsigned long           mlId;
-    static unsigned long    mlNextId;
+    unsigned long int           mlId;
+    static unsigned long int    mlNextId;
     const long              mRefId;
     const double            mTimeStamp;
 
@@ -58,10 +70,15 @@ public:
     std::map<long int, size_t>      mpFFObservation;   //Feature_id ---> feature order in mvFeatures
 
     FramePtr                mFrame;
+    CameraPtr               mCamera;
 
     cv::Mat                 mClolorImg;
     cv::Mat                 mDepthImg;
-    std::vector<cv::Mat>     mvImg_Pyr;
+    std::vector<cv::Mat>    mvImg_Pyr;
+
+    unsigned long           mlLocalBAKfId;
+    unsigned long           mlFixedLocalBAKfId;
+
 protected:
 
     int     mnVaildMps;     // the number of vaild Feature number
@@ -70,7 +87,9 @@ protected:
     Sophus::SO3             mR_w2c;
     Eigen::Vector3d         mOw;
 
-    CameraPtr               mCamera;
+    std::map<KeyFrame*, int>                    mConnectedKFs;
+    std::vector<std::pair<int, KeyFrame*>>      mOrderedCovGraph;
+
 };
 
 } //DSDTM

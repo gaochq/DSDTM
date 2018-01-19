@@ -258,7 +258,7 @@ bool Frame::Get_SceneDepth(double &tMinDepth, double &tMeanDepth)
 
     if (tDepth_vec.empty())
     {
-        DLOG(ERROR)<< "The scene depth is wrong in frame: %d" << this->mlId;
+        LOG(ERROR)<< "The scene depth is wrong in frame: %d" << this->mlId;
         return false;
     }
 

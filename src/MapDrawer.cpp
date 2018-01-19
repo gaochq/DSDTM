@@ -98,8 +98,23 @@ void MapDrawer::DrawKeyframes()
         Eigen::Vector3d tPose = tvKFrames[j]->Get_CameraCnt();
         glVertex3d(tPose(0), tPose(1), tPose(2));
     }
-
     glEnd();
+
+    /*
+    glLineWidth(mfKeyFrameLineWidth);
+    glColor3f(0.0, 0.0, 1.0);
+    Eigen::Vector3d tPose1 = Eigen::MatrixXd::Zero(3,1);
+    Eigen::Vector3d tPose2 = Eigen::MatrixXd::Zero(3,1);
+    glBegin(GL_LINES);
+    for (int j = 0; j < N; ++j)
+    {
+        tPose2 = tvKFrames[j]->Get_CameraCnt();
+        glVertex3d(tPose1(0), tPose1(1), tPose1(2));
+        glVertex3d(tPose2(0), tPose2(1), tPose2(2));
+        tPose1 = tPose2;
+    }
+    glEnd();
+    */
 }
 
 void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)

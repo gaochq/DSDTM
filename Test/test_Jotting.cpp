@@ -147,13 +147,13 @@ int main(int argc, char **argv)
     a.resize(10, 0);
 
     int b = a[a.size()-1];
-    DLOG(INFO)<< "b = " << b;
+    LOG(INFO)<< "b = " << b;
     
     int c = static_cast<int>(5.10);
-    DLOG(WARNING)<< "c = " << c;
+    LOG(WARNING)<< "c = " << c;
 
     LOG(ERROR)<< "finished";
-    //DLOG(FATAL)<< "finished";
+    //LOG(FATAL)<< "finished";
 
     cv::Mat ModelIMg(480, 640, CV_8UC1, cv::Scalar(255, 255, 255));
     cv::cvtColor(ModelIMg, ModelIMg, CV_GRAY2BGR);

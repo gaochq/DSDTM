@@ -104,9 +104,6 @@ private:
     void MotionRemovalTest1();
     void MotionRemovalTest2();
 
-    //! Set the static weight refer to DVO
-    void SetMpWeights();
-
 public:
     CameraPtr               mCam;               //! Camera
     int                     mMaxPyra_levels;

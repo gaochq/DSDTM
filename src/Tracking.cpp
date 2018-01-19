@@ -98,18 +98,22 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
                 //std::cout << tc.toc() << std::endl;
             }
             else
-                DLOG(ERROR) << "Tracking lost with last frame" << std::endl;
+                LOG(ERROR) << "Tracking lost with last frame" << std::endl;
 
             if(bOK)
             {
                 mMapDrawer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
 
                 if (NeedKeyframe())
+                {
                     CraeteKeyframe();
+                    Optimizer::LocalBundleAdjustment(mpLastKF, mMap);
+                }
+
             }
             else
             {
-                DLOG(ERROR) << "Trakcing lost in LocalMap" << std::endl;
+                LOG(ERROR) << "Trakcing lost in LocalMap" << std::endl;
             }
 
             mProcessedFrames++;
@@ -158,17 +162,17 @@ bool Tracking::CreateInitialMapRGBD()
     }
 
     int N  = tKFrame->GetVaildMpNum();
-    DLOG(INFO) << N << " MapPoints created in Initialization" << endl;
+    LOG(INFO) << N << " MapPoints created in Initialization" << endl;
 
     //TODO write this param into Config flie
     if(N < 100)
     {
-        DLOG(ERROR) << "Initialization failed, Too few MapPoints in Initialization" << endl;
+        LOG(ERROR) << "Initialization failed, Too few MapPoints in Initialization" << endl;
 
         mMap->Release();
         return false;
     }
-    DLOG(INFO) << "Initialization successful!" << endl;
+    LOG(INFO) << "Initialization successful!" << endl;
 
     mpLastKF = tKFrame;
 
@@ -184,11 +188,11 @@ bool Tracking::TrackWithLastFrame()
 
     int tnPts = mSprase_ImgAlign->Run(mCurrentFrame, mLastFrame);
 
-    DLOG(INFO) << "Tracked " << tnPts << "Features" << std::endl;
+    LOG(INFO) << "Tracked " << tnPts << "Features" << std::endl;
     if(tnPts < 20)
     {
         mState = Lost;
-        DLOG(ERROR) << "Too few feature after SpraseImage Align" << std::endl;
+        LOG(ERROR) << "Too few feature after SpraseImage Align" << std::endl;
 
         return false;
     }
@@ -203,7 +207,7 @@ bool Tracking::TrackWithLocalMap()
     mFeature_Alignment->SearchLocalPoints(mCurrentFrame);
 
     int N = mCurrentFrame->mvFeatures.size();
-    DLOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
+    LOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
     //MotionRemovalTest1();
     //SetMpWeights();
@@ -213,11 +217,14 @@ bool Tracking::TrackWithLocalMap()
     mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
 
     Optimizer::PoseOptimization(mCurrentFrame, 10);
-    double inialError, finalError;
-    //Optimizer::optimizeGaussNewton(2.0, 10, mCurre                     ntFrame, inialError, finalError);
+
     if(N < 30)
     {
-        DLOG(ERROR)<< "Too few Features tracked" << std::endl;
+        LOG(WARNING)<< "Too few Features tracked" << std::endl;
+
+        if(N < 20)
+            return false;
+
         return true;
     }
     else
@@ -297,9 +304,6 @@ void Tracking::GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFra
 
 bool Tracking::NeedKeyframe()
 {
-    //if(mCurrentFrame->mvFeatures.size() < 50)
-    //    return true;
-
     //! This condition frome HeYijia / svo_edgelet
     //! https://github.com/HeYijia/svo_edgelet/blob/master/src/frame_handler_mono.cpp#L501
     std::vector<double> tPixDist;
@@ -323,16 +327,14 @@ bool Tracking::NeedKeyframe()
         return true;
     }
 
-    //if(mProcessedFrames<10)
-    //    return false;
-
+    //! If the translation and rotation difference larger than a threshold
     Sophus::SE3 tDeltaPose = mpLastKF->Get_Pose().inverse()*mCurrentFrame->Get_Pose();
     double tRotNorm = tDeltaPose.so3().log().norm();
     double tTransNorm = tDeltaPose.translation().norm();
-    //if(tRotNorm >= mdMinRotParallax || tTransNorm >= mdMinTransParallax)
-    //{
-    //    return true;
-    //}
+    if(tRotNorm >= mdMinRotParallax || tTransNorm >= mdMinTransParallax)
+    {
+        return true;
+    }
 
     //! This condition from SVO, and only consider translation in keyframe selection
     double tMinDepth, tMeanDepth;
@@ -345,6 +347,10 @@ bool Tracking::NeedKeyframe()
            fabs(tRelPose(2)/tMeanDepth < tMeanDepth*1.3))
             return false;
     }
+
+    //! More than 20 frames passed after last KeyFrame insertion
+    if(mProcessedFrames > 20)
+        return true;
 
     return true;
 }
@@ -395,7 +401,11 @@ void Tracking::CraeteKeyframe()
     }
     mpLastKF = tKFrame;
 
-    DLOG(INFO)<< "Create new Keyframe " << tKFrame->mlId << " with " << tNum << " new MapPoints" <<std::endl;
+    tKFrame->UpdateConnection();
+
+    mProcessedFrames = 0;
+
+    LOG(INFO)<< "Create new Keyframe " << tKFrame->mlId << " with " << tNum << " new MapPoints" <<std::endl;
 }
 
 void Tracking::MotionRemoval()
@@ -616,52 +626,6 @@ void Tracking::MotionRemovalTest2()
 
 
     mini_dist = 0;
-}
-
-void Tracking::SetMpWeights()
-{
-    int N = mCurrentFrame->mvMapPoints.size();
-
-    Eigen::Matrix<double, 3, Eigen::Dynamic> tCurMps, tLastMps;
-    tCurMps.resize(Eigen::NoChange, N);
-    tLastMps.resize(Eigen::NoChange, N);
-
-    std::vector<MapPoint*> tLastMapPoints = mLastFrame->mvMapPoints;
-
-    Sophus::SE3 tT_c2w = mCurrentFrame->Get_Pose();
-    Sophus::SE3 tT_c2r = tT_c2w*mLastFrame->Get_Pose().inverse();
-
-    std::vector<MapPoint*> tUpdataMps;
-    std::vector<double> tDistSets;
-    int tNum = 0, tNum1 = 0;
-    for (auto iter = mCurrentFrame->mvMapPoints.begin(); iter!=mCurrentFrame->mvMapPoints.end(); iter++, ++tNum)
-    {
-        std::vector<MapPoint*>::iterator result = std::find(tLastMapPoints.begin(), tLastMapPoints.end(), (*iter));
-        if(result!=tLastMapPoints.end())
-        {
-            Eigen::Vector3d tCurMp = mCurrentFrame->mvFeatures[tNum]->mNormal*mCurrentFrame->Get_FeatureDetph(mCurrentFrame->mvFeatures[tNum]);
-
-            int it = result - tLastMapPoints.begin();
-            Feature *tLastPt = mLastFrame->mvFeatures[it];
-            Eigen::Vector3d tMpdiff = tT_c2r*(tLastPt->mNormal*mLastFrame->Get_FeatureDetph(tLastPt)) - tCurMp;
-
-            tDistSets.push_back(tMpdiff.norm());
-            tUpdataMps.push_back((*iter));
-
-            tNum1++;
-        }
-    }
-
-    std::vector<double> Weights;
-    mCam->VarWithMAD(tDistSets, &Weights);
-    tNum = 0;
-    for (auto it = tUpdataMps.begin(); it!=tUpdataMps.end(); ++it, ++tNum)
-    {
-        (*it)->SetStaticWeight(Weights[tNum]);
-    }
-
-    mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
-    std::cout << "Finish" << std::endl;
 }
 
 void Tracking::SetViewer(Viewer *tViewer)

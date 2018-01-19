@@ -16,7 +16,8 @@ MapPoint::MapPoint()
 }
 
 MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame):
-        mPose(_pose), mFirstFrame(_frame->mlId), mnFound(0)
+        mPose(_pose), mFirstFrame(_frame->mlId), mnFound(0),
+        mlLocalBAKFId(0)
 {
     mlID = mlNextId++;
     mbOutlier = false;
@@ -41,6 +42,12 @@ void MapPoint::Add_Observation(KeyFrame *tKFrame, size_t tFID)
         mObservations[tKFrame] = tFID;
 
     mObsNum++;
+}
+
+std::map<KeyFrame*, size_t> MapPoint::Get_Observations()
+{
+    //TODO add lock
+    return mObservations;
 }
 
 void MapPoint::SetBadFlag()

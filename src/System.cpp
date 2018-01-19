@@ -41,7 +41,7 @@ Sophus::SE3 System::TrackRGBD(cv::Mat &tColorImg, cv::Mat &tDepthImg, const doub
 {
     if(mSensor!=RGB_PinHole)
     {
-        DLOG(ERROR)<< "Called wrong Tracking API!" << std::endl;
+        LOG(ERROR)<< "Called wrong Tracking API!" << std::endl;
         std::cerr<< "Called wrong Tracking API!" << std::endl;
         exit(-1);
     }

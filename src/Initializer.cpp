@@ -44,7 +44,7 @@ bool Initializer::Init_RGBDCam(FramePtr frame)
     mFeature_detector->detect(frame.get(), 20, false);
     if (frame->Get_FeatureSize() < 50)
     {
-        DLOG(ERROR) << "Too few features in Initializer" << std::endl;
+        LOG(ERROR) << "Too few features in Initializer" << std::endl;
 
         return false;
     }

@@ -7,6 +7,7 @@
 
 #include "Camera.h"
 #include "Frame.h"
+#include <Map.h>
 
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"
@@ -25,20 +26,29 @@ public:
     Optimizer();
     ~Optimizer();
 
+    //! Two View BA after FeatureAlignment
     static void PoseOptimization(FramePtr tCurFrame, int tIterations = 100);
+
+    //! Local BA int LcoalMaper
+    static void LocalBundleAdjustment(KeyFrame *tKF, Map *tMap);
+
+    //! Convert SE3 into double array
     static double *se3ToDouble(Eigen::Matrix<double, 6, 1> tso3);
+
+    //! Get the Residual of the problem
     static std::vector<double> GetReprojectReidual(const ceres::Problem &problem);
-    static void optimizeGaussNewton(const double reproj_thresh, const size_t n_iter, FramePtr &frame, double& error_init, double& error_final);
+
+    //! Get the jacobian of SE3([t|R])
     static void jacobian_xyz2uv(const Eigen::Vector3d& xyz_in_f, Eigen::Matrix<double,2,6>& J);
 };
 
 
 //! 参数块的个数和后面的雅克比矩阵的维数要对应
 //! The number of parameter blocks should be equal to jacobian
-class PoseSolver_Problem: public ceres::SizedCostFunction<2, 6>
+class BAPoseOnly_Problem: public ceres::SizedCostFunction<2, 6>
 {
 public:
-    PoseSolver_Problem(const Eigen::Vector3d &tMapPoint, const Feature* tFeature, const CameraPtr tCamera):
+    BAPoseOnly_Problem(const Eigen::Vector3d &tMapPoint, const Feature* tFeature, const CameraPtr tCamera):
             mMapPoint(tMapPoint), mFeature(tFeature), mCamera(tCamera)
     {
     }
@@ -106,10 +116,10 @@ protected:
 };
 
 //! 参数块的个数和后面的雅克比矩阵的维数要对应
-class TwoViewBA_Problem: public ceres::SizedCostFunction<2, 6, 3>
+class FullBA_Problem: public ceres::SizedCostFunction<2, 6, 3>
 {
 public:
-    TwoViewBA_Problem(const Feature* tFeature, const CameraPtr tCamera):
+    FullBA_Problem(const Feature* tFeature, const CameraPtr tCamera):
                     mFeature(tFeature), mCamera(tCamera)
     {
         mfx = mIntrinsic(0, 0);

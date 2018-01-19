@@ -29,6 +29,7 @@ public:
 
     //! Add Mappoint observation
     void Add_Observation(KeyFrame *tKFrame, size_t tfID);
+    std::map<KeyFrame*, size_t> Get_Observations();
 
     //! Set mappoint bad
     void SetBadFlag();
@@ -47,6 +48,7 @@ public:
     void SetStaticWeight(double tWeight);
     double GetStaticWeight();
 
+
 protected:
 
 public:
@@ -54,6 +56,7 @@ public:
     static unsigned long    mlNextId;
     unsigned long           mLastSeenFrameId;
     unsigned long           mLastProjectedFrameId;
+    unsigned long           mlLocalBAKFId;
 
     bool                    mbOutlier;
 

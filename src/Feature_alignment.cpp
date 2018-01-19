@@ -98,10 +98,7 @@ bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
         tFindMatch = FindMatchDirect(iter->mMpPoint, tFrame, iter->mPx, tLevel);
 
         if(!tFindMatch)
-        {
-            //tCell->erase(iter);
             continue;
-        }
 
         iter->mMpPoint->IncreaseFound();
 
@@ -111,7 +108,11 @@ bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
         tFrame->Add_Feature(tFeature);
         tFrame->Add_MapPoint(iter->mMpPoint);
         //TODO Add Feature into Frame
+
+        return true;
     }
+
+    return false;
 }
 
 bool Feature_Alignment::CellComparator(Candidate &c1, Candidate &c2)

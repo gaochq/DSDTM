@@ -47,24 +47,14 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
 
         Eigen::Vector2d tObserves((*iter)->mpx.x,(*iter)->mpx.y);
 
-        /*
-        tPointsets[tNum][0] = tPoint(0);
-        tPointsets[tNum][1] = tPoint(1);
-        tPointsets[tNum][2] = tPoint(2);
-
-        // only optimize camera pose
-        TwoViewBA_Problem* p = new TwoViewBA_Problem((*iter), tCurFrame->mCamera);
-        problem.AddResidualBlock(p, NULL, tT_c2rArray.data(), tPointsets[tNum]);
-        */
-
-        PoseSolver_Problem *p = new PoseSolver_Problem(tPoint, (*iter), tCurFrame->mCamera);
+        BAPoseOnly_Problem *p = new BAPoseOnly_Problem(tPoint, (*iter), tCurFrame->mCamera);
         problem.AddResidualBlock(p, NULL, tT_c2rArray.data());
 
     }
 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::SPARSE_SCHUR;
-//    options.minimizer_progress_to_stdout = true;
+    //options.minimizer_progress_to_stdout = true;
     options.trust_region_strategy_type = ceres::DOGLEG;
     options.max_num_iterations = 100;
 
@@ -74,23 +64,152 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     //std::cout<< "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
     tCurFrame->Set_Pose(Sophus::SE3(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>()));
 
-    /*
-    tNum = 0;
-    for (auto iter = tCurFrame->mvMapPoints.begin(); iter!=tCurFrame->mvMapPoints.end();++iter)
+    //std::vector<double> tvdResidual = GetReprojectReidual(problem);
+    //std::cout << summary.FullReport() << std::endl;
+
+    //std::cout <<"Residual Sum: "<<std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
+}
+
+void Optimizer::LocalBundleAdjustment(KeyFrame *tKFrame, Map *tMap)
+{
+    std::vector<KeyFrame*> tvLocalKeyFrmaes;
+    tvLocalKeyFrmaes.push_back(tKFrame);
+
+    //! Get Covibility keyframes and all the mappoints they observe
+    std::vector<std::pair<int, KeyFrame*>> tvCovKeyFrames  = tKFrame->GetCovKFrames();
+    for(auto &iter : tvCovKeyFrames)
     {
-        if(!tCurFrame->mvFeatures[tNum]->mbInitial)
-            continue;
+        KeyFrame *tKf = iter.second;
+        //TODO check the quality of this CovKeyframe
 
-        (*iter)->Set_Pose(Eigen::Map<Eigen::Matrix<double, 3, 1>>(tPointsets[tNum]));
-        tCurFrame->mvFeatures[tNum]->mPoint = Eigen::Map<Eigen::Matrix<double, 3, 1>>(tPointsets[tNum]);
+        tKf->mlLocalBAKfId = tKFrame->mlId;
+        tvLocalKeyFrmaes.push_back(iter.second);
     }
-     */
+
+    std::vector<MapPoint*> tvLocalMapPoints;
+    for (const auto &iterKF : tvLocalKeyFrmaes)
+    {
+        std::vector<MapPoint*> tvMps = iterKF->mvMapPoints;
+        for (auto &iterMp : tvMps)
+        {
+            if(!iterMp)
+                continue;
+
+            if(iterMp->IsBad())
+                continue;
+
+            if(iterMp->mlLocalBAKFId!=tKFrame->mlId)
+            {
+                iterMp->mlLocalBAKFId = tKFrame->mlId;
+                tvLocalMapPoints.push_back(iterMp);
+            }
+        }
+    }
+
+    //! Get Keyframes observe the lcoalMappoints but not belong to tvLocalKeyFrames
+    std::vector<KeyFrame*> tvFixedLocalFrames;
+    for (const auto &itMp : tvLocalMapPoints)
+    {
+        std::map<KeyFrame*, size_t > tmObservations = itMp->Get_Observations();
+        for (auto &itKf : tmObservations)
+        {
+            KeyFrame *tKf = itKf.first;
+
+            if(tKf->mlLocalBAKfId!=tKFrame->mlId && tKf->mlFixedLocalBAKfId!=tKFrame->mlId)
+            {
+                tKf->mlFixedLocalBAKfId = tKFrame->mlId;
+                tvFixedLocalFrames.push_back(tKf);
+            }
+        }
+    }
+
+    //! Construct ceres problem
+    ceres::Problem problem;
 
 
-//    std::vector<double> tvdResidual = GetReprojectReidual(problem);
-//    std::cout << summary.FullReport() << std::endl;
+    //! Add Keyframe pose
+    std::map<unsigned long, Eigen::Matrix<double, 6, 1>> tKFPoseSets;
+    std::map<unsigned long, KeyFrame*> tSolveKFSets;
 
-//    std::cout <<"Residual Sum: "<<std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
+    for (const auto &itKF : tvLocalKeyFrmaes)
+    {
+        Eigen::Matrix<double, 6, 1> tT_c2w;
+        Sophus::SE3 tPose = itKF->Get_Pose();
+        tT_c2w.block(0, 0, 3, 1) = itKF->Get_Pose().translation();
+        tT_c2w.block(3, 0, 3, 1) = itKF->Get_Pose().so3().log();
+
+        tKFPoseSets[itKF->mlId] = tT_c2w;
+        tSolveKFSets[itKF->mlId] = itKF;
+
+        ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
+        problem.AddParameterBlock(tKFPoseSets[itKF->mlId].data(), SIZE_POSE, local_parameterization);
+
+        if(itKF->mlId == 0)
+            problem.SetParameterBlockConstant(tKFPoseSets[itKF->mlId].data());
+    }
+
+    for (const auto &itKF : tvFixedLocalFrames)
+    {
+        Eigen::Matrix<double, 6, 1> tT_c2w;
+        Sophus::SE3 tPose = itKF->Get_Pose();
+        tT_c2w.block(0, 0, 3, 1) = itKF->Get_Pose().translation();
+        tT_c2w.block(3, 0, 3, 1) = itKF->Get_Pose().so3().log();
+
+        tKFPoseSets[itKF->mlId] = tT_c2w;
+        tSolveKFSets[itKF->mlId] = itKF;
+
+        ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
+        problem.AddParameterBlock(tKFPoseSets[itKF->mlId].data(), SIZE_POSE, local_parameterization);
+        problem.SetParameterBlockConstant(tKFPoseSets[itKF->mlId].data());
+    }
+
+    //! Add MapPoint and residual
+    std::map<size_t, Eigen::Vector3d> tMpPoseSets;
+    std::map<size_t, MapPoint*> tSolveMpSets;
+    for (const auto &itMp : tvLocalMapPoints)
+    {
+        Eigen::Vector3d tPose = itMp->Get_Pose();
+
+        tMpPoseSets[itMp->mlID] = tPose;
+        tSolveMpSets[itMp->mlID] = itMp;
+
+        std::map<KeyFrame*, size_t> tMpObserves = itMp->Get_Observations();
+        for (const auto &itKf : tMpObserves)
+        {
+            KeyFrame *tKf = itKf.first;
+
+            if(!tKFPoseSets.count(tKf->mlId))
+                continue;
+
+            FullBA_Problem *p = new FullBA_Problem(tKf->mvFeatures[itKf.second], tKf->mCamera);
+            problem.AddResidualBlock(p, NULL, tKFPoseSets[tKf->mlId].data(), tMpPoseSets[itMp->mlID].data());
+        }
+    }
+
+    ceres::Solver::Options options;
+    options.linear_solver_type = ceres::SPARSE_SCHUR;
+    options.minimizer_progress_to_stdout = true;
+    options.trust_region_strategy_type = ceres::DOGLEG;
+    options.max_num_iterations = 100;
+
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+
+    //! Update the pose of Kf and Mp
+    for (const auto &itKfPose : tKFPoseSets)
+    {
+        Sophus::SE3 tT_c2w = Sophus::SE3(Sophus::SO3::exp(itKfPose.second.tail<3>()), itKfPose.second.head<3>());
+
+        tSolveKFSets[itKfPose.first]->Set_Pose(tT_c2w);
+    }
+
+    for (const auto &itMpPose : tMpPoseSets)
+    {
+        //TODO check the quality of the MapPoint
+        tSolveMpSets[itMpPose.first]->Set_Pose(itMpPose.second);
+    }
+
+    std::cout << summary.FullReport() << std::endl;
 }
 
 double *Optimizer::se3ToDouble(Eigen::Matrix<double, 6, 1> tse3)
@@ -129,152 +248,7 @@ std::vector<double> Optimizer::GetReprojectReidual(const ceres::Problem &problem
     return tResult;
 }
 
-void Optimizer::optimizeGaussNewton(const double reproj_thresh, const size_t n_iter, FramePtr &frame, double& error_init,
-                                    double& error_final)
-{
-    //! Step1: 初始化
-    // init
-    size_t num_obs;
-    double chi2(0.0);
-    std::vector<double> chi2_vec_init, chi2_vec_final;
 
-    Sophus::SE3 T_old(frame->Get_Pose());
-    Eigen::Matrix<double, 6, 6> A;
-    Eigen::Matrix<double, 6, 1> b;
-
-    // compute the scale of the error for robust estimation
-    //! Step2：计算重投影误差
-    std::vector<float> errors;
-    errors.reserve(frame->mvFeatures.size());
-    chi2_vec_init.reserve(num_obs);
-    chi2_vec_final.reserve(num_obs);
-
-    for(auto it=frame->mvFeatures.begin(); it!=frame->mvFeatures.end(); ++it)
-    {
-        if(!((*it)->mbInitial))
-            continue;
-
-        //! 将3D点变换到当前帧坐标系下
-        Eigen::Vector3d tPose = frame->Get_Pose() * (*it)->mPoint;
-        Eigen::Vector2d e = Eigen::Vector2d((*it)->mNormal(0)/(*it)->mNormal(2),(*it)->mNormal(1)/(*it)->mNormal(2)) -
-                            Eigen::Vector2d(tPose(0)/tPose(2), tPose(1)/tPose(2));
-        //! 这种尺度变换的原理是什么呢
-        e *= 1.0 / (1<<(*it)->mlevel);
-
-        errors.push_back(e.norm());
-    }
-    if(errors.empty())
-        return;
-
-    num_obs = errors.size();
-    chi2_vec_init.reserve(num_obs);
-    chi2_vec_final.reserve(num_obs);
-
-    //! Step3: 迭代优化当前帧位姿
-    for(size_t iter=0; iter<n_iter; iter++)
-    {
-        b.setZero();
-        A.setZero();
-        double new_chi2(0.0);
-
-        //! Step3.1：计算残差
-        // compute residual
-        for(auto it=frame->mvFeatures.begin(); it!=frame->mvFeatures.end(); ++it)
-        {
-            if(!((*it)->mbInitial))
-                continue;
-            Eigen::Matrix<double,2,6> J;
-
-            //！ 当前帧坐标系下的3D点
-            Eigen::Vector3d xyz_f(frame->Get_Pose() * (*it)->mPoint);
-
-            //! 计算 de/dδT
-            jacobian_xyz2uv(xyz_f, J);
-
-            //! 相机归一化平面上的误差
-            Eigen::Vector3d tPose = frame->Get_Pose() * (*it)->mPoint;
-            Eigen::Vector2d e = Eigen::Vector2d((*it)->mNormal(0)/(*it)->mNormal(2),(*it)->mNormal(1)/(*it)->mNormal(2)) -
-                                Eigen::Vector2d(tPose(0)/tPose(2), tPose(1)/tPose(2));
-            double sqrt_inv_cov = 1.0 / (1<<(*it)->mlevel);
-            e *= sqrt_inv_cov;
-
-            if(iter == 0)
-                chi2_vec_init.push_back(e.squaredNorm()); // just for debug
-            J *= sqrt_inv_cov;
-
-
-
-            //! 计算高斯牛顿的增量方程，AdT = b
-            A.noalias() += J.transpose()*J;
-            b.noalias() -= J.transpose()*e;
-            new_chi2 += e.squaredNorm();
-        }
-
-        //! 求解更新的位姿
-        // solve linear system
-        //! 求解的表达是李代数的形式
-        const Eigen::Matrix<double, 6, 1> dT(A.ldlt().solve(b));
-
-        // check if error increased
-        if((iter > 0 && new_chi2 > chi2) || (bool) std::isnan((double)dT[0]))
-        {
-            /*
-            if(true)
-                std::cout << "it " << iter
-                          << "\t FAILURE \t new_chi2 = " << new_chi2 << std::endl;
-            frame->Set_Pose(T_old); // roll-back
-             */
-            break;
-        }
-
-        // update the model
-        Sophus::SE3 T_new = Sophus::SE3::exp(dT)*frame->Get_Pose();
-        T_old = frame->Get_Pose();
-        frame->Set_Pose(T_new);
-        chi2 = new_chi2;
-        /*
-        if(true)
-            std::cout << "it " << iter
-                      << "\t Success \t new_chi2 = " << new_chi2
-                      << "\t norm(dT) = " << dT.cwiseAbs().maxCoeff() << std::endl;
-        */
-        // stop when converged
-        if(dT.cwiseAbs().maxCoeff() <= 1e-10)
-            break;
-    }
-
-    double reproj_thresh_scaled = reproj_thresh / 315;
-    size_t n_deleted_refs = 0;
-    int tNum = 0;
-    for(auto it=frame->mvFeatures.begin(); it!=frame->mvFeatures.end(); ++it, ++tNum)
-    {
-        if(!((*it)->mbInitial))
-            continue;
-
-        Eigen::Vector3d tPose = frame->Get_Pose() * (*it)->mPoint;
-        Eigen::Vector2d e = Eigen::Vector2d((*it)->mNormal(0)/(*it)->mNormal(2),(*it)->mNormal(1)/(*it)->mNormal(2)) -
-                            Eigen::Vector2d(tPose(0)/tPose(2), tPose(1)/tPose(2));
-        double sqrt_inv_cov = 1.0 / (1<<(*it)->mlevel);
-        e *= sqrt_inv_cov;
-        chi2_vec_final.push_back(e.squaredNorm());
-        if(e.norm() > reproj_thresh_scaled)
-        {
-            // we don't need to delete a reference in the point since it was not created yet
-            //(*it)->point = NULL;
-            frame->mvMapPoints[tNum]->SetBadFlag();
-            (*it)->mbInitial = false;
-            ++n_deleted_refs;
-        }
-    }
-
-    error_init=0.0;
-    error_final=0.0;
-    if(!chi2_vec_init.empty())
-        error_init = sqrt(frame->mCamera->GetMedian(chi2_vec_init))*315;
-    if(!chi2_vec_final.empty())
-        error_final = sqrt(frame->mCamera->GetMedian(chi2_vec_final))*315;
-
-}
 
 void Optimizer::jacobian_xyz2uv(const Eigen::Vector3d &xyz_in_f, Eigen::Matrix<double, 2, 6> &J)
 {
