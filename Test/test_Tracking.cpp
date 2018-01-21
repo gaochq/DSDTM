@@ -79,13 +79,6 @@ int main(int argc, char **argv)
 //        clahe->apply(ColorImage, Image_tmp);
 
         Sophus::SE3 tPose = tSystem->TrackRGBD(ColorImage, DepthIMage, vTimestamps[i]);
-
-        //Image_tmp.release();
-
-        if(i > nImages - 10)
-        {
-            std::cout << vTimestamps[i] << "------" << tPose.translation().transpose() << std::endl;
-        }
     }
     tSystem->SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();

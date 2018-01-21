@@ -122,10 +122,6 @@ public:
     FullBA_Problem(const Feature* tFeature, const CameraPtr tCamera):
                     mFeature(tFeature), mCamera(tCamera)
     {
-        mfx = mIntrinsic(0, 0);
-        mfy = mIntrinsic(1, 1);
-        mcx = mIntrinsic(0, 2);
-        mcy = mIntrinsic(1, 2);
     }
 
     virtual bool Evaluate(double const* const* parameters, double* residuals, double **jacobians) const
