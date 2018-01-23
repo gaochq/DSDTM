@@ -34,9 +34,12 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
     problem.AddParameterBlock(tT_c2rArray.data(), SIZE_POSE, local_parameterization);
 
-    std::vector<MapPoint*> tvMpts;
-    std::vector<Eigen::Vector3d> tvMptPoses;
-    for (auto iter = tCurFrame->mvFeatures.begin(); iter!=tCurFrame->mvFeatures.end(); ++iter)
+    size_t N = tCurFrame->Get_Observations().size();
+    std::map<int, MapPoint*> tvMpts;
+    std::map<int, Eigen::Vector3d> tvMptPoses;
+
+    int tNum = 0;
+    for (auto iter = tCurFrame->mvFeatures.begin(); iter!=tCurFrame->mvFeatures.end(); ++iter, ++tNum)
     {
         if(!(*iter)->Mpt)
             continue;
@@ -47,23 +50,24 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
         if(!((*iter)->mbInitial))
             continue;
 
-        MapPoint *tMp = (*iter)->Mpt;
-        Eigen::Vector3d tPose = tMp->Get_Pose();
-        tvMpts.push_back(tMp);
-        tvMptPoses.push_back(tPose);
+        Eigen::Vector3d tPose = (*iter)->Mpt->Get_Pose();
+        tvMpts[tNum] = (*iter)->Mpt;
+        tvMptPoses[tNum] = tPose;
 
-        BAPoseOnly_Problem *p = new BAPoseOnly_Problem(tvMptPoses.back(), (*iter), tCurFrame->mCamera);
-        problem.AddResidualBlock(p, NULL, tT_c2rArray.data());
+        //BAPoseOnly_Problem *p = new BAPoseOnly_Problem(tvMptPoses.back(), (*iter), tCurFrame->mCamera);
+        //problem.AddResidualBlock(p, NULL, tT_c2rArray.data());
 
+        problem.AddParameterBlock(tvMptPoses[tNum].data(), 3);
+        problem.SetParameterBlockConstant(tvMptPoses[tNum].data());
 
-        //FullBA_Problem *p = new FullBA_Problem((*iter), tCurFrame->mCamera);
-        //problem.AddResidualBlock(p, NULL, tT_c2rArray.data(), tvMptPoses.back().data());
+        FullBA_Problem *p = new FullBA_Problem((*iter), tCurFrame->mCamera);
+        problem.AddResidualBlock(p, NULL, tT_c2rArray.data(), tvMptPoses[tNum].data());
     }
 
     ceres::Solver::Options options;
-    options.linear_solver_type = ceres::SPARSE_SCHUR;
+    //options.linear_solver_type = ceres::DENSE_SCHUR;
     //options.minimizer_progress_to_stdout = true;
-    options.trust_region_strategy_type = ceres::DOGLEG;
+    //options.trust_region_strategy_type = ceres::DOGLEG;
     options.max_num_iterations = 100;
 
     ceres::Solver::Summary summary;
@@ -71,15 +75,13 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
 
     tCurFrame->Set_Pose(Sophus::SE3(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>()));
 
-    /*
-    int tNum = 0;
+
+    tNum = 0;
     for (auto &it : tvMpts)
     {
-        it->Set_Pose(tvMptPoses[tNum]);
+        it.second->Set_Pose(tvMptPoses[tNum]);
         tNum++;
     }
-     */
-
 
     //std::vector<double> tvdResidual = GetReprojectReidual(problem);
     //std::cout << summary.FullReport() << std::endl;
