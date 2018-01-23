@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     int nImages = vstrImageFilenamesRGB.size();
     cv::Mat ColorImage, Image_tmp, DepthIMage;
     double start = static_cast<double>(cvGetTickCount());
-    for (int i = 0; i < nImages-170; ++i)
+    for (int i = 0; i < nImages; ++i)
     {
         std::cout <<"Frame " << i << "---->   ";
 

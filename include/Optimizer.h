@@ -134,6 +134,9 @@ public:
     {
     }
 
+    ~FullBA_Problem()
+    {}
+
     virtual bool Evaluate(double const* const* parameters, double* residuals, double **jacobians) const
     {
         //! Camera pose: Convert se3 into SO3

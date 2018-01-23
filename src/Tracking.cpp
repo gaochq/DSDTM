@@ -108,8 +108,8 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
                 {
                     CraeteKeyframe();
 
-                    //if(mMap->ReturnKeyFramesSize() > 2)
-                    //    Optimizer::LocalBundleAdjustment(mpLastKF, mMap);
+                    if(mMap->ReturnKeyFramesSize() > 2)
+                        Optimizer::LocalBundleAdjustment(mpLastKF, mMap);
                 }
 
             }

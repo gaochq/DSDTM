@@ -84,6 +84,7 @@ void MapPoint::SetBadFlag()
         tKf->Erase_MapPointMatch(iter.second);
     }
 
+    LOG(INFO)<< "MapPoint " << this->mlID << " deleted" <<std::endl;
     mMap->EraseMapPoint(this);
 }
 
@@ -99,24 +100,27 @@ int MapPoint::Get_ObserveNums() const
 
 bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *&tKframe) const
 {
-    Eigen::Vector3d tPt_frame = mPose - tFrame->Get_CameraCnt();
+    Eigen::Vector3d tPt_frame = tFrame->Get_CameraCnt() - mPose;
     tPt_frame.normalize();
 
     double tMin_angle = 0;
+    auto min_it = mObservations.begin();
     for (auto iter = mObservations.begin(); iter != mObservations.end(); iter++)
     {
-        Eigen::Vector3d tPt_refer = mPose - iter->first->Get_CameraCnt();
+        Eigen::Vector3d tPt_refer = iter->first->Get_CameraCnt() - mPose;
         tPt_refer.normalize();
 
         double tCos_angle = tPt_refer.dot(tPt_frame);
         if(tCos_angle > tMin_angle)
         {
             tMin_angle = tCos_angle;
-            tFeature = iter->first->mvFeatures[iter->second];
-
-            tKframe = iter->first;
+            min_it = iter;
         }
     }
+
+    tFeature = min_it->first->mvFeatures[min_it->second];
+
+    tKframe = min_it->first;
 
     if(tMin_angle < 0.5)
         return false;
