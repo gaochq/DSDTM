@@ -90,7 +90,7 @@ void Sprase_ImgAlign::GetJocabianMat(int tLevel)
                              mRefFrame->mvFeatures[i]->mpx.y;
         tRefPts.col(tNum) = tRefPts.col(tNum)*tScale;
 
-        tRefPoints.col(tNum) = mRefFrame->mvFeatures[i]->mPoint;
+        tRefPoints.col(tNum) = mRefFrame->mvFeatures[i]->Mpt->Get_Pose();
 
         if( tRefPoints.col(tNum).isZero(0) || tRefPts(0, tNum) - boarder < 0 || tRefPts(1, tNum) - boarder < 0 ||
             tRefPts(0, tNum) + boarder >= tRefIMg.cols || tRefPts(1, tNum) + boarder >= tRefIMg.rows)

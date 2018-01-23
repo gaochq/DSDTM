@@ -62,7 +62,8 @@ add_library(${PROJECT_NAME} SHARED
 	src/Sprase_ImageAlign.cpp
 	src/Viewer.cpp
 	src/MapDrawer.cpp
-	src/System.cpp)
+	src/System.cpp
+	src/Utils.cpp)
 
 target_link_libraries(${PROJECT_NAME}
 		${OpenCV_LIBS}

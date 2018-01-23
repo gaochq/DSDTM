@@ -107,7 +107,9 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
                 if (NeedKeyframe())
                 {
                     CraeteKeyframe();
-                    Optimizer::LocalBundleAdjustment(mpLastKF, mMap);
+
+                    //if(mMap->ReturnKeyFramesSize() > 2)
+                        //Optimizer::LocalBundleAdjustment(mpLastKF, mMap);
                 }
 
             }
@@ -144,18 +146,18 @@ bool Tracking::CreateInitialMapRGBD()
         if(z < 0)
             continue;
 
-        //Eigen::Vector3d tPose = mInitFrame->UnProject(mInitFrame->mvFeatures[i]->mpx, z);
-        Eigen::Vector3d tPose = mInitFrame->mvFeatures[i]->mNormal*z;
-        tPose = mInitFrame->Get_Pose().inverse()*tPose;
+        Eigen::Vector3d tPose = mInitFrame->UnProject(mInitFrame->mvFeatures[i]->mpx, z);
+        //Eigen::Vector3d tPose = mInitFrame->mvFeatures[i]->mNormal*z;
+        //tPose = mInitFrame->Get_Pose().inverse()*tPose;
 
-        MapPoint *pMp = new MapPoint(tPose, tKFrame);
+        MapPoint *pMp = new MapPoint(tPose, tKFrame, mMap);
 
         tKFrame->Add_MapPoint(pMp, i);
 
         pMp->Add_Observation(tKFrame, i);
 
         //Add MapPoint into Current Frame for image alignment and BA
-        mInitFrame->mvFeatures[i]->SetPose(tPose);
+        mInitFrame->mvFeatures[i]->SetPose(pMp);
         mInitFrame->Add_MapPoint(pMp, i);
 
         mMap->AddMapPoint(pMp);
@@ -209,10 +211,7 @@ bool Tracking::TrackWithLocalMap()
     int N = mCurrentFrame->mvFeatures.size();
     LOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
-    //MotionRemovalTest1();
-    //SetMpWeights();
     //MotionRemoval();
-    //MotionRemovalTest2();
 
     mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
 
@@ -309,11 +308,14 @@ bool Tracking::NeedKeyframe()
     std::vector<double> tPixDist;
     for (auto it = mpLastKF->mvFeatures.begin(); it !=mpLastKF->mvFeatures.end() ; ++it)
     {
-        if((*it)->mPoint.isZero())
+        if(!(*it)->Mpt)
             continue;
 
-        Eigen::Vector2d tPix1 = mCurrentFrame->World2Pixel((*it)->mPoint);
-        Eigen::Vector2d tPix2 = mpLastKF->World2Pixel((*it)->mPoint);
+        if((*it)->Mpt->IsBad())
+            continue;
+
+        Eigen::Vector2d tPix1 = mCurrentFrame->World2Pixel((*it)->Mpt->Get_Pose());
+        Eigen::Vector2d tPix2 = mpLastKF->World2Pixel((*it)->Mpt->Get_Pose());
         Eigen::Vector2d tPixDiff = tPix1 - tPix2;
 
         tPixDist.push_back(tPixDiff.norm());
@@ -383,17 +385,17 @@ void Tracking::CraeteKeyframe()
         if(z < 0)
             continue;
 
-        //Eigen::Vector3d tPose = mCurrentFrame->UnProject(tFeature->mpx, z);
-        Eigen::Vector3d tPose = tFeature->mNormal*z;
-        tPose = mCurrentFrame->Get_Pose().inverse()*tPose;
+        Eigen::Vector3d tPose = mCurrentFrame->UnProject(tFeature->mpx, z);
+        //Eigen::Vector3d tPose = tFeature->mNormal*z;
+        //tPose = mCurrentFrame->Get_Pose().inverse()*tPose;
 
-        MapPoint *tMp = new MapPoint(tPose, tKFrame);
+        MapPoint *tMp = new MapPoint(tPose, tKFrame, mMap);
 
         tKFrame->Add_MapPoint(tMp, i);
 
         tMp->Add_Observation(tKFrame, i);
 
-        tFeature->SetPose(tPose);
+        tFeature->SetPose(tMp);
         mCurrentFrame->Add_MapPoint(tMp, i);
 
         mMap->AddMapPoint(tMp);

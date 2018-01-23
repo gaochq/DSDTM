@@ -19,9 +19,10 @@ public:
     KeyFrame(const FramePtr _frame);
     ~KeyFrame();
 
-    //! Add MapPoint and the observation between mappoint and features
-    void Add_MapPoint(MapPoint *tMPoint, int tIdx);
-    void Add_Observations(size_t tId, MapPoint *tMPoint);
+    //! Add and Erase MapPoint
+    void Add_MapPoint(MapPoint *tMpPoint, int tIdx);
+    void Erase_MapPointMatch(MapPoint *tMpPoint);
+    void Erase_MapPointMatch(int tIdx);
 
     //! Get the number of vaild mappoints
     int GetVaildMpNum() const { return mnVaildMps;}

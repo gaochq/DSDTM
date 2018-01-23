@@ -103,7 +103,7 @@ bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
         iter->mMpPoint->IncreaseFound();
 
         Feature *tFeature = new Feature(tFrame.get(), cv::Point2f(iter->mPx(0), iter->mPx(1)), tLevel);
-        tFeature->SetPose(iter->mMpPoint->Get_Pose());
+        tFeature->SetPose(iter->mMpPoint);
 
         tFrame->Add_Feature(tFeature);
         tFrame->Add_MapPoint(iter->mMpPoint);
@@ -159,7 +159,7 @@ Eigen::Matrix2d Feature_Alignment::SolveAffineMatrix(KeyFrame *tReferKframe, con
     const int Half_PatchLarger = mHalf_PatchSize + 1;
     const int tLevel = tReferFeature->mlevel;
 
-    Eigen::Vector3d tRefPoint = (tReferKframe->Get_CameraCnt() - tReferFeature->mPoint).norm()*tReferFeature->mNormal;
+    Eigen::Vector3d tRefPoint = (tReferKframe->Get_CameraCnt() - tReferFeature->Mpt->Get_Pose()).norm()*tReferFeature->mNormal;
 
     cv::Point2f tRefPx = tReferFeature->mpx;
 

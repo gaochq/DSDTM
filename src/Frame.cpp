@@ -148,24 +148,6 @@ void Frame::Get_Features(std::vector<cv::Point2f> &_features)
     }
 }
 
-
-void Frame::SetFeatures(const std::vector<cv::Point2f> &_features)
-{
-    for (int i = 0; i < _features.size(); ++i)
-    {
-        Add_Feature( new Feature(this, _features[i], 0));
-    }
-}
-
-void Frame::SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<long int> tStatus,
-                        std::vector<long int> tTrack_cnt)
-{
-    for (int i = 0; i < _features.size(); ++i)
-    {
-        Add_Feature(new Feature(this, _features[i], 0, tStatus[i], tTrack_cnt[i]));
-    }
-}
-
 void Frame::Set_Pose(Sophus::SE3 _pose)
 {
     mT_c2w = _pose;
@@ -249,7 +231,13 @@ bool Frame::Get_SceneDepth(double &tMinDepth, double &tMeanDepth)
 
     for (auto it = this->mvFeatures.begin(); it != this->mvFeatures.end(); it++)
     {
-        Eigen::Vector3d tPose = mT_c2w*(*it)->mPoint;
+        if(!(*it)->Mpt)
+            continue;
+
+        if((*it)->Mpt->IsBad())
+            continue;
+
+        Eigen::Vector3d tPose = mT_c2w*(*it)->Mpt->Get_Pose();
         const double z = tPose(2);
 
         tDepth_vec.push_back(z);

@@ -5,7 +5,7 @@
 #rgbd_dataset_freiburg2_desk_with_person
 #rgbd_dataset_freiburg3_walking_static
 #rgbd_dataset_freiburg2_desk
-dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg2_desk
+dataset_dir: /home/buyi/Datasets/longhouse
 
 Camera.width: 640
 Camera.height: 480
@@ -24,28 +24,28 @@ Camera.height: 480
 #Camera.k3: 1.1633
 
 # fr2
-Camera.fx: 520.9
-Camera.fy: 521.0
-Camera.cx: 325.1
-Camera.cy: 249.7
+#Camera.fx: 520.9
+#Camera.fy: 521.0
+#Camera.cx: 325.1
+#Camera.cy: 249.7
 
-Camera.k1: 0.231222
-Camera.k2: -0.784899
-Camera.p1: -0.003257
-Camera.p2: -0.000105
-Camera.k3: 0.917205
+#Camera.k1: 0.231222
+#Camera.k2: -0.784899
+#Camera.p1: -0.003257
+#Camera.p2: -0.000105
+#Camera.k3: 0.917205
 
 # fr3
-#Camera.fx: 535.4
-#Camera.fy: 539.2
-#Camera.cx: 320.1
-#Camera.cy: 247.6
+Camera.fx: 535.4
+Camera.fy: 539.2
+Camera.cx: 320.1
+Camera.cy: 247.6
 
-#Camera.k1: 0.0
-#Camera.k2: 0.0
-#Camera.p1: 0.0
-#Camera.p2: 0.0
-#Camera.k3: 0.0
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+Camera.k3: 0.0
 
 Camera.f: 525
 
@@ -82,6 +82,7 @@ Rarsac.Terminate_threshold: 0.001
 
 #Ceres optimization
 Optimization.MaxIter: 8
+Optimization.LocalBAthreshhold: 2.0
 
 #Insert KeyFrame
 KeyFrame.min_rot: 0.08

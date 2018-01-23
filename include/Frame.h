@@ -40,11 +40,6 @@ public:
     //! Return keypoints from features
     void Get_Features(std::vector<cv::Point2f> &KeyPoints);
 
-    //! Return keypoints from features
-    void SetFeatures(const std::vector<cv::Point2f> &_features);
-    void SetFeatures(const std::vector<cv::Point2f> &_features, std::vector<long int> tStatus,
-                     std::vector<long int> tTrack_cnt);
-
     //! Clear all the members in frame
     void ResetFrame();
 

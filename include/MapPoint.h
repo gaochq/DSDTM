@@ -9,6 +9,7 @@
 #include "Frame.h"
 #include "Feature.h"
 #include "Keyframe.h"
+#include "Map.h"
 
 
 namespace DSDTM
@@ -16,19 +17,21 @@ namespace DSDTM
 
 class KeyFrame;
 class Frame;
+class Map;
 
 class MapPoint
 {
 public:
     MapPoint();
-    MapPoint(Eigen::Vector3d& _pose, KeyFrame *_frame);
+    MapPoint(Eigen::Vector3d& _pose, KeyFrame *_frame, Map *tMap);
 
     //! Set and Get the world position of mappoint
     void Set_Pose(Eigen::Vector3d tPose);
     Eigen::Vector3d Get_Pose() const;
 
-    //! Add Mappoint observation
+    //! Add and delete Mappoint observation
     void Add_Observation(KeyFrame *tKFrame, size_t tfID);
+    void Erase_Observation(KeyFrame *tKFrame);
     std::map<KeyFrame*, size_t> Get_Observations();
 
     //! Set mappoint bad
@@ -44,10 +47,8 @@ public:
     //! Increase the match times with frames
     void IncreaseFound(int n = 1);
 
-    //! Set and Get static weight
-    void SetStaticWeight(double tWeight);
-    double GetStaticWeight();
-
+    //! Get the index of feature in Keyframe oberse this MapPoint
+    int Get_IndexInKeyFrame(KeyFrame *tKf);
 
 protected:
 
@@ -63,6 +64,8 @@ public:
     double                  mdStaticWeight;
 
 protected:
+
+    Map     *mMap;
 
     Eigen::Vector3d         mPose;
 

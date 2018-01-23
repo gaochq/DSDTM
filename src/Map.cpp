@@ -47,6 +47,17 @@ std::vector<KeyFrame*> Map::GetAllKeyFrames()
     return std::vector<KeyFrame*>(msKeyFrames.begin(), msKeyFrames.end());
 }
 
+int Map::ReturnKeyFramesSize()
+{
+    return msKeyFrames.size();
+}
+
+void Map::EraseMapPoint(MapPoint *tMp)
+{
+    //TODO add lock
+    msMapPoints.erase(tMp);
+}
+
 void Map::Release()
 {
     msMapPoints.clear();

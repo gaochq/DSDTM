@@ -51,6 +51,10 @@ public:
     BAPoseOnly_Problem(const Eigen::Vector3d &tMapPoint, const Feature* tFeature, const CameraPtr tCamera):
             mMapPoint(tMapPoint), mFeature(tFeature), mCamera(tCamera)
     {
+        mfx = mCamera->mfx;
+        mfy = mCamera->mfy;
+        mcx = mCamera->mcx;
+        mcy = mCamera->mcy;
     }
 
     virtual bool Evaluate(double const* const* parameters, double* residuals, double **jacobians) const
@@ -73,6 +77,7 @@ public:
         tObservation << mFeature->mNormal(0)/mFeature->mNormal(2), mFeature->mNormal(1)/mFeature->mNormal(2);
 
         mResidual = (tObservation - tPrediction)/(1<<mFeature->mlevel);
+
 
         if(mResidual(0)>10 || mResidual(1)>10)
             std::cout<< " optimizer error" <<std::endl;
@@ -113,6 +118,11 @@ protected:
 
     const Feature     *mFeature;
     const CameraPtr   mCamera;
+
+    double              mfx;
+    double              mfy;
+    double              mcx;
+    double              mcy;
 };
 
 //! 参数块的个数和后面的雅克比矩阵的维数要对应
@@ -146,13 +156,11 @@ public:
         Eigen::Vector2d tObservation;
         tObservation << mFeature->mNormal(0)/mFeature->mNormal(2), mFeature->mNormal(1)/mFeature->mNormal(2);
 
-        mResidual = (tObservation - tPrediction)/(1<<mFeature->mlevel);
+        //mResidual = tObservation - tPrediction;
+         mResidual = (tObservation - tPrediction)/(1<<mFeature->mlevel);
 
         if(mResidual(0)>10 || mResidual(1)>10)
             std::cout<< "error" <<std::endl;
-
-        //std::cout<< "num" <<std::endl;
-        //std::cout << mResidual <<std::endl<<std::endl;
 
         if(jacobians!=NULL)
         {
@@ -200,12 +208,6 @@ protected:
     Eigen::Vector2d     mObservation;
     Eigen::Matrix3d     mSqrt_Info;
     Eigen::Matrix<double, 4, 4, Eigen::RowMajor>     mIntrinsic;
-
-
-    double              mfx;
-    double              mfy;
-    double              mcx;
-    double              mcy;
 
     const Feature     *mFeature;
     const CameraPtr   mCamera;

@@ -15,9 +15,9 @@ MapPoint::MapPoint()
     mdStaticWeight = 1.0;
 }
 
-MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame):
+MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame, Map *tMap):
         mPose(_pose), mFirstFrame(_frame->mlId), mnFound(0),
-        mlLocalBAKFId(0)
+        mlLocalBAKFId(0), mMap(tMap), mObsNum(0)
 {
     mlID = mlNextId++;
     mbOutlier = false;
@@ -36,12 +36,33 @@ Eigen::Vector3d MapPoint::Get_Pose() const
 
 void MapPoint::Add_Observation(KeyFrame *tKFrame, size_t tFID)
 {
+    //!TODO add lock
+
     if(mObservations.count(tKFrame))
         return;
     else
         mObservations[tKFrame] = tFID;
 
     mObsNum++;
+}
+
+void MapPoint::Erase_Observation(KeyFrame *tKFrame)
+{
+    bool bBad = false;
+
+    if(mObservations.count(tKFrame))
+    {
+        mObsNum--;
+
+        mObservations.erase(tKFrame);
+
+        if(mObsNum <=1)
+            bBad = true;
+    }
+
+    if(bBad)
+        SetBadFlag();
+
 }
 
 std::map<KeyFrame*, size_t> MapPoint::Get_Observations()
@@ -53,6 +74,17 @@ std::map<KeyFrame*, size_t> MapPoint::Get_Observations()
 void MapPoint::SetBadFlag()
 {
     mbOutlier = true;
+
+    std::map<KeyFrame*, size_t> obs = mObservations;
+    mObservations.clear();
+
+    for (auto &iter : obs)
+    {
+        KeyFrame *tKf = iter.first;
+        tKf->Erase_MapPointMatch(iter.second);
+    }
+
+    mMap->EraseMapPoint(this);
 }
 
 bool MapPoint::IsBad() const
@@ -97,14 +129,12 @@ void MapPoint::IncreaseFound(int n)
     mnFound = mnFound + n;
 }
 
-void MapPoint::SetStaticWeight(double tWeight)
+int MapPoint::Get_IndexInKeyFrame(KeyFrame *tKf)
 {
-    mdStaticWeight = 0.5*mdStaticWeight + 0.5*tWeight;
-}
-
-double MapPoint::GetStaticWeight()
-{
-    return mdStaticWeight;
+    if(mObservations.count(tKf))
+        return mObservations[tKf];
+    else
+        return -1;
 }
 
 

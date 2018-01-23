@@ -38,6 +38,10 @@ public:
 
     //! Get all KeyFrames
     std::vector<KeyFrame*> GetAllKeyFrames();
+    int ReturnKeyFramesSize();
+
+    //! Erase MapPoint
+    void EraseMapPoint(MapPoint *tMp);
 
     //! Clera all vars in map
     void Release();

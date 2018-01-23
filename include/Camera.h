@@ -39,6 +39,7 @@
 #include "tic_toc.h"
 #include "Config.h"
 #include "Feature.h"
+#include "Utils.h"
 
 
 namespace DSDTM
