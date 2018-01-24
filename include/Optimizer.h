@@ -159,7 +159,6 @@ public:
         Eigen::Vector2d tObservation;
         tObservation << mFeature->mNormal(0)/mFeature->mNormal(2), mFeature->mNormal(1)/mFeature->mNormal(2);
 
-        //mResidual = tObservation - tPrediction;
          mResidual = (tObservation - tPrediction)/(1<<mFeature->mlevel);
 
         if(mResidual(0)>10 || mResidual(1)>10)

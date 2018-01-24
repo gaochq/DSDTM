@@ -90,11 +90,11 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     }
     */
 
-    std::vector<double> tvdResidual = GetReprojectReidual(problem);
-    std::cout << summary.FullReport() << std::endl;
+    //std::vector<double> tvdResidual = GetReprojectReidual(problem);
+    //std::cout << summary.FullReport() << std::endl;
 
-    std::cout <<"Residual Sum: "<<std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
-    std::cout << std::endl;
+    //std::cout <<"Residual Sum: "<<std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
+    //std::cout << std::endl;
 }
 
 void Optimizer::LocalBundleAdjustment(KeyFrame *tKFrame, Map *tMap)
@@ -206,7 +206,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *tKFrame, Map *tMap)
         tSolveMpSets[itMp->mlID] = itMp;
 
         problem.AddParameterBlock(tMpPoseSets[itMp->mlID].data(), 3);
-        //problem.SetParameterBlockConstant(tMpPoseSets[itMp->mlID].data());
 
         std::map<KeyFrame*, size_t> tMpObserves = itMp->Get_Observations();
         for (const auto &itKf : tMpObserves)
@@ -223,13 +222,10 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *tKFrame, Map *tMap)
 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_SCHUR;
-    options.minimizer_progress_to_stdout = true;
-    //options.trust_region_strategy_type = ceres::DOGLEG;
+    //options.minimizer_progress_to_stdout = true;
     options.num_threads = 4;
     options.num_linear_solver_threads = 4;
     options.max_num_iterations = 10;
-    //options.gradient_tolerance = 1e-16;
-    //options.function_tolerance = 1e-16;
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
@@ -260,16 +256,9 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *tKFrame, Map *tMap)
         std::map<KeyFrame*, size_t> tMpObserves = itMp->Get_Observations();
         for(auto &itKf : tMpObserves)
         {
-            //double tRes = utils::ReprojectionError(itKf.first->mvFeatures[itKf.second]->mNormal, itKf.first->Get_Pose(), tPose);
+            double tRes = utils::ReprojectionError(itKf.first->mvFeatures[itKf.second]->mNormal, itKf.first->Get_Pose(), tPose);
 
-
-            Eigen::Vector2d tPix;
-            tPix << itKf.first->mvFeatures[itKf.second]->mpx.x, itKf.first->mvFeatures[itKf.second]->mpx.y;
-            Eigen::Vector2d tRess = itKf.first->mCamera->Camera2Pixel(itKf.first->Get_Pose() * tPose) - tPix;
-            double tRes = tRess.norm();
-
-
-            if(tRes > 5.991)
+            if(tRes > tOutlineThres)
             {
                 itMp->Erase_Observation(itKf.first);
                 itKf.first->Erase_MapPointMatch(itMp);
@@ -282,14 +271,14 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *tKFrame, Map *tMap)
         }
     }
 
-    std::cout << tOutlineNum <<std::endl;
-    std::cout << summary.FullReport() << std::endl;
-    std::cout << "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
+    std::cout <<"outlines: " << tOutlineNum <<std::endl;
+    //std::cout << summary.FullReport() << std::endl;
+    //std::cout << "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
 
-    std::vector<double> tvdResidual = GetReprojectReidual(problem);
-    std::cout << "Residual Sum: "<< std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
+    //std::vector<double> tvdResidual = GetReprojectReidual(problem);
+    //std::cout << "Residual Sum: "<< std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
 
-    std::cout << std::endl;
+    //std::cout << std::endl;
 }
 
 double *Optimizer::se3ToDouble(Eigen::Matrix<double, 6, 1> tse3)
