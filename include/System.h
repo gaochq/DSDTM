@@ -8,7 +8,6 @@
 #include "Camera.h"
 #include "Tracking.h"
 #include "Map.h"
-#include "MapDrawer.h"
 #include "Viewer.h"
 
 namespace DSDTM
@@ -51,7 +50,6 @@ protected:
     Map                 *mMap;
     Tracking            *mTracker;
     LocalMapping        *mLocalMapper;
-    MapDrawer           *mMapDrawer;
     Viewer              *mViewer;
 
     std::thread*    mtLocalMapper;

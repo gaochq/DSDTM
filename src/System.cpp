@@ -24,13 +24,11 @@ System::System(const std::string &Paramfile, const Camera_Model tSensor, const b
 
     mMap = new Map();
 
-    mMapDrawer = new MapDrawer(mMap);
-
     mLocalMapper = new LocalMapping(mMap);
 
-    mTracker = new Tracking(mCamera, mMap, mLocalMapper, mMapDrawer);
+    mTracker = new Tracking(mCamera, mMap, mLocalMapper);
 
-    mViewer = new Viewer(this, mTracker, mMapDrawer);
+    mViewer = new Viewer(this, mTracker, mMap);
     if(mbUseViewer)
         mtViewer = new std::thread(&Viewer::Run, mViewer);
 

@@ -11,9 +11,9 @@ namespace DSDTM
 
 long int Tracking::mlNextID = 0;
 
-Tracking::Tracking(CameraPtr _cam, Map *_map, LocalMapping *tLocalMapping, MapDrawer *tMapDrawer):
+Tracking::Tracking(CameraPtr _cam, Map *_map, LocalMapping *tLocalMapping):
         mCam(_cam), mInitializer(static_cast<Initializer*>(NULL)), mMap(_map), mLocalMapping(tLocalMapping),
-        mProcessedFrames(0), mMapDrawer(tMapDrawer)
+        mProcessedFrames(0)
 {
     mState = Not_Init;
 
@@ -69,7 +69,7 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
             if(!CreateInitialMapRGBD())
                 return IdentitySE3;
 
-            mMapDrawer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
+            mViewer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
 
             mState = OK;
             mCurrentFrame->Reset_Gridproba();
@@ -102,7 +102,7 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
 
             if(bOK)
             {
-                mMapDrawer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
+                mViewer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
 
                 if (NeedKeyframe())
                 {
@@ -147,8 +147,6 @@ bool Tracking::CreateInitialMapRGBD()
             continue;
 
         Eigen::Vector3d tPose = mInitFrame->UnProject(mInitFrame->mvFeatures[i]->mpx, z);
-        //Eigen::Vector3d tPose = mInitFrame->mvFeatures[i]->mNormal*z;
-        //tPose = mInitFrame->Get_Pose().inverse()*tPose;
 
         MapPoint *pMp = new MapPoint(tPose, tKFrame, mMap);
 

@@ -265,9 +265,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *tKFrame, Map *tMap)
 
                 tOutlineNum++;
             }
-
-            tResidualSets.push_back(tRes);
-            tObs.push_back(std::make_pair(itMp, itKf.first));
         }
     }
 

@@ -7,7 +7,6 @@
 
 #include "Camera.h"
 #include "Tracking.h"
-#include "MapDrawer.h"
 #include "System.h"
 
 
@@ -20,8 +19,15 @@ class Tracking;
 class Viewer
 {
 public:
-    Viewer(System *tSystem, Tracking *pTracking, MapDrawer *tMapDrawer);
+    Viewer(System *tSystem, Tracking *pTracking, Map *tMap);
     ~Viewer();
+
+    //! Draw MapPoints and KeyFrames
+    void DrawMapPoints();
+    void DrawKeyframes();
+    void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc);
+    void SetCurrentCameraPose(const Sophus::SE3 &Tcw);
+    void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M);
 
     void Run();
 
@@ -45,13 +51,24 @@ private:
 
     float mViewerpointX, mViewerpointY, mViewerpointZ, mViewerpointF;
 
-    MapDrawer       *mMapDrawer;
     System          *mSystem;
     Tracking        *mTracker;
 
     bool        mbStopped;
     bool        mbRequestStop;
     bool        mbPaused;
+
+    Map     *mMap;
+
+    float mfKeyFrameSize;
+    float mfKeyFrameLineWidth;
+    float mfGraphLineWidth;
+    float mfPointSize;
+    float mfCameraSize;
+    float mfCameraLineWidth;
+
+    Sophus::SE3     mCameraPose;
+    Sophus::SE3     mLastCamPose;
 
 };
 

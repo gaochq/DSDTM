@@ -15,7 +15,6 @@
 #include "Moving_Detection.h"
 #include "Feature_alignment.h"
 #include "Sprase_ImageAlign.h"
-#include "MapDrawer.h"
 #include "Viewer.h"
 
 namespace DSDTM
@@ -47,7 +46,7 @@ private:
     };
 
 public:
-    Tracking(CameraPtr _cam, Map *_map, LocalMapping *tLocalMapping, MapDrawer *tMapDrawer);
+    Tracking(CameraPtr _cam, Map *_map, LocalMapping *tLocalMapping);
     ~Tracking();
 
     //! Tracking on the rgbd camera
@@ -138,7 +137,6 @@ protected:
     Moving_Detecter         *mMoving_detecter;
     Feature_Alignment       *mFeature_Alignment;
     Sprase_ImgAlign         *mSprase_ImgAlign;
-    MapDrawer               *mMapDrawer;
     Viewer                  *mViewer;
 
 
