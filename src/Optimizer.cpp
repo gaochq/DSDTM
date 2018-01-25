@@ -52,14 +52,6 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
 
         Eigen::Vector3d tPoint((*iter)->Mpt->Get_Pose());
 
-        //BAPoseOnly_Problem *p = new BAPoseOnly_Problem(tPoint, (*iter), tCurFrame->mCamera);
-        //problem.AddResidualBlock(p, NULL, tT_c2rArray.data());
-
-        /*
-        tPointsets[tNum][0] = tPoint(0);
-        tPointsets[tNum][1] = tPoint(1);
-        tPointsets[tNum][2] = tPoint(2);
-         */
         tvMpts[tNum] = (*iter)->Mpt;
         tvMptPoses[tNum] = tPoint;
         problem.AddParameterBlock(tvMptPoses[tNum].data(), 3);
@@ -81,14 +73,6 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     //std::cout<< "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
     tCurFrame->Set_Pose(Sophus::SE3(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>()));
 
-    /*
-    tNum = 0;
-    for (auto &it : tvMpts)
-    {
-        it.second->Set_Pose(tvMptPoses[tNum]);
-        tNum++;
-    }
-    */
 
     //std::vector<double> tvdResidual = GetReprojectReidual(problem);
     //std::cout << summary.FullReport() << std::endl;

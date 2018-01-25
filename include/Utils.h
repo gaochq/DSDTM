@@ -23,7 +23,7 @@ inline double ReprojectionError(Eigen::Vector3d tPixNormal, const Sophus::SE3 &t
 
     Eigen::Vector2d tReidual = Normalizezation2D(tPixNormal) - Normalizezation2D(tCamPt);
 
-    return tReidual.squaredNorm();
+    return tReidual.dot(tReidual);
 }
 
 

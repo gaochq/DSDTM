@@ -22,10 +22,18 @@ public:
     //! Insert keyframe into map and create new MapPoints
     void ProcessNewKeyframe();
 
+    //! Check the size of Keyframe list
+    bool CheckNewFrames();
+
+    //! The main function in local mapping
+    void Run();
+
 
 protected:
     Map         *mMap;
     std::list<KeyFrame*> mlNewKeyFrames;
+
+    std::mutex mMutexKFlist;
 
 };
 

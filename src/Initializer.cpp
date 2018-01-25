@@ -41,7 +41,7 @@ bool Initializer::Init_RGBDCam(FramePtr frame)
 {
     mFeature_detector = new Feature_detector();
 
-    mFeature_detector->detect(frame.get(), 20, false);
+    mFeature_detector->detect(frame.get(), 5.0, false);
     if (frame->Get_FeatureSize() < 50)
     {
         LOG(ERROR) << "Too few features in Initializer" << std::endl;
@@ -52,7 +52,6 @@ bool Initializer::Init_RGBDCam(FramePtr frame)
     mReferFrame->Set_Pose(Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero()));
     //mReferFrame->Set_Pose(Sophus::SE3(Eigen::Quaterniond(0.00000, 0.82266, 0.21488, 0.00000), Eigen::Vector3d(0.11314, 0.11314, 2.00000)).inverse());
     //mReferFrame->Set_Pose(Sophus::SE3(Eigen::Quaterniond(-0.0145, 0.0003, 0.8617, -0.5072), Eigen::Vector3d(-0.6832, 2.6909, 1.7373)).inverse());
-
     return true;
 }
 

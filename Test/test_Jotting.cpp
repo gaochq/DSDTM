@@ -138,6 +138,10 @@ int main(int argc, char **argv)
         tNullSE3 = DSDTM::IdentitySE3;
     }
 
+    //! Test Eigen squaredNorm
+    Eigen::Vector2d tSquaredNorm(1,2);
+    double tSNfinal = tSquaredNorm.squaredNorm();
+
     std::vector<int> a;
     for (int i = 0; i < 10; ++i)
     {

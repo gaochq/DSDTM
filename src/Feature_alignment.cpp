@@ -93,6 +93,9 @@ bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
         if(iter->mMpPoint->IsBad())
             continue;
 
+        if(tFrame->mImgMask.at<uchar>(cv::Point2f(iter->mPx[0], iter->mPx[1]))!=255)
+            continue;
+
         bool tFindMatch = true;
         int tLevel = 0;
         tFindMatch = FindMatchDirect(iter->mMpPoint, tFrame, iter->mPx, tLevel);
@@ -102,8 +105,10 @@ bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
 
         iter->mMpPoint->IncreaseFound();
 
-        Feature *tFeature = new Feature(tFrame.get(), cv::Point2f(iter->mPx(0), iter->mPx(1)), tLevel);
+        Feature *tFeature = new Feature(tFrame.get(), cv::Point2f(iter->mPx[0], iter->mPx[1]), tLevel);
         tFeature->SetPose(iter->mMpPoint);
+
+        cv::circle(tFrame->mImgMask, cv::Point2f(iter->mPx[0], iter->mPx[1]), mGrid.mCell_size, 0, -1);
 
         tFrame->Add_Feature(tFeature);
         tFrame->Add_MapPoint(iter->mMpPoint);
