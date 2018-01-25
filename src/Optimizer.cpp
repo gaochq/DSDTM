@@ -19,6 +19,10 @@ Optimizer::~Optimizer()
 
 void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
 {
+    double tReprojectThresh = Config::Get<float>("Optimization.LocalBAthreshhold");
+    tReprojectThresh = tReprojectThresh/tCurFrame->mCamera->mf;
+    double tOutlineThres = tReprojectThresh;
+
     Eigen::Matrix<double, 4, 4, Eigen::RowMajor> tIntrinsic;
     tIntrinsic = tCurFrame->mCamera->Return_Intrinsic();
 
@@ -54,6 +58,7 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
 
         tvMpts[tNum] = (*iter)->Mpt;
         tvMptPoses[tNum] = tPoint;
+
         problem.AddParameterBlock(tvMptPoses[tNum].data(), 3);
         problem.SetParameterBlockConstant(tvMptPoses[tNum].data());
 
@@ -73,12 +78,22 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     //std::cout<< "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
     tCurFrame->Set_Pose(Sophus::SE3(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>()));
 
+    int  n = 0;
+    std::vector<double> tvdResidual = GetReprojectReidual(problem);
+    for (int i = 0; i < tvdResidual.size(); ++i)
+    {
+        if(tvdResidual[i] > tOutlineThres)
+        {
+            n++;
+            tvMpts[i]->EraseFound();
+        }
+    }
 
     //std::vector<double> tvdResidual = GetReprojectReidual(problem);
     //std::cout << summary.FullReport() << std::endl;
 
     //std::cout <<"Residual Sum: "<<std::accumulate(tvdResidual.begin(), tvdResidual.end(), 0.0) << std::endl;
-    //std::cout << std::endl;
+    std::cout << std::endl;
 }
 
 void Optimizer::LocalBundleAdjustment(KeyFrame *tKFrame, Map *tMap)

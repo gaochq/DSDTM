@@ -207,23 +207,26 @@ bool Tracking::TrackWithLocalMap()
 
     mFeature_Alignment->SearchLocalPoints(mCurrentFrame);
 
-    int N = mCurrentFrame->mvFeatures.size();
-    LOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
+    mCurrentFrame->mvFeatures.size();
 
-    std::cout << "Tracking Pts: " << N << std::endl;
+    MotionRemoval();
 
-    //MotionRemoval();
+    Optimizer::PoseOptimization(mCurrentFrame, 10);
 
     mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
 
-    Optimizer::PoseOptimization(mCurrentFrame, 10);
+    int N = mCurrentFrame->Get_VaildMpNums();
+
+    LOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
+
+    std::cout << "Tracking Pts: " << N << std::endl;
 
     if(N < 30)
     {
         LOG(WARNING)<< "Too few Features tracked" << std::endl;
 
-        if(N < 20)
-            return false;
+        //if(N < 10)
+        //    return false;
 
         return true;
     }
@@ -355,8 +358,8 @@ bool Tracking::NeedKeyframe()
     if(mProcessedFrames > 20)
         return true;
 
-    int N = mCurrentFrame->mvFeatures.size();
-    if(N >= 20 && N <= 40)
+    int N = mCurrentFrame->Get_VaildMpNums();
+    if(N >= 10 && N <= 50)
     {
         return true;
     }

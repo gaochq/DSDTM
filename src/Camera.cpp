@@ -229,6 +229,7 @@ void Camera::Draw_Features(cv::Mat &_image, const Features _features)
 
     for (int i = 0; i < _features.size(); ++i)
     {
+        if(_features[i]->Mpt)
             cv::rectangle(_image,
                           cv::Point2f(_features[i]->mpx.x - 2, _features[i]->mpx.y - 2),
                           cv::Point2f(_features[i]->mpx.x + 2, _features[i]->mpx.y + 2),

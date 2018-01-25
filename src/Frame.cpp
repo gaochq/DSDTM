@@ -303,9 +303,23 @@ Eigen::Vector2d Frame::World2Pixel(const Eigen::Vector3d &Point)
     return mCamera->Camera2Pixel(tPoint);
 }
 
-void Frame::GetCorrespondMp()
+void Frame::Get_CorrespondMp()
 {
 
 }
 
+int Frame::Get_VaildMpNums()
+{
+    int N = 0;
+    for(const auto &it : mvMapPoints)
+    {
+        if(it)
+            N++;
+    }
+
+    return N;
 }
+
+
+
+}// namespace DSDTM

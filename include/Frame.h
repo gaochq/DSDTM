@@ -89,7 +89,10 @@ public:
     Eigen::Vector2d World2Pixel(const Eigen::Vector3d &Point);
 
     //! Get common MapPoints and Features
-    void GetCorrespondMp();
+    void Get_CorrespondMp();
+
+    //! Get vaild MapPoints number
+    int Get_VaildMpNums();
 
 
 public:

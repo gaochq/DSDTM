@@ -133,6 +133,13 @@ void MapPoint::IncreaseFound(int n)
     mnFound = mnFound + n;
 }
 
+void MapPoint::EraseFound(int n)
+{
+    mnFound = mnFound - n;
+    if(mnFound <= 0)
+        SetBadFlag();
+}
+
 int MapPoint::Get_IndexInKeyFrame(KeyFrame *tKf)
 {
     if(mObservations.count(tKf))
