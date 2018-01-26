@@ -80,10 +80,13 @@ int main(int argc, char **argv)
 
         Sophus::SE3 tPose = tSystem->TrackRGBD(ColorImage, DepthIMage, vTimestamps[i]);
     }
-    tSystem->SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
     double time = ((double)cvGetTickCount() - start) / cvGetTickFrequency();
     cout <<"Cost "<< time << " us" << endl;
     cout <<"Average "<< time/nImages << "us" << endl;
+
+    tSystem->SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
+    tSystem->SaveCameraTrajectory("CameraTrajectory.txt");
+
     cout << tSystem->ReturnKeyFrameSize() << endl;
 
     return  0;

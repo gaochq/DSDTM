@@ -250,7 +250,7 @@ bool Frame::Get_SceneDepth(double &tMinDepth, double &tMeanDepth)
         return false;
     }
 
-    mMeanDepth = mCamera->GetMedian(tDepth_vec);
+    mMeanDepth = utils::GetMedian(tDepth_vec);
 
     tMinDepth = mMinDepth;
     tMeanDepth = mMeanDepth;
@@ -275,7 +275,7 @@ void Frame::Set_Mask()
         if(mvMapPoints[k])
             cv::circle(mImgMask, mvFeatures[k]->mpx, mMin_Dist, 0, -1);
     }
-
+    mImgMask = mImgMask + (~mDynamicMask);
 }
 
 bool Frame::isVisible(const Eigen::Vector3d tPose, int tBoundary) const
@@ -320,6 +320,29 @@ int Frame::Get_VaildMpNums()
     return N;
 }
 
+void Frame::Motion_Removal(const cv::Mat tMask)
+{
+    mDynamicMask = tMask;
+
+    Features tmpFeatures = mvFeatures;
+    std::vector<MapPoint*> tmpMps = mvMapPoints;
+
+    mvFeatures.clear();
+    mvMapPoints.clear();
+
+    int j = 0;
+    for (int i = 0; i < mvFeatures.size(); ++i)
+    {
+        if(tMask.at<uchar>(cv::Point2f(mvFeatures[i]->mpx.x, mvFeatures[i]->mpx.y))!=255)
+        {
+            tmpFeatures.push_back(mvFeatures[i]);
+            tmpMps.push_back(mvMapPoints[i]);
+        }
+    }
+
+    mvFeatures = tmpFeatures;
+    mvMapPoints = tmpMps;
+}
 
 
 }// namespace DSDTM

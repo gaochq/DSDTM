@@ -95,9 +95,6 @@ public:
     //! whether is the point in image
     bool IsInImage(const cv::Point2f _point, int tBoundary = 1, int tLevel = 0) const;
 
-    //! Get the median value of the vector
-    double GetMedian(const std::vector<double> tdVector) const;
-
     //! Calculate the variance using median absolute deviation
     void VarWithMAD(const std::vector<double> tErrors, std::vector<double> *tWeights);
 

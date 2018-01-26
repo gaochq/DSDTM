@@ -127,6 +127,8 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
 
     Reset_Status();
 
+    mTrajectory.push_back(std::make_pair(mCurrentFrame->mdCloTimestamp, mCurrentFrame->Get_Pose()));
+
     return mCurrentFrame->Get_Pose().inverse();
 }
 
@@ -210,10 +212,11 @@ bool Tracking::TrackWithLocalMap()
     mCurrentFrame->mvFeatures.size();
 
     MotionRemoval();
-
-    Optimizer::PoseOptimization(mCurrentFrame, 10);
+    //MotionRemovalTest1();
 
     mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
+
+    Optimizer::PoseOptimization(mCurrentFrame, 10);
 
     int N = mCurrentFrame->Get_VaildMpNums();
 
@@ -275,7 +278,7 @@ void Tracking::UpdateLocalMap()
             (*itMP)->mLastProjectedFrameId = mCurrentFrame->mlId;
 
             if (mFeature_Alignment->ReprojectPoint(mCurrentFrame, (*itMP)))
-                mvpLocalMapPoints.push_back((*itMP));
+                mvpLocalMapPoints[(*itMP)] = tKFrame;
         }
     }
 }
@@ -327,7 +330,7 @@ bool Tracking::NeedKeyframe()
         if(tPixDist.size() > 30)
             break;
     }
-    double d = mCam->GetMedian(tPixDist);
+    double d = utils::GetMedian(tPixDist);
     if(d > 40)
     {
         return true;
@@ -441,7 +444,49 @@ void Tracking::MotionRemoval()
         }
     }
 
-    mMoving_detecter->Mod_FastMCD(mCurrentFrame->mColorImg, tFeaturesA, tFeaturesB);
+    cv::Mat tMask = mMoving_detecter->Mod_FastMCD(mCurrentFrame->mColorImg, tFeaturesA, tFeaturesB);
+    //cv::Mat tMask = mMoving_detecter->Mod_FrameDiff(mCurrentFrame, mLastFrame, tFeaturesA, tFeaturesB);
+    if(tMask.rows!=480)
+        return;
+    mCurrentFrame->Motion_Removal(tMask);
+}
+
+void Tracking::MotionRemovalTest1()
+{
+    std::vector<MapPoint*> tMpSets = mCurrentFrame->mvMapPoints;
+    std::vector<MapPoint*> tRefMpSets = mpLastKF->mvMapPoints;
+    std::vector<MapPoint*> tMatchMps;
+    std::vector<double> tResiduals;
+
+    Sophus::SE3 tRelPose = mCurrentFrame->Get_Pose()*mpLastKF->Get_Pose().inverse();
+
+    for (int i = 0; i < tMpSets.size(); ++i)
+    {
+        auto iter = std::find(tRefMpSets.begin(), tRefMpSets.end(), tMpSets[i]);
+
+        if(iter!=tRefMpSets.end())
+        {
+            int n = iter - tRefMpSets.begin();
+            Eigen::Vector3d tDiff = mCurrentFrame->mvFeatures[i]->mNormal - tRelPose*mpLastKF->mvFeatures[n]->mNormal;
+            tResiduals.push_back(tDiff.norm());
+            tMatchMps.push_back(*iter);
+        }
+    }
+
+    int N = 0;
+    std::vector<double> tWeights;
+    mCam->VarWithMAD(tResiduals, &tWeights);
+    for (int j = 0; j < tMatchMps.size(); ++j)
+    {
+        double tmp = tMatchMps[j]->mdStaticWeight;
+        tMatchMps[j]->mdStaticWeight = 0.5*tmp + 0.5*tWeights[j];
+        tWeights[j] = tMatchMps[j]->mdStaticWeight;
+        if(tWeights[j] < 1)
+            N++;
+    }
+
+    //std::cout << N <<std::endl;
+    //std::cout << std::endl;
 }
 
 void Tracking::SetViewer(Viewer *tViewer)

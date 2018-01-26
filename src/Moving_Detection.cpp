@@ -21,10 +21,13 @@ cv::Mat Moving_Detecter::Mod_FastMCD(const cv::Mat tImg, std::vector<cv::Point2f
 {
     cv::Mat ImageA, ImageB;
 
-    cv::Mat H = cv::findHomography(tPointsA, tPointsB, CV_RANSAC);
+    cv::Mat Motion_Mask(tImg.size(), CV_8UC1, cv::Scalar(0));
 
-    //cv::pyrDown(tImg, ImageB);
-    cv::Mat Motion_Mask = Run(tImg, H.ptr<double>(0));
+    if(tPointsA.size() > 4)
+    {
+        cv::Mat H = cv::findHomography(tPointsA, tPointsB, CV_RANSAC);
+        Motion_Mask = Run(tImg, H.ptr<double>(0));
+    }
 
     return Motion_Mask;
 
@@ -33,35 +36,28 @@ cv::Mat Moving_Detecter::Mod_FastMCD(const cv::Mat tImg, std::vector<cv::Point2f
 cv::Mat Moving_Detecter::Mod_FrameDiff(FramePtr tframeA, FramePtr tframeB, std::vector<cv::Point2f> tPointsA,
                                        std::vector<cv::Point2f> tPointsB)
 {
+    cv::Mat mMask;
+    if(tPointsA.size() < 4)
+        return mMask;
 
-    cv::Mat tImgCA = tframeA->mColorImg;
-    cv::Mat tImgCB = tframeB->mColorImg;
-    cv::Mat tImgDA = tframeA->mDepthImg;
-    cv::Mat tImgDB = tframeB->mDepthImg;
 
-    cv::Mat mMask, mMask1;
+    cv::Mat tImgA = tframeA->mColorImg;
+    cv::Mat tImgB = tframeA->mColorImg;
+
     cv::Mat tAffine = cv::findHomography(tPointsB, tPointsA, CV_RANSAC);
+    cv::warpPerspective(tImgB, mMask, tAffine, mMask.size());
 
-    cv::warpPerspective(tImgCB, mMask, tAffine, mMask.size());
-    cv::warpPerspective(tImgDB, mMask1, tAffine, mMask.size());
+    mMask = tImgA - mMask;
 
-    mMask = tImgCA - mMask;
-    mMask1 = tImgDA - mMask1;
+    cv::threshold(mMask, mMask, 50, 200.0, CV_THRESH_BINARY);
 
-    cv::imwrite("depth.png", mMask);
-
-    //cv::threshold(mMask, mMask, 150, 255.0, CV_THRESH_TOZERO_INV);
-    cv::threshold(mMask, mMask, 50, 255.0, CV_THRESH_TOZERO);
-
-
-    cv::Mat element = getStructuringElement(MORPH_RECT, Size(3, 3));
+    cv::Mat element = getStructuringElement(MORPH_RECT, Size(5, 5));
     cv::morphologyEx(mMask, mMask, MORPH_OPEN, element);
     cv::dilate(mMask, mMask, element);
 
     cv::namedWindow("Depth");
     cv::imshow("Depth", mMask);
     cv::waitKey(1);
-
 
     return mMask;
 }

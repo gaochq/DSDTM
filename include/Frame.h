@@ -94,6 +94,9 @@ public:
     //! Get vaild MapPoints number
     int Get_VaildMpNums();
 
+    //! Remove the moving Features
+    void Motion_Removal(const cv::Mat tMask);
+
 
 public:
     Features                mvFeatures;

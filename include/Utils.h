@@ -26,7 +26,18 @@ inline double ReprojectionError(Eigen::Vector3d tPixNormal, const Sophus::SE3 &t
     return tReidual.dot(tReidual);
 }
 
+inline double MedianAbsDev(const std::vector<double> &tResiduals)
+{
 
+}
+
+inline double GetMedian(std::vector<double> tdVector)
+{
+    std::vector<double>::iterator iter = tdVector.begin() + floor(tdVector.size()/2);
+    std::nth_element(tdVector.begin(), iter, tdVector.end());
+
+    return *iter;
+}
 } // UTILS
 
 } // DSDTM

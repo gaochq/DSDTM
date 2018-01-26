@@ -192,19 +192,11 @@ bool Camera::IsInImage(const cv::Point2f _point, int tBoundary, int tLevel) cons
     return false;
 }
 
-double Camera::GetMedian(std::vector<double> tdVector) const
-{
-    std::vector<double>::iterator iter = tdVector.begin() + floor(tdVector.size()/2);
-    std::nth_element(tdVector.begin(), iter, tdVector.end());
-
-    return *iter;
-}
-
 void Camera::VarWithMAD(const std::vector<double> tErrors, std::vector<double> *tWeights)
 {
     std::vector<double> tAbsErrors;
     double tmedian = 0;
-    double tDegree = 10;
+    double tDegree = 1;
 
     for (int i = 0; i < tErrors.size(); ++i)
     {
@@ -213,11 +205,12 @@ void Camera::VarWithMAD(const std::vector<double> tErrors, std::vector<double> *
 
     std::sort(tAbsErrors.begin(), tAbsErrors.end());
 
-    double tVariance = 1.4826*GetMedian(tAbsErrors);
+    double tVariance = 1.4826*utils::GetMedian(tAbsErrors);
 
     for (int j = 0; j < tErrors.size(); ++j)
     {
-        double tWeight = (tDegree + 1)/(tDegree + std::pow((tErrors[j] - tVariance), 2));
+        double tmp = tErrors[j]/tVariance;
+        double tWeight = (tDegree + 1)/(tDegree + tmp*tmp);
         tWeights->push_back(tWeight);
     }
 }

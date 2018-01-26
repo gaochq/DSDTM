@@ -109,6 +109,7 @@ public:
     int                     mMinPyra_levels;
     static long int         mlNextID;
 
+    std::vector<std::pair<double, Sophus::SE3>> mTrajectory;
 protected:
     float                   mDepthScale;
     int                     mMaxIters;
@@ -141,7 +142,7 @@ protected:
 
 
     std::vector<KeyFrame*>  mvpLocalKeyFrames;
-    std::vector<MapPoint*>  mvpLocalMapPoints;
+    std::map<MapPoint*, KeyFrame*>  mvpLocalMapPoints;
 
 };
 

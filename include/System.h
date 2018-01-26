@@ -34,6 +34,7 @@ public:
 
     //! Save camera trajectory
     void SaveKeyFrameTrajectoryTUM(const string &filename);
+    void SaveCameraTrajectory(const string &filename);
 
     void Reset();
 
