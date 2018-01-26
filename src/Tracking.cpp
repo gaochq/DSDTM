@@ -312,6 +312,13 @@ bool Tracking::NeedKeyframe()
 {
     //! This condition frome HeYijia / svo_edgelet
     //! https://github.com/HeYijia/svo_edgelet/blob/master/src/frame_handler_mono.cpp#L501
+
+    int N = mCurrentFrame->Get_VaildMpNums();
+    if(N >= 10 && N <= 50)
+    {
+        return true;
+    }
+
     std::vector<double> tPixDist;
     for (auto it = mpLastKF->mvFeatures.begin(); it !=mpLastKF->mvFeatures.end() ; ++it)
     {
@@ -358,14 +365,9 @@ bool Tracking::NeedKeyframe()
     }
 
     //! More than 20 frames passed after last KeyFrame insertion
-    if(mProcessedFrames > 20)
-        return true;
+    //if(mProcessedFrames > 20)
+    //    return true;
 
-    int N = mCurrentFrame->Get_VaildMpNums();
-    if(N >= 10 && N <= 50)
-    {
-        return true;
-    }
 
     return false;
 }
