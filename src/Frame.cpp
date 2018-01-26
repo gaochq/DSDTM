@@ -269,13 +269,16 @@ bool Frame::Find_Observations(size_t tID)
 
 void Frame::Set_Mask()
 {
-
     for (int k = 0; k < mvFeatures.size(); ++k)
     {
         if(mvMapPoints[k])
             cv::circle(mImgMask, mvFeatures[k]->mpx, mMin_Dist, 0, -1);
     }
-    mImgMask = mImgMask + (~mDynamicMask);
+
+    cv::threshold(mDynamicMask, mDynamicMask, 200, 255, CV_THRESH_BINARY);
+
+    mImgMask = mImgMask - mDynamicMask;
+    std::cout <<" ";
 }
 
 bool Frame::isVisible(const Eigen::Vector3d tPose, int tBoundary) const
@@ -327,9 +330,6 @@ void Frame::Motion_Removal(const cv::Mat tMask)
     Features tmpFeatures = mvFeatures;
     std::vector<MapPoint*> tmpMps = mvMapPoints;
 
-    mvFeatures.clear();
-    mvMapPoints.clear();
-
     int j = 0;
     for (int i = 0; i < mvFeatures.size(); ++i)
     {
@@ -339,6 +339,8 @@ void Frame::Motion_Removal(const cv::Mat tMask)
             tmpMps.push_back(mvMapPoints[i]);
         }
     }
+    mvFeatures.clear();
+    mvMapPoints.clear();
 
     mvFeatures = tmpFeatures;
     mvMapPoints = tmpMps;

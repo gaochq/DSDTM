@@ -92,8 +92,40 @@ cv::Mat MCDWrapper::Run(const cv::Mat ColorImg, double *H)
     BGModel.update(detect_img);
 
     cv::Mat matimg = cv::Mat(detect_img);
-    cv::Mat element = getStructuringElement(MORPH_RECT, Size(9, 9));
-    cv::morphologyEx(matimg, matimg, MORPH_OPEN, element);
+    //cv::Mat element = getStructuringElement(MORPH_RECT, Size(9, 9));
+    //cv::morphologyEx(matimg, matimg, MORPH_OPEN, element);
+
+    vector< vector<cv::Point> > contours ;
+    cv::findContours(matimg,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
+
+    if(contours.size() >0)
+    {
+        double maxArea = 0;
+        vector<cv::Point> maxContour;
+        for (size_t i = 0; i < contours.size(); i++)
+        {
+            double area = cv::contourArea(contours[i]);
+            if (area > maxArea)
+            {
+                maxArea = area;
+                maxContour = contours[i];
+            }
+        }
+        // 将轮廓转为矩形框
+        if(maxContour.size() > 0)
+        {
+            cv::Rect maxRect = cv::boundingRect(maxContour);
+
+            // 显示连通域
+            cv::Mat result1;
+
+            matimg.copyTo(result1);
+
+            cv::rectangle(result1, maxRect, cv::Scalar(255), CV_FILLED);
+
+            matimg = result1;
+        }
+    }
 
     cv::namedWindow("Moving_Detect");
     cv::imshow("Moving_Detect", matimg);
