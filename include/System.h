@@ -38,7 +38,8 @@ public:
 
     void Reset();
 
-    int ReturnKeyFrameSize() { return mMap->GetAllKeyFrames().size(); }
+    int ReturnKeyFramesSize() { return mMap->GetAllKeyFrames().size(); }
+    int ReturnMapPointsSize() { return mMap->GetAllMapPoints().size(); }
 
 protected:
     Camera_Model    mSensor;

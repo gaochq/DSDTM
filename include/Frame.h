@@ -97,6 +97,8 @@ public:
     //! Remove the moving Features
     void Motion_Removal(const cv::Mat tMask);
 
+    //! Check whether the MapPoint is in the Frusum of this frame
+    bool IsinFrustum(MapPoint* tMp, float tfViewCosLimit);
 
 public:
     Features                mvFeatures;

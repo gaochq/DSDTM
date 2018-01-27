@@ -346,5 +346,33 @@ void Frame::Motion_Removal(const cv::Mat tMask)
     mvMapPoints = tmpMps;
 }
 
+bool Frame::IsinFrustum(MapPoint *tMp, float tfViewCosLimit)
+{
+    Eigen::Vector3d tPoseW = tMp->Get_Pose();
+
+    Eigen::Vector3d tPoseC = mT_c2w*tPoseW;
+    if(tPoseC[2] < 0)
+        return false;
+
+    Eigen::Vector2d tPx = mCamera->Camera2Pixel(tPoseC);
+    if(!mCamera->IsInImage(cv::Point2f(tPx[0], tPx[1])))
+        return false;
+
+    Eigen::Vector3d tVec_C2P = tPoseW - mOw;
+
+    float tDist = tVec_C2P.norm();
+    float tMaxDistance = tMp->Get_MaxObserveDistance();
+    float tMinDistance = tMp->Get_MinObserveDistance();
+    if(tDist > tMaxDistance || tDist < tMinDistance)
+        return false;
+
+    Eigen::Vector3d tNormalVec = tMp->Get_NormalVector();
+    const float tViewDiff = tVec_C2P.dot(tNormalVec);
+    if(tViewDiff < tfViewCosLimit)
+        return false;
+
+    return true;
+}
+
 
 }// namespace DSDTM

@@ -108,8 +108,7 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
                 {
                     CraeteKeyframe();
 
-                    if(mMap->ReturnKeyFramesSize() > 2)
-                        Optimizer::LocalBundleAdjustment(mpLastKF, mMap);
+                    mLocalMapping->Run(mpLastKF);
                 }
 
             }
@@ -266,19 +265,25 @@ void Tracking::UpdateLocalMap()
 
         for (std::vector<MapPoint *>::const_iterator itMP = tMapPoints.begin(); itMP != tMapPoints.end(); itMP++)
         {
-            if ((*itMP)==NULL)
+            MapPoint *tMp = (*itMP);
+
+            if (tMp==NULL)
                 continue;
 
-            if((*itMP)->IsBad())
+            if(tMp->IsBad())
                 continue;
 
-            if ((*itMP)->mLastProjectedFrameId == mCurrentFrame->mlId)
+            if (tMp->mLastProjectedFrameId == mCurrentFrame->mlId)
                 continue;
 
-            (*itMP)->mLastProjectedFrameId = mCurrentFrame->mlId;
+            tMp->mLastProjectedFrameId = mCurrentFrame->mlId;
 
-            if (mFeature_Alignment->ReprojectPoint(mCurrentFrame, (*itMP)))
+            if (mFeature_Alignment->ReprojectPoint(mCurrentFrame, tMp))
+            {
                 mvpLocalMapPoints[(*itMP)] = tKFrame;
+                if(mCurrentFrame->IsinFrustum(tMp, 0.5))
+                    tMp->IncreaseVisible();
+            }
         }
     }
 }

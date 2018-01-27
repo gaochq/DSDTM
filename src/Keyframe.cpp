@@ -6,7 +6,7 @@
 
 namespace DSDTM
 {
-long unsigned int KeyFrame::mlNextId=0;
+unsigned long int KeyFrame::mlNextId=0;
 KeyFrame::KeyFrame(const FramePtr tframe):
         mFrame(tframe), mvMapPoints(tframe->mvMapPoints), mTimeStamp(tframe->mdCloTimestamp),
         mvFeatures(tframe->mvFeatures), mnVaildMps(0), mCamera(tframe->mCamera), mRefId(tframe->mlId),

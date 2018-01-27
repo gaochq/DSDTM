@@ -4,11 +4,14 @@
 #include "Camera.h"
 #include "Map.h"
 #include "Keyframe.h"
+#include "MapPoint.h"
+#include "Optimizer.h"
 
 namespace DSDTM
 {
 class Map;
 class KeyFrame;
+class MapPoint;
 
 class LocalMapping
 {
@@ -20,18 +23,25 @@ public:
     void InsertKeyFrame(KeyFrame *tKFrame);
 
     //! Insert keyframe into map and create new MapPoints
-    void ProcessNewKeyframe();
+    void ProcessNewKeyframe(KeyFrame *tKf= static_cast<KeyFrame*>(NULL));
+
+    //! Recent MapPoints culling refer to orb-slam2
+    void MapPointCulling();
 
     //! Check the size of Keyframe list
     bool CheckNewFrames();
 
     //! The main function in local mapping
-    void Run();
+    void Run(KeyFrame *tKf= static_cast<KeyFrame*>(NULL));
 
 
 protected:
+
     Map         *mMap;
-    std::list<KeyFrame*> mlNewKeyFrames;
+    KeyFrame    *mCurrentKframe;
+
+    std::list<KeyFrame*>    mlNewKeyFrames;
+    std::list<MapPoint*>    mlRecentMapPoints;
 
     std::mutex mMutexKFlist;
 

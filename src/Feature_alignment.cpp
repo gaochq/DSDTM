@@ -122,7 +122,7 @@ bool Feature_Alignment::ReprojectCell(FramePtr tFrame, Cell *tCell)
 
 bool Feature_Alignment::CellComparator(Candidate &c1, Candidate &c2)
 {
-    return  c1.mMpPoint->Get_ObserveNums() > c2.mMpPoint->Get_ObserveNums();
+    return  c1.mMpPoint->Get_FoundNums() > c2.mMpPoint->Get_FoundNums();
 }
 
 bool Feature_Alignment::FindMatchDirect(const MapPoint *tMpPoint, const FramePtr tFrame, Eigen::Vector2d &tPt, int &tLevel)

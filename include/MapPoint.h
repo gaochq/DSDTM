@@ -38,8 +38,9 @@ public:
     void SetBadFlag();
     bool IsBad() const;
 
-    //! Get observe times
+    //! Get observe and found times
     int Get_ObserveNums() const;
+    int Get_FoundNums() const;
 
     //! Get the closest keyframe between cunrrent frame refer this MapPoint
     bool Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *&tKframe) const;
@@ -48,8 +49,24 @@ public:
     void IncreaseFound(int n = 1);
     void EraseFound(int n = 1);
 
+    //! Increase the number of visible
+    void IncreaseVisible(int n = 1);
+
     //! Get the index of feature in Keyframe oberse this MapPoint
     int Get_IndexInKeyFrame(KeyFrame *tKf);
+
+    //! Update the normal vector direction and observe distance
+    void UpdateNormalAndDepth();
+
+    //! Return the Max and Min observe distance
+    float Get_MaxObserveDistance();
+    float Get_MinObserveDistance();
+
+    //! Return the noraml vector
+    Eigen::Vector3d Get_NormalVector();
+
+    //! Get the ratio between found and visible
+    float Get_FoundRatio();
 
 protected:
 
@@ -64,14 +81,21 @@ public:
 
     double                  mdStaticWeight;
 
+    float                   mfMaxDistance;
+    float                   mfMinDistance;
+
+    Eigen::Vector3d         mNoramlVector;
+
+    unsigned long int   mFirstFrameId;
+
 protected:
 
     Map     *mMap;
 
-    Eigen::Vector3d         mPose;
+    Eigen::Vector3d     mPose;
 
     //! the frame first observe this point
-    unsigned long           mFirstFrame;
+    KeyFrame            *mRefKframe;
 
     //! Observation
     size_t                  mObsNum;

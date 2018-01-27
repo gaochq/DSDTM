@@ -16,8 +16,9 @@ MapPoint::MapPoint()
 }
 
 MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame, Map *tMap):
-        mPose(_pose), mFirstFrame(_frame->mlId), mnFound(0),
-        mlLocalBAKFId(0), mMap(tMap), mObsNum(0)
+        mPose(_pose), mFirstFrameId(_frame->mlId), mnFound(0),
+        mlLocalBAKFId(0), mMap(tMap), mObsNum(0), mRefKframe(_frame),
+        mnVisible(0)
 {
     mlID = mlNextId++;
     mbOutlier = false;
@@ -55,6 +56,12 @@ void MapPoint::Erase_Observation(KeyFrame *tKFrame)
         mObsNum--;
 
         mObservations.erase(tKFrame);
+
+        if(tKFrame==mRefKframe)
+        {
+            mRefKframe = mObservations.begin()->first;
+            mFirstFrameId = mRefKframe->mlId;
+        }
 
         if(mObsNum <=1)
             bBad = true;
@@ -94,6 +101,11 @@ bool MapPoint::IsBad() const
 }
 
 int MapPoint::Get_ObserveNums() const
+{
+    return mObsNum;
+}
+
+int MapPoint::Get_FoundNums() const
 {
     return mnFound;
 }
@@ -140,6 +152,11 @@ void MapPoint::EraseFound(int n)
         SetBadFlag();
 }
 
+void MapPoint::IncreaseVisible(int n)
+{
+    mnVisible += n;
+}
+
 int MapPoint::Get_IndexInKeyFrame(KeyFrame *tKf)
 {
     if(mObservations.count(tKf))
@@ -148,6 +165,59 @@ int MapPoint::Get_IndexInKeyFrame(KeyFrame *tKf)
         return -1;
 }
 
+void MapPoint::UpdateNormalAndDepth()
+{
+    // TODO add lock
+    std::map<KeyFrame*, size_t> tObservations = mObservations;
+    const Eigen::Vector3d tPose = mPose;
+    KeyFrame *tRefKframe = mRefKframe;
 
+    if(tObservations.empty())
+        return;
+
+    Eigen::Vector3d normal = Eigen::MatrixXd::Zero(3,1);
+    int n = 0;
+    for(const auto &it : tObservations)
+    {
+        Eigen::Vector3d tVec_C2P = tPose - it.first->Get_CameraCnt();
+        tVec_C2P.normalize();
+
+        normal = normal + tVec_C2P;
+        n++;
+    }
+
+    Eigen::Vector3d tVec_P2Ref = tPose - tRefKframe->Get_CameraCnt();
+    const float dist = tVec_P2Ref.norm();
+
+    const int level = tObservations[tRefKframe];
+    const float tLevelFactor = 1<<level;
+    const int tLevels = 4;
+    const float tMinLevelFactor = 1.0/(1<<tLevels);
+
+    mfMaxDistance = dist*tLevelFactor;
+    mfMinDistance = mfMaxDistance*tMinLevelFactor;
+
+    mNoramlVector = normal/n;
+}
+
+float MapPoint::Get_MaxObserveDistance()
+{
+    return mfMaxDistance;
+}
+
+float MapPoint::Get_MinObserveDistance()
+{
+    return mfMinDistance;
+}
+
+Eigen::Vector3d MapPoint::Get_NormalVector()
+{
+    return mNoramlVector;
+}
+
+float MapPoint::Get_FoundRatio()
+{
+    return (1.0*mnFound/mnVisible);
+}
 
 } // namespace DSDTM
