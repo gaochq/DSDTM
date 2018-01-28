@@ -44,7 +44,7 @@ void LocalMapping::ProcessNewKeyframe(KeyFrame *tKf)
 
 void LocalMapping::MapPointCulling()
 {
-    const int tnObsTh = 3;
+    const int tnObsTh = 2;
     const unsigned long int mnCurrentKfId = mCurrentKframe->mlId;
 
     std::list<MapPoint*>::iterator it = mlRecentMapPoints.begin();
@@ -84,6 +84,8 @@ void LocalMapping::Run(KeyFrame *tKf)
 {
     //ProcessNewKeyframe(tKf);
     //MapPointCulling();
+
+    mCurrentKframe = tKf;
 
     if(mMap->ReturnKeyFramesSize() > 2)
         Optimizer::LocalBundleAdjustment(mCurrentKframe, mMap);

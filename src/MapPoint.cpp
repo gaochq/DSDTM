@@ -202,12 +202,12 @@ void MapPoint::UpdateNormalAndDepth()
 
 float MapPoint::Get_MaxObserveDistance()
 {
-    return mfMaxDistance;
+    return mfMaxDistance*1.2;
 }
 
 float MapPoint::Get_MinObserveDistance()
 {
-    return mfMinDistance;
+    return mfMinDistance*0.8;
 }
 
 Eigen::Vector3d MapPoint::Get_NormalVector()

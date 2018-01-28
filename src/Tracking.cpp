@@ -421,7 +421,7 @@ void Tracking::CraeteKeyframe()
         mMap->AddMapPoint(tMp);
         tNum++;
     }
-    mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
+    //mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
     mpLastKF = tKFrame;
 
     tKFrame->UpdateConnection();

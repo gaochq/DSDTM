@@ -77,7 +77,7 @@ void Feature_Alignment::SearchLocalPoints(FramePtr tFrame)
         if(ReprojectCell(tFrame, mGrid.mCells[i]))
             mMatches++;
 
-        if(mMatches >= mMax_pts)
+        if(mMatches >= 200)
             break;
     }
 }

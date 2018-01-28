@@ -10,7 +10,7 @@
 #rgbd_dataset_freiburg3_sitting_xyz
 #rgbd_dataset_freiburg3_sitting_halfsphere
 #rgbd_dataset_freiburg3_walking_halfsphere
-dataset_dir: /home/buyi/Datasets/rgbd_dataset_freiburg3_sitting_static
+dataset_dir: /home/buyi/Datasets/longhouse
 
 Camera.width: 640
 Camera.height: 480
