@@ -41,6 +41,8 @@ public:
     int ReturnKeyFramesSize() { return mMap->GetAllKeyFrames().size(); }
     int ReturnMapPointsSize() { return mMap->GetAllMapPoints().size(); }
 
+    void OutputTimeCounter();
+
 protected:
     Camera_Model    mSensor;
 

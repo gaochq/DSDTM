@@ -113,5 +113,10 @@ void System::RequestStart()
     mbPaused = false;
 }
 
+void System::OutputTimeCounter()
+{
+    mTracker->CostTimeCount();
+}
+
 
 }

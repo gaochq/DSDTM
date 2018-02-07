@@ -87,6 +87,8 @@ int main(int argc, char **argv)
     tSystem->SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
     tSystem->SaveCameraTrajectory("CameraTrajectory.txt");
 
+    tSystem->OutputTimeCounter();
+
     cout <<"KeyFrames size: "<< tSystem->ReturnKeyFramesSize() << endl;
     cout <<"MapPoints size: "<< tSystem->ReturnMapPointsSize() << endl;
 

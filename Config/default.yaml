@@ -17,7 +17,7 @@ Camera.height: 480
 
 # camera intrinsics
 # fr1
-#Camera.fx: 517.3
+#Camera.fx: 517.3kugo
 #Camera.fy: 516.5
 #Camera.cx: 325.1
 #Camera.cy: 249.7

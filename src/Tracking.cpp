@@ -86,9 +86,7 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
         {
             bool bOK;
 
-            //TicToc tc;
             bOK = TrackWithLastFrame();
-            //std::cout << tc.toc() <<"----";
 
             //std::cout << mCurrentFrame->Get_CameraCnt().transpose() <<std::endl;
 
@@ -106,9 +104,13 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
 
                 if (NeedKeyframe())
                 {
+                    TicToc tcJudege;
                     CraeteKeyframe();
+                    mvKeyframeCreation.push_back(tcJudege.toc());
 
+                    TicToc tcLba;
                     mLocalMapping->Run(mpLastKF);
+                    mvLocalBATime.push_back(tcLba.toc());
                 }
 
             }
@@ -187,8 +189,9 @@ bool Tracking::TrackWithLastFrame()
 {
     mCurrentFrame->Set_Pose(mLastFrame->Get_Pose());
 
+    TicToc tc;
     int tnPts = mSprase_ImgAlign->Run(mCurrentFrame, mLastFrame);
-
+    mvImageAlignTime.push_back(tc.toc());
 
     LOG(INFO) << "Tracked " << tnPts << "Features" << std::endl;
     if(tnPts < 20)
@@ -206,11 +209,15 @@ bool Tracking::TrackWithLocalMap()
 {
     UpdateLocalMap();
 
+    TicToc tc;
     mFeature_Alignment->SearchLocalPoints(mCurrentFrame);
+    mvFeatureAligTime.push_back(tc.toc());
 
     mCurrentFrame->mvFeatures.size();
 
+    TicToc tcc;
     MotionRemoval();
+    mvMotionDetection.push_back(tcc.toc());
     //MotionRemovalTest1();
 
     mCam->Draw_Features(mCurrentFrame->mColorImg, mCurrentFrame->mvFeatures);
@@ -218,6 +225,7 @@ bool Tracking::TrackWithLocalMap()
     Optimizer::PoseOptimization(mCurrentFrame, 10);
 
     int N = mCurrentFrame->Get_VaildMpNums();
+    mvFeatureNumCounter.push_back(N);
 
     LOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
@@ -317,7 +325,7 @@ bool Tracking::NeedKeyframe()
 {
     //! This condition frome HeYijia / svo_edgelet
     //! https://github.com/HeYijia/svo_edgelet/blob/master/src/frame_handler_mono.cpp#L501
-
+    TicToc tc;
     int N = mCurrentFrame->Get_VaildMpNums();
     if(N >= 10 && N <= 50)
     {
@@ -373,7 +381,7 @@ bool Tracking::NeedKeyframe()
     //if(mProcessedFrames > 20)
     //    return true;
 
-
+    mvKeyFrameJudgeTime.push_back(tc.toc());
     return false;
 }
 
@@ -429,6 +437,10 @@ void Tracking::CraeteKeyframe()
     mProcessedFrames = 0;
 
     LOG(INFO)<< "Create new Keyframe " << tKFrame->mlId << " with " << tNum << " new MapPoints" <<std::endl;
+
+    Eigen::Matrix3d tMt;
+    Sophus::SO3 tRot(tMt);
+    Eigen::Vector3d tvt = tRot.log();
 }
 
 void Tracking::MotionRemoval()
@@ -601,6 +613,78 @@ void Tracking::UpdateID(Features &features)
 
         features[i]->mTrack_cnt++;
     }
+}
+
+void Tracking::CostTimeCount()
+{
+    double sum = std::accumulate(mvImageAlignTime.begin(), mvImageAlignTime.end(), 0.0);
+    double mean = sum/mvImageAlignTime.size();
+    double accum  = 0.0;
+    std::for_each (std::begin(mvImageAlignTime), std::end(mvImageAlignTime), [&](const double d)
+    {
+        accum  += (d-mean)*(d-mean);
+    });
+    double stdev = sqrt(accum/(mvImageAlignTime.size()-1));
+    std::cout << "ImageAlign" << "mean: " << mean << "median: " << utils::GetMedian(mvImageAlignTime) << "std: " << stdev <<std::endl;
+    sum = mean = accum = stdev =0;
+
+    sum = std::accumulate(mvFeatureAligTime.begin(), mvFeatureAligTime.end(), 0.0);
+    mean = sum/mvFeatureAligTime.size();
+    accum  = 0.0;
+    std::for_each (std::begin(mvFeatureAligTime), std::end(mvFeatureAligTime), [&](const double d)
+    {
+        accum  += (d-mean)*(d-mean);
+    });
+    stdev = sqrt(accum/(mvFeatureAligTime.size()-1));
+    std::cout << "FeatureAlign" << "mean: " << mean << "median: " << utils::GetMedian(mvFeatureAligTime) << "std: " << stdev <<std::endl;
+    sum = mean = accum = stdev =0;
+
+    sum = std::accumulate(mvMotionDetection.begin(), mvMotionDetection.end(), 0.0);
+    mean = sum/mvMotionDetection.size();
+    accum  = 0.0;
+    std::for_each (std::begin(mvMotionDetection), std::end(mvMotionDetection), [&](const double d)
+    {
+        accum  += (d-mean)*(d-mean);
+    });
+    stdev = sqrt(accum/(mvMotionDetection.size()-1));
+    std::cout << "MotionRemoval" << "mean: " << mean << "median: " << utils::GetMedian(mvMotionDetection) << "std: " << stdev <<std::endl;
+    sum = mean = accum = stdev =0;
+
+    sum = std::accumulate(mvKeyFrameJudgeTime.begin(), mvKeyFrameJudgeTime.end(), 0.0);
+    mean = sum/mvKeyFrameJudgeTime.size();
+    accum  = 0.0;
+    std::for_each (std::begin(mvKeyFrameJudgeTime), std::end(mvKeyFrameJudgeTime), [&](const double d)
+    {
+        accum  += (d-mean)*(d-mean);
+    });
+    stdev = sqrt(accum/(mvKeyFrameJudgeTime.size()-1));
+    std::cout << "KeyframeJudege" << "mean: " << mean << "median: " << utils::GetMedian(mvKeyFrameJudgeTime) << "std: " << stdev <<std::endl;
+    sum = mean = accum = stdev =0;
+
+    sum = std::accumulate(mvKeyframeCreation.begin(), mvKeyframeCreation.end(), 0.0);
+    mean = sum/mvKeyframeCreation.size();
+    accum  = 0.0;
+    std::for_each (std::begin(mvKeyframeCreation), std::end(mvKeyframeCreation), [&](const double d)
+    {
+        accum  += (d-mean)*(d-mean);
+    });
+    stdev = sqrt(accum/(mvKeyframeCreation.size()-1));
+    std::cout << "KeyframeCreation" << "mean: " << mean << "median: " << utils::GetMedian(mvKeyframeCreation) << "std: " << stdev <<std::endl;
+    sum = mean = accum = stdev =0;
+
+    sum = std::accumulate(mvLocalBATime.begin(), mvLocalBATime.end(), 0.0);
+    mean = sum/mvLocalBATime.size();
+    accum  = 0.0;
+    std::for_each (std::begin(mvLocalBATime), std::end(mvLocalBATime), [&](const double d)
+    {
+        accum  += (d-mean)*(d-mean);
+    });
+    stdev = sqrt(accum/(mvLocalBATime.size()-1));
+    std::cout << "LocalBA" << "mean: " << mean << "median: " << utils::GetMedian(mvLocalBATime) << "std: " << stdev <<std::endl;
+
+    long sum1 = std::accumulate(mvFeatureNumCounter.begin(), mvFeatureNumCounter.end(), 0);
+    int mean1 = sum1/mvFeatureNumCounter.size();
+    std::cout << "FeatureNum" << "mean: " << mean1 << std::endl;
 }
 
 } //namespace DSDTM

@@ -66,6 +66,9 @@ public:
     //! Set the Viewer
     void SetViewer(Viewer *tViewer);
 
+    //! Count the time of different part
+    void CostTimeCount();
+
     //! Reset Tracker
     void Reset();
 
@@ -102,6 +105,8 @@ private:
     void MotionRemoval();
     void MotionRemovalTest1();
     void MotionRemovalTest2();
+
+
 
 public:
     CameraPtr               mCam;               //! Camera
@@ -144,6 +149,14 @@ protected:
     std::vector<KeyFrame*>  mvpLocalKeyFrames;
     std::map<MapPoint*, KeyFrame*>  mvpLocalMapPoints;
 
+    std::vector<double> mvImageAlignTime;
+    std::vector<double> mvFeatureAligTime;
+    std::vector<double> mvMotionDetection;
+    std::vector<double> mvKeyFrameJudgeTime;
+    std::vector<double> mvLocalBATime;
+    std::vector<double> mvKeyframeCreation;
+
+    std::vector<int> mvFeatureNumCounter;
 };
 
 }// namespace DSDTM
