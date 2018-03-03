@@ -1,6 +1,6 @@
 # DSDTM
 DSDTM is a semi-direct rgbd visual odometry for dynamic environment.
-## 1. Dependencies
+### Dependencies
 - Opencv 2.4.13
 - [Eigen3.2.0](https://bitbucket.org/eigen/eigen/src/faf438078f33c4d0c059b2a106c136baa511c524/?at=3.2) 
 - Sophus 1.0.0
