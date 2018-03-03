@@ -142,6 +142,10 @@ int main(int argc, char **argv)
     Eigen::Vector2d tSquaredNorm(1,2);
     double tSNfinal = tSquaredNorm.squaredNorm();
 
+    //! Test quaterion multiplication a scalar
+    Eigen::Quaterniond MulQuat(1, 2, 3, 4);
+    MulQuat = MulQuat.coeffs()*2;
+
     std::vector<int> a;
     for (int i = 0; i < 10; ++i)
     {

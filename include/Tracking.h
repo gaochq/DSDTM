@@ -72,6 +72,9 @@ public:
     //! Reset Tracker
     void Reset();
 
+    //! Get the Tracker state
+    int GetState() { return mState;}
+
 private:
 
     //! Create Keyframe and MapPoints after initialization
@@ -105,7 +108,6 @@ private:
     void MotionRemoval();
     void MotionRemovalTest1();
     void MotionRemovalTest2();
-
 
 
 public:

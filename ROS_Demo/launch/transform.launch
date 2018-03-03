@@ -1,0 +1,7 @@
+<launch>  
+
+	<node pkg="tf" type="static_transform_publisher" name="map" args="0 0 0 0 0 0 /map /odom 100" />  
+	<node name="Pose_transform" pkg="ORB-SLAM2_DENSE" type="Pose_transform" >
+	</node>​
+
+</launch> 

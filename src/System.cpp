@@ -35,7 +35,7 @@ System::System(const std::string &Paramfile, const Camera_Model tSensor, const b
     mTracker->SetViewer(mViewer);
 }
 
-Sophus::SE3 System::TrackRGBD(cv::Mat &tColorImg, cv::Mat &tDepthImg, const double &timestamp)
+Sophus::SE3 System::TrackRGBD(const cv::Mat &tColorImg, const cv::Mat &tDepthImg, const double &timestamp)
 {
     if(mSensor!=RGB_PinHole)
     {
@@ -116,6 +116,11 @@ void System::RequestStart()
 void System::OutputTimeCounter()
 {
     mTracker->CostTimeCount();
+}
+
+int System::GetSystemState()
+{
+     return mTracker->GetState();
 }
 
 

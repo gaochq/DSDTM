@@ -24,7 +24,7 @@ public:
 
     System(const std::string &Paramfile, const Camera_Model tSensor, const bool tbUseViewer = true);
 
-    Sophus::SE3 TrackRGBD(cv::Mat &tColorImg, cv::Mat &tDepthImg, const double &timestamp);
+    Sophus::SE3 TrackRGBD(const cv::Mat &tColorImg, const cv::Mat &tDepthImg, const double &timestamp);
 
     Sophus::SE3 TrackMonocular(cv::Mat &tColorImg, const double &timestamp);
 
@@ -42,6 +42,8 @@ public:
     int ReturnMapPointsSize() { return mMap->GetAllMapPoints().size(); }
 
     void OutputTimeCounter();
+
+    int GetSystemState();
 
 protected:
     Camera_Model    mSensor;
