@@ -13,4 +13,4 @@ sudo apt-get install libgoogle-glog-dev
 - [Fast - Corner Detector](https://github.com/uzh-rpg/fast)
 - [fastMCD](https://github.com/kmyid/fastMCD)
 
-The project is tested with TUM RGBD datasets. And it need to be further improved.
+The project is tested with TUM RGBD datasets. And it is still undergoing.
