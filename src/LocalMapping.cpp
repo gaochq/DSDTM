@@ -15,7 +15,6 @@ LocalMapping::LocalMapping(Map *tMap):
 void LocalMapping::InsertKeyFrame(KeyFrame *tKFrame)
 {
     //std::unique_lock<std::mutex> lock(mMutexKFlist);
-
     mlNewKeyFrames.push_back(tKFrame);
 }
 
@@ -82,8 +81,8 @@ bool LocalMapping::CheckNewFrames()
 
 void LocalMapping::Run(KeyFrame *tKf)
 {
-    //ProcessNewKeyframe(tKf);
-    //MapPointCulling();
+    ProcessNewKeyframe(tKf);
+    MapPointCulling();
 
     mCurrentKframe = tKf;
 

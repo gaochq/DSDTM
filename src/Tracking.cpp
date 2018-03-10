@@ -130,6 +130,8 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
 
     mTrajectory.push_back(std::make_pair(mCurrentFrame->mdCloTimestamp, mCurrentFrame->Get_Pose()));
 
+    mvFeatureNumCounter.push_back(mCurrentFrame->Get_VaildMpNums());
+
     return mCurrentFrame->Get_Pose().inverse();
 }
 
@@ -216,7 +218,7 @@ bool Tracking::TrackWithLocalMap()
     mCurrentFrame->mvFeatures.size();
 
     TicToc tcc;
-    MotionRemoval();
+    //MotionRemoval();
     mvMotionDetection.push_back(tcc.toc());
     //MotionRemovalTest1();
 
@@ -225,7 +227,6 @@ bool Tracking::TrackWithLocalMap()
     Optimizer::PoseOptimization(mCurrentFrame, 10);
 
     int N = mCurrentFrame->Get_VaildMpNums();
-    mvFeatureNumCounter.push_back(N);
 
     LOG(INFO)<< mCurrentFrame->mlId <<" Frame tracked " << N << " Features" << std::endl;
 
