@@ -20,24 +20,31 @@ MapPoint::MapPoint(Eigen::Vector3d &_pose, KeyFrame *_frame, Map *tMap):
         mlLocalBAKFId(0), mMap(tMap), mObsNum(0), mRefKframe(_frame),
         mnVisible(0)
 {
-    mlID = mlNextId++;
+    {
+        std::unique_lock<std::mutex> lock(mMap->mMutexMPCreation);
+        mlID = mlNextId++;
+    }
     mbOutlier = false;
     mdStaticWeight = 1.0;
 }
 
 void MapPoint::Set_Pose(Eigen::Vector3d tPose)
 {
+    std::unique_lock<std::mutex> lock(mMutexPos);
+
     mPose = tPose;
 }
 
 Eigen::Vector3d MapPoint::Get_Pose() const
 {
+    std::unique_lock<std::mutex> lock(mMutexPos);
+
     return mPose;
 }
 
 void MapPoint::Add_Observation(KeyFrame *tKFrame, size_t tFID)
 {
-    //!TODO add lock
+    std::unique_lock<std::mutex> lock(mMutexObs);
 
     if(mObservations.count(tKFrame))
         return;
@@ -50,21 +57,23 @@ void MapPoint::Add_Observation(KeyFrame *tKFrame, size_t tFID)
 void MapPoint::Erase_Observation(KeyFrame *tKFrame)
 {
     bool bBad = false;
-
-    if(mObservations.count(tKFrame))
     {
-        mObsNum--;
+        std::unique_lock<std::mutex> lock(mMutexObs);
 
-        mObservations.erase(tKFrame);
-
-        if(tKFrame==mRefKframe)
+        if (mObservations.count(tKFrame))
         {
-            mRefKframe = mObservations.begin()->first;
-            mFirstFrameId = mRefKframe->mlId;
-        }
+            mObsNum--;
 
-        if(mObsNum <=1)
-            bBad = true;
+            mObservations.erase(tKFrame);
+
+            if (tKFrame == mRefKframe) {
+                mRefKframe = mObservations.begin()->first;
+                mFirstFrameId = mRefKframe->mlId;
+            }
+
+            if (mObsNum <= 1)
+                bBad = true;
+        }
     }
 
     if(bBad)
@@ -74,12 +83,16 @@ void MapPoint::Erase_Observation(KeyFrame *tKFrame)
 
 std::map<KeyFrame*, size_t> MapPoint::Get_Observations()
 {
-    //TODO add lock
+    std::unique_lock<std::mutex> lock(mMutexObs);
+
     return mObservations;
 }
 
 void MapPoint::SetBadFlag()
 {
+    std::unique_lock<std::mutex> lock(mMutexObs);
+    std::unique_lock<std::mutex> lock2(mMutexPos);
+
     mbOutlier = true;
 
     std::map<KeyFrame*, size_t> obs = mObservations;
@@ -97,29 +110,46 @@ void MapPoint::SetBadFlag()
 
 bool MapPoint::IsBad() const
 {
+    std::unique_lock<std::mutex> lock(mMutexObs);
+    std::unique_lock<std::mutex> lock2(mMutexPos);
+
     return mbOutlier;
 }
 
 int MapPoint::Get_ObserveNums() const
 {
+    std::unique_lock<std::mutex> lock(mMutexObs);
+
     return mObsNum;
 }
 
 int MapPoint::Get_FoundNums() const
 {
+    std::unique_lock<std::mutex> lock(mMutexFounds);
+
     return mnFound;
 }
 
 bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *&tKframe) const
 {
-    Eigen::Vector3d tPt_frame = tFrame->Get_CameraCnt() - mPose;
+    Eigen::Vector3d tPt_frame, tPose;
+    std::map<KeyFrame*, size_t> tObservations;
+    {
+        std::unique_lock<std::mutex> lock2(mMutexObs);
+        std::unique_lock<std::mutex> lock(mMutexPos);
+
+        tPose =  mPose;
+        tObservations = mObservations;
+    }
+
+    tPt_frame = tFrame->Get_CameraCnt() - tPose;
     tPt_frame.normalize();
 
     double tMin_angle = 0;
-    auto min_it = mObservations.begin();
-    for (auto iter = mObservations.begin(); iter != mObservations.end(); iter++)
+    auto min_it = tObservations.begin();
+    for (auto iter = tObservations.begin(); iter != tObservations.end(); iter++)
     {
-        Eigen::Vector3d tPt_refer = iter->first->Get_CameraCnt() - mPose;
+        Eigen::Vector3d tPt_refer = iter->first->Get_CameraCnt() - tPose;
         tPt_refer.normalize();
 
         double tCos_angle = tPt_refer.dot(tPt_frame);
@@ -130,9 +160,11 @@ bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *
         }
     }
 
-    tFeature = min_it->first->mvFeatures[min_it->second];
-
-    tKframe = min_it->first;
+    {
+        std::unique_lock<std::mutex> lock2(mMutexObs);
+        tFeature = min_it->first->mvFeatures[min_it->second];
+        tKframe = min_it->first;
+    }
 
     if(tMin_angle < 0.5)
         return false;
@@ -142,23 +174,39 @@ bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *
 
 void MapPoint::IncreaseFound(int n)
 {
+    std::unique_lock<std::mutex> lock(mMutexFounds);
+
     mnFound = mnFound + n;
 }
 
 void MapPoint::EraseFound(int n)
 {
-    mnFound = mnFound - n;
-    if(mnFound <= 0)
+    std::unique_lock<std::mutex> lock(mMutexFounds);
+    bool tbBad = false;
+    {
+        //std::unique_lock<std::mutex> lock(mMutexFounds);
+
+        mnFound = mnFound - n;
+        if (mnFound <= 0)
+            tbBad = true;
+    }
+
+    if(tbBad)
         SetBadFlag();
 }
 
 void MapPoint::IncreaseVisible(int n)
 {
+    std::unique_lock<std::mutex> lock(mMutexObs);
+
     mnVisible += n;
 }
 
 int MapPoint::Get_IndexInKeyFrame(KeyFrame *tKf)
 {
+    std::unique_lock<std::mutex> lock(mMutexObs);
+    std::unique_lock<std::mutex> lock2(mMutexPos);
+
     if(mObservations.count(tKf))
         return mObservations[tKf];
     else
@@ -167,10 +215,17 @@ int MapPoint::Get_IndexInKeyFrame(KeyFrame *tKf)
 
 void MapPoint::UpdateNormalAndDepth()
 {
-    // TODO add lock
-    std::map<KeyFrame*, size_t> tObservations = mObservations;
-    const Eigen::Vector3d tPose = mPose;
-    KeyFrame *tRefKframe = mRefKframe;
+    std::map<KeyFrame*, size_t> tObservations;
+    Eigen::Vector3d tPose;
+    KeyFrame *tRefKframe;
+
+    {
+        std::unique_lock<std::mutex> lock(mMutexObs);
+        std::unique_lock<std::mutex> lock2(mMutexPos);
+        tObservations = mObservations;
+        tPose = mPose;
+        tRefKframe = mRefKframe;
+    }
 
     if(tObservations.empty())
         return;
@@ -194,29 +249,42 @@ void MapPoint::UpdateNormalAndDepth()
     const int tLevels = 4;
     const float tMinLevelFactor = 1.0/(1<<tLevels);
 
-    mfMaxDistance = dist*tLevelFactor;
-    mfMinDistance = mfMaxDistance*tMinLevelFactor;
+    {
+        std::unique_lock<std::mutex> lock2(mMutexPos);
 
-    mNoramlVector = normal/n;
+        mfMaxDistance = dist*tLevelFactor;
+        mfMinDistance = mfMaxDistance*tMinLevelFactor;
+
+        mNoramlVector = normal/n;
+    }
 }
 
 float MapPoint::Get_MaxObserveDistance()
 {
+    std::unique_lock<std::mutex> lock2(mMutexPos);
+
     return mfMaxDistance*1.2;
 }
 
 float MapPoint::Get_MinObserveDistance()
 {
+    std::unique_lock<std::mutex> lock2(mMutexPos);
+
     return mfMinDistance*0.8;
 }
 
 Eigen::Vector3d MapPoint::Get_NormalVector()
 {
+    std::unique_lock<std::mutex> lock2(mMutexPos);
+
     return mNoramlVector;
 }
 
 float MapPoint::Get_FoundRatio()
 {
+    std::unique_lock<std::mutex> lock(mMutexObs);
+    std::unique_lock<std::mutex> lock2(mMutexFounds);
+
     return (1.0*mnFound/mnVisible);
 }
 

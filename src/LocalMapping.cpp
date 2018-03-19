@@ -14,17 +14,17 @@ LocalMapping::LocalMapping(Map *tMap):
 
 void LocalMapping::InsertKeyFrame(KeyFrame *tKFrame)
 {
-    //std::unique_lock<std::mutex> lock(mMutexKFlist);
+    std::unique_lock<std::mutex> lock(mMutexKFlist);
     mlNewKeyFrames.push_back(tKFrame);
 }
 
-void LocalMapping::ProcessNewKeyframe(KeyFrame *tKf)
+void LocalMapping::ProcessNewKeyframe()
 {
-    //std::unique_lock<std::mutex> lock(mMutexKFlist);
-    //mCurrentKframe = mlNewKeyFrames.front();
-    //mlNewKeyFrames.pop_front();
+    std::unique_lock<std::mutex> lock(mMutexKFlist);
+    mCurrentKframe = mlNewKeyFrames.front();
+    mlNewKeyFrames.pop_front();
 
-    mCurrentKframe = tKf;
+    //mCurrentKframe = tKf;
 
     const std::vector<MapPoint*> mvMapPoints = mCurrentKframe->GetMapPoints();
     for (const auto &it : mvMapPoints)
@@ -74,20 +74,32 @@ void LocalMapping::MapPointCulling()
 
 bool LocalMapping::CheckNewFrames()
 {
-    //std::unique_lock<std::mutex> lock(mMutexKFlist);
+    std::unique_lock<std::mutex> lock(mMutexKFlist);
 
     return mlNewKeyFrames.empty();
 }
 
-void LocalMapping::Run(KeyFrame *tKf)
+void LocalMapping::Run()
 {
-    ProcessNewKeyframe(tKf);
-    MapPointCulling();
+    while(1)
+    {
+        if(!CheckNewFrames())
+        {
+            ProcessNewKeyframe();
+            MapPointCulling();
 
-    mCurrentKframe = tKf;
 
-    if(mMap->ReturnKeyFramesSize() > 2)
-        Optimizer::LocalBundleAdjustment(mCurrentKframe, mMap);
+            if(mMap->ReturnKeyFramesSize() > 2)
+                Optimizer::LocalBundleAdjustment(mCurrentKframe, mMap);
+        }
+
+        //usleep(3000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
+
+    }
+
 }
+
+
 
 }//namespace DSDTM

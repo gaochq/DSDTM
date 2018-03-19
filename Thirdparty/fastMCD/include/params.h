@@ -26,7 +26,7 @@
 #define BLOCK_SIZE_SQR				(4.0)
 #define VARIANCE_INTERPOLATE_PARAM	        (1.0)
 
-#define MAX_BG_AGE				(3.0)
+#define MAX_BG_AGE				(2.0)
 #define VAR_MIN_NOISE_T			        (50.0*50.0)
 #define VAR_DEC_RATIO			        (0.001)
 #define MIN_BG_VAR				(30.0*30.0)	//15*15

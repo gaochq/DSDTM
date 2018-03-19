@@ -105,6 +105,11 @@ protected:
     int mnFound;
     int mnVisible;
 
+    //! Mutex
+    mutable std::mutex mMutexObs;
+    mutable std::mutex mMutexFounds;
+    mutable std::mutex mMutexPos;
+
 };
 
 

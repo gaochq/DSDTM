@@ -46,6 +46,9 @@ public:
     //! Clera all vars in map
     void Release();
 
+    //! Avoid simultaneously create mappoint in separate thread
+    std::mutex mMutexMPCreation;
+
 protected:
     std::set<KeyFrame*>     msKeyFrames;
     std::set<MapPoint*>     msMapPoints;

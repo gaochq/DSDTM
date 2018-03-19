@@ -108,9 +108,12 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
                     CraeteKeyframe();
                     mvKeyframeCreation.push_back(tcJudege.toc());
 
+                    /*
                     TicToc tcLba;
                     mLocalMapping->Run(mpLastKF);
                     mvLocalBATime.push_back(tcLba.toc());
+                     */
+                    mLocalMapping->InsertKeyFrame(mpLastKF);
                 }
 
             }

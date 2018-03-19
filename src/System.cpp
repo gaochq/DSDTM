@@ -25,6 +25,7 @@ System::System(const std::string &Paramfile, const Camera_Model tSensor, const b
     mMap = new Map();
 
     mLocalMapper = new LocalMapping(mMap);
+    mtLocalMapper = new std::thread(&LocalMapping::Run, mLocalMapper);
 
     mTracker = new Tracking(mCamera, mMap, mLocalMapper);
 

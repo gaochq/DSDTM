@@ -32,6 +32,8 @@ void Map::AddMapPoint(MapPoint *_point)
 
 KeyFrame* Map::Get_InitialKFrame()
 {
+    std::unique_lock<std::mutex> lock(mMapMutex);
+
     return *msKeyFrames.begin();
 }
 
@@ -49,12 +51,15 @@ std::vector<KeyFrame*> Map::GetAllKeyFrames()
 
 int Map::ReturnKeyFramesSize()
 {
+    std::unique_lock<std::mutex> lock(mMapMutex);
+
     return msKeyFrames.size();
 }
 
 void Map::EraseMapPoint(MapPoint *tMp)
 {
-    //TODO add lock
+    std::unique_lock<std::mutex> lock(mMapMutex);
+
     msMapPoints.erase(tMp);
 }
 
