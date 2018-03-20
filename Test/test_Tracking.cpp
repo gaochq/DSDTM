@@ -84,10 +84,12 @@ int main(int argc, char **argv)
     cout <<"Cost "<< time << " us" << endl;
     cout <<"Average "<< time/nImages << "us" << endl;
 
+    tSystem->Shutdown();
+
     tSystem->SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
     tSystem->SaveCameraTrajectory("CameraTrajectory.txt");
 
-    tSystem->OutputTimeCounter();
+    //tSystem->OutputTimeCounter();
 
     cout <<"KeyFrames size: "<< tSystem->ReturnKeyFramesSize() << endl;
     cout <<"MapPoints size: "<< tSystem->ReturnMapPointsSize() << endl;

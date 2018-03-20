@@ -7,7 +7,7 @@
 namespace DSDTM
 {
 LocalMapping::LocalMapping(Map *tMap):
-    mMap(tMap)
+    mMap(tMap), mbRequestFinish(false), mbFinished(false)
 {
 
 }
@@ -81,6 +81,8 @@ bool LocalMapping::CheckNewFrames()
 
 void LocalMapping::Run()
 {
+    mbFinished = false;
+
     while(1)
     {
         if(!CheckNewFrames())
@@ -93,13 +95,92 @@ void LocalMapping::Run()
                 Optimizer::LocalBundleAdjustment(mCurrentKframe, mMap);
         }
 
-        //usleep(3000);
-        std::this_thread::sleep_for(std::chrono::milliseconds(3));
+        if(CheckFinish())
+            break;
 
+        if(Stop())
+        {
+            while(IsStopped())
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(3));
+            }
+        }
     }
 
+    SetFinish();
 }
 
+void LocalMapping::RequestFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    mbRequestFinish = true;
+}
+
+bool LocalMapping::CheckFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    return mbRequestFinish;
+}
+
+bool LocalMapping::IsFinished()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    return mbFinished;
+}
+
+void LocalMapping::SetFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    mbFinished = true;
+}
+
+void LocalMapping::RequestStart()
+{
+    if(mbPaused)
+        mbPaused = false;
+}
+
+void LocalMapping::RequestPause()
+{
+    if(!mbPaused)
+        mbPaused = true;
+}
+
+void LocalMapping::RequestStop()
+{
+    if(!mbStopped)
+        mbRequestStop = true;
+}
+
+bool LocalMapping::Stop()
+{
+    if(mbRequestStop)
+    {
+        mbStopped = true;
+        mbRequestStop = false;
+        return true;
+    }
+
+    return false;
+}
+
+bool LocalMapping::IsStopped()
+{
+    return mbStopped;
+}
+
+void LocalMapping::Release()
+{
+    mbStopped = true;
+    mbRequestStop = false;
+
+    mbFinished = false;
+    mbRequestFinish = false;
+}
 
 
 }//namespace DSDTM

@@ -39,12 +39,22 @@ public:
     //! Check whether the stop menu is choosed
     bool IsStopped();
 
+    void Release();
+
+    void RequestFinish();
+
+    bool IsFinished();
+
+protected:
+
     //! Set the Stopped true
     bool Stop();
 
-    void Release();
 
-private:
+    bool CheckFinish();
+    void SetFinish();
+
+protected:
 
     double mT;
     float mImageWidth, mImageHeight;
@@ -69,6 +79,11 @@ private:
 
     Sophus::SE3     mCameraPose;
     Sophus::SE3     mLastCamPose;
+
+    bool        mbRequestFinish;
+    bool        mbFinished;
+
+    std::mutex mMutexFinish;
 
 };
 

@@ -10,7 +10,8 @@ namespace DSDTM
 
 Viewer::Viewer(System *tSystem, Tracking *pTracking, Map *tMap):
         mSystem(tSystem), mTracker(pTracking), mbStopped(false),
-        mbRequestStop(false), mbPaused(true), mMap(tMap)
+        mbRequestStop(false), mbPaused(true), mMap(tMap), mbRequestFinish(false),
+        mbFinished(false)
 {
     float fps = Config::Get<int>("Camera.fps");
     if(fps < 1)
@@ -217,6 +218,7 @@ void Viewer::Run()
     Twc.SetIdentity();
 
     bool tbFollow = true;
+    mbFinished = false;
 
     while(1)
     {
@@ -288,7 +290,12 @@ void Viewer::Run()
                 std::this_thread::sleep_for(std::chrono::milliseconds(3));
             }
         }
+
+        if(CheckFinish())
+            break;
     }
+
+    SetFinish();
 }
 
 void Viewer::RequestStart()
@@ -330,6 +337,34 @@ void Viewer::Release()
 {
     mbStopped = true;
     mbRequestStop = false;
+}
+
+void Viewer::RequestFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    mbRequestFinish = true;
+}
+
+bool Viewer::CheckFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    return mbRequestFinish;
+}
+
+bool Viewer::IsFinished()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    return mbFinished;
+}
+
+void Viewer::SetFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    mbFinished = true;
 }
 
 }// namesapce DSDTM

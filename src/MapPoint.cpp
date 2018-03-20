@@ -162,6 +162,7 @@ bool MapPoint::Get_ClosetObs(const Frame *tFrame, Feature *&tFeature, KeyFrame *
 
     {
         std::unique_lock<std::mutex> lock2(mMutexObs);
+        std::unique_lock<std::mutex> lock(mMutexFounds);
         tFeature = min_it->first->mvFeatures[min_it->second];
         tKframe = min_it->first;
     }
@@ -181,10 +182,11 @@ void MapPoint::IncreaseFound(int n)
 
 void MapPoint::EraseFound(int n)
 {
-    std::unique_lock<std::mutex> lock(mMutexFounds);
+    //std::unique_lock<std::mutex> lock(mMutexFounds);
     bool tbBad = false;
     {
-        //std::unique_lock<std::mutex> lock(mMutexFounds);
+        std::unique_lock<std::mutex> lock(mMutexObs);
+        std::unique_lock<std::mutex> lock2(mMutexFounds);
 
         mnFound = mnFound - n;
         if (mnFound <= 0)

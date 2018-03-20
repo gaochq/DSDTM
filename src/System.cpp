@@ -48,7 +48,6 @@ Sophus::SE3 System::TrackRGBD(const cv::Mat &tColorImg, const cv::Mat &tDepthImg
 
     while(mbPaused==true)
     {
-        //TODO Set the LocalMapper to sleep
         std::this_thread::sleep_for(std::chrono::milliseconds(3));
     }
 
@@ -96,6 +95,17 @@ void System::SaveCameraTrajectory(const string &filename)
 
         f << setprecision(6) << it.first << setprecision(7) << " " << t(0) << " " << t(1) << " " << t(2)
           << " " << float(q.x()) << " " << float(q.y()) << " " << float(q.z()) << " " << float(q.w()) << endl;
+    }
+}
+
+void System::Shutdown()
+{
+    mLocalMapper->RequestFinish();
+    mViewer->RequestFinish();
+
+    while(!mLocalMapper->IsFinished() || !mViewer->IsFinished())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
     }
 }
 

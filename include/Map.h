@@ -48,6 +48,7 @@ public:
 
     //! Avoid simultaneously create mappoint in separate thread
     std::mutex mMutexMPCreation;
+    std::mutex mMutexMapUpdate;
 
 protected:
     std::set<KeyFrame*>     msKeyFrames;

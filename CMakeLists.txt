@@ -94,8 +94,8 @@ add_executable(test_Jotting Test/test_Jotting.cpp)
 target_link_libraries(test_Jotting ${PROJECT_NAME})
 
 # Test the initial pose solver
-add_executable(test_Optimizer Test/test_Optimizer.cpp)
-target_link_libraries(test_Optimizer ${PROJECT_NAME})
+#add_executable(test_Optimizer Test/test_Optimizer.cpp)
+#target_link_libraries(test_Optimizer ${PROJECT_NAME})
 
 #Test Motion Dection
 add_executable(test_Motion_dection Test/test_Motion_detection.cpp)
@@ -106,8 +106,8 @@ add_executable(test_Feature_alignemnt Test/test_Feature_alignment.cpp)
 target_link_libraries(test_Feature_alignemnt ${PROJECT_NAME})
 
 #Test Sprase iamge Alignment
-add_executable(test_SpraseImg_alignment Test/test_SpraseImg_alignment.cpp)
-target_link_libraries(test_SpraseImg_alignment ${PROJECT_NAME})
+#add_executable(test_SpraseImg_alignment Test/test_SpraseImg_alignment.cpp)
+#target_link_libraries(test_SpraseImg_alignment ${PROJECT_NAME})
 
 #Test Tracking with SVO datasets
 add_executable(test_uzhsin Test/test_uzhsin.cpp)
