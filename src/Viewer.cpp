@@ -208,6 +208,14 @@ void Viewer::Run()
     pangolin::Var<bool> menuPause("menu.Pause",true,true);
     pangolin::Var<bool> menuReset("menu.Reset",false,false);
 
+    pangolin::Var<float> menuDisplayPose_X("menu.Pose:X", false, false);
+    pangolin::Var<float> menuDisplayPose_Y("menu.Pose:Y", false, false);
+    pangolin::Var<float> menuDisplayPose_Z("menu.Pose:Z", false, false);
+    pangolin::Var<float> menuDisplayPose_Roll("menu.Pose:Roll", false, false);
+    pangolin::Var<float> menuDisplayPose_Pitch("menu.Pose:Pitch", false, false);
+    pangolin::Var<float> menuDisplayPose_Yaw("menu.Pose:Yaw", false, false);
+
+
     pangolin::OpenGlRenderState s_cam(pangolin::ProjectionMatrix(1024, 768, mViewerpointF, mViewerpointF, 512, 389, 0.1, 1000),
                                       pangolin::ModelViewLookAt(mViewerpointX, mViewerpointY, mViewerpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
 
@@ -225,6 +233,17 @@ void Viewer::Run()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         GetCurrentOpenGLCameraMatrix(Twc);
+
+        {
+            // 对界面显示的变量进行赋值
+            menuDisplayPose_X = Twc.m[14];
+            menuDisplayPose_Y = -Twc.m[12];
+            menuDisplayPose_Z = -Twc.m[13];
+
+            menuDisplayPose_Roll = atan(Twc.m[1]/Twc.m[0]) / 3.14 * 180;
+            menuDisplayPose_Pitch = -atan(Twc.m[9] / Twc.m[10]) / 3.14 * 180;
+            menuDisplayPose_Yaw = atan(-Twc.m[2] / sqrt( Twc.m[6] * Twc.m[6]+ Twc.m[10] * Twc.m[10])) / 3.14 * 180;
+        }
 
         //! choose the way to follow the Camera
         if(menuFollowCamera && tbFollow)
