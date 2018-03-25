@@ -100,7 +100,7 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
 
             if(bOK)
             {
-                mViewer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
+                //mViewer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
 
                 if (NeedKeyframe())
                 {
@@ -127,6 +127,8 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
     mLastFrame = mCurrentFrame;
 
     Reset_Status();
+
+    mViewer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
 
     mTrajectory.push_back(std::make_pair(mCurrentFrame->mdCloTimestamp, mCurrentFrame->Get_Pose()));
 

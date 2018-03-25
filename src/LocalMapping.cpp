@@ -82,7 +82,7 @@ bool LocalMapping::CheckNewFrames()
 void LocalMapping::Run(KeyFrame *tKf)
 {
     ProcessNewKeyframe(tKf);
-    MapPointCulling();
+    //MapPointCulling();
 
     mCurrentKframe = tKf;
 
