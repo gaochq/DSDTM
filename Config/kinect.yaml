@@ -1,0 +1,98 @@
+%YAML:1.0
+# data
+# walking people: rgbd_dataset_freiburg3_walking_xyz
+# sitting people: rgbd_dataset_freiburg3_sitting_static
+#rgbd_dataset_freiburg2_desk_with_person
+#rgbd_dataset_freiburg3_walking_static
+#rgbd_dataset_freiburg2_desk
+#rgbd_dataset_freiburg3_walking_rpy
+#rgbd_dataset_freiburg3_sitting_rpy
+#rgbd_dataset_freiburg3_sitting_xyz
+#rgbd_dataset_freiburg3_sitting_halfsphere
+#rgbd_dataset_freiburg3_walking_halfsphere
+dataset_dir: /home/buyi/Datasets/longhouse
+
+Camera.width: 640
+Camera.height: 480
+
+# camera intrinsics
+# fr1
+#Camera.fx: 517.3kugo
+#Camera.fy: 516.5
+#Camera.cx: 325.1
+#Camera.cy: 249.7
+
+#Camera.k1: 0.2624
+#Camera.k2: -0.9531
+#Camera.p1: -0.0054
+#Camera.p2: 0.0026
+#Camera.k3: 1.1633
+
+# fr2
+#Camera.fx: 520.9
+#Camera.fy: 521.0
+#Camera.cx: 325.1
+#Camera.cy: 249.7
+
+#Camera.k1: 0.231222
+#Camera.k2: -0.784899
+#Camera.p1: -0.003257
+#Camera.p2: -0.000105
+#Camera.k3: 0.917205
+
+#Camera.depth_scale: 5208
+
+# fr3
+Camera.fx: 517.306408
+Camera.fy: 516.469215
+Camera.cx: 318.643040
+Camera.cy: 255.313989
+
+Camera.k1: 0.262383
+Camera.k2: -0.953104
+Camera.p1: -0.005358
+Camera.p2: 0.002628
+Camera.k3: 1.163314
+
+Camera.depth_scale: 1000
+
+Camera.f: 525
+
+# VO Parameters
+Camera.MaxPyraLevels: 5
+Camera.MinPyraLevels: 0
+Camera.CellSize: 15
+Camera.Max_fts: 500
+Camera.Max_tkfts: 200
+Camera.Min_fts: 15
+Camera.Min_dist: 15
+
+Camera.Half_PatchSize: 4
+
+# Viewer
+Camera.fps: 30
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+
+#Rarsac algorithm
+Rarsac.Sampson_Dist_threshold: 1.25
+Rarsac.MaxIterators: 1000
+Rarsac.Terminate_threshold: 0.001
+
+#Ceres optimization
+Optimization.MaxIter: 8
+Optimization.LocalBAthreshhold: 2.0
+
+#Insert KeyFrame
+KeyFrame.min_rot: 0.08
+KeyFrame.min_trans: 0.08
+KeyFrame.min_features: 25
+KeyFrame.min_dist: 0.12
