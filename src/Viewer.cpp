@@ -207,6 +207,13 @@ void Viewer::Run()
     pangolin::Var<bool> menuPause("menu.Pause",true,true);
     pangolin::Var<bool> menuReset("menu.Reset",false,false);
 
+    pangolin::Var<float> menuDisplayPose_X("menu.Pose:X", false, false);
+    pangolin::Var<float> menuDisplayPose_Y("menu.Pose:Y", false, false);
+    pangolin::Var<float> menuDisplayPose_Z("menu.Pose:Z", false, false);
+    pangolin::Var<float> menuDisplayPose_Roll("menu.Pose:Roll", false, false);
+    pangolin::Var<float> menuDisplayPose_Pitch("menu.Pose:Pitch", false, false);
+    pangolin::Var<float> menuDisplayPose_Yaw("menu.Pose:Yaw", false, false);
+
     pangolin::OpenGlRenderState s_cam(pangolin::ProjectionMatrix(1024, 768, mViewerpointF, mViewerpointF, 512, 389, 0.1, 1000),
                                       pangolin::ModelViewLookAt(mViewerpointX, mViewerpointY, mViewerpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
 
@@ -223,6 +230,22 @@ void Viewer::Run()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         GetCurrentOpenGLCameraMatrix(Twc);
+
+        {
+            Sophus::SE3 tPose = mCameraPose.inverse();
+            Eigen::Quaterniond q = tPose.unit_quaternion();
+            Eigen::Vector3f t = tPose.translation().cast<float>();
+            Eigen::Vector3d Euler = q.toRotationMatrix().eulerAngles(0, 1, 2);
+            Euler = Euler*180/3.14;
+            // 对界面显示的变量进行赋值
+            menuDisplayPose_X =  t[2];
+            menuDisplayPose_Y =  t[0];
+            menuDisplayPose_Z =  t[1];
+
+            menuDisplayPose_Roll = Euler[0];
+            menuDisplayPose_Pitch = Euler[1];
+            menuDisplayPose_Yaw = Euler[2];
+        }
 
         //! choose the way to follow the Camera
         if(menuFollowCamera && tbFollow)
