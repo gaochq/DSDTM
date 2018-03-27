@@ -238,8 +238,8 @@ bool Tracking::TrackWithLocalMap()
     {
         LOG(WARNING)<< "Too few Features tracked" << std::endl;
 
-        //if(N < 10)
-        //    return false;
+        if(N < 20)
+            return false;
 
         return true;
     }
@@ -330,7 +330,7 @@ bool Tracking::NeedKeyframe()
     //! https://github.com/HeYijia/svo_edgelet/blob/master/src/frame_handler_mono.cpp#L501
     TicToc tc;
     int N = mCurrentFrame->Get_VaildMpNums();
-    if(N >= 10 && N <= 50)
+    if(N >= 30 && N <= 50)
     {
         return true;
     }

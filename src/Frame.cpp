@@ -55,11 +55,11 @@ void Frame::InitFrame()
     ComputeImagePyramid(mColorImg, mvImg_Pyr);
 
     //! it takes almost 6ms to undistort the image, it takes too much time
-    /*
-    cv::Mat tColorImg(mColorImg);
-    mColorImg.release();
-    cv::undistort(tColorImg, mColorImg, mCamera->mInstrinsicMat, mCamera->mDistortionMat);
-    */
+
+    //cv::Mat tColorImg(mColorImg);
+    //mColorImg.release();
+    //cv::undistort(tColorImg, mColorImg, mCamera->mInstrinsicMat, mCamera->mDistortionMat, mCamera->mInstrinsicMat);
+
 
     mImgMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(255));
     mDynamicMask = cv::Mat(mCamera->mheight, mCamera->mwidth, CV_8UC1, cv::Scalar(0));
@@ -102,8 +102,8 @@ void Frame::UndistortFeatures()
     int tNum = 0;
     for (auto it = mvFeatures.begin(); it!=mvFeatures.end(); ++it)
     {
-        if((*it)->mbInitial)
-            continue;
+        //if((*it)->mbInitial)
+        //    continue;
 
         tSrc.push_back((*it)->mpx);
         tNum++;
@@ -117,11 +117,14 @@ void Frame::UndistortFeatures()
     }
 
     //! the InputArray in undistortPoints should be 2 channels
+    cv::Mat tDistortionMat(mCamera->mDistortionMat.size(), CV_32F, cv::Scalar(0));
+
     mat=mat.reshape(2);
     cv::undistortPoints(mat, mat, mCamera->mInstrinsicMat,
                         mCamera->mDistortionMat, cv::noArray(), mCamera->mInstrinsicMat);
     mat=mat.reshape(1);
 
+    /*
     int i = 0;
     for (int j = N - tNum; j < N; ++j, ++i)
     {
@@ -130,6 +133,20 @@ void Frame::UndistortFeatures()
 
         mvFeatures[j]->mNormal = mCamera->Pixel2Camera(mvFeatures[j]->mpx, 1.0);
         mvFeatures[j]->mNormal.normalize();
+    }
+     */
+    for (int i = 0; i < tNum; ++i)
+    {
+        if(mvFeatures[i]->mbInitial)
+            continue;
+
+        mvFeatures[i]->mpx.x = mat.at<float>(i, 0);
+        mvFeatures[i]->mpx.y = mat.at<float>(i, 1);
+
+        mvFeatures[i]->mNormal = mCamera->Pixel2Camera(mvFeatures[i]->mpx, 1.0);
+        mvFeatures[i]->mNormal.normalize();
+
+
     }
 }
 
