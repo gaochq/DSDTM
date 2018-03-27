@@ -88,6 +88,7 @@ void LocalMapping::Run()
         if(!CheckNewFrames())
         {
             ProcessNewKeyframe();
+
             //MapPointCulling();
 
 

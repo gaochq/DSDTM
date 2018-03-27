@@ -102,8 +102,8 @@ void Frame::UndistortFeatures()
     int tNum = 0;
     for (auto it = mvFeatures.begin(); it!=mvFeatures.end(); ++it)
     {
-        if((*it)->mbInitial)
-            continue;
+        //if((*it)->mbInitial)
+        //    continue;
 
         tSrc.push_back((*it)->mpx);
         tNum++;
@@ -122,6 +122,7 @@ void Frame::UndistortFeatures()
                         mCamera->mDistortionMat, cv::noArray(), mCamera->mInstrinsicMat);
     mat=mat.reshape(1);
 
+    /*
     int i = 0;
     for (int j = N - tNum; j < N; ++j, ++i)
     {
@@ -131,6 +132,21 @@ void Frame::UndistortFeatures()
         mvFeatures[j]->mNormal = mCamera->Pixel2Camera(mvFeatures[j]->mpx, 1.0);
         mvFeatures[j]->mNormal.normalize();
     }
+     */
+
+
+    for (int j = 0; j < tNum; ++j)
+    {
+        if(mvFeatures[j]->mbInitial)
+            continue;
+
+        mvFeatures[j]->mpx.x = mat.at<float>(j, 0);
+        mvFeatures[j]->mpx.y = mat.at<float>(j, 1);
+
+        mvFeatures[j]->mNormal = mCamera->Pixel2Camera(mvFeatures[j]->mpx, 1.0);
+        mvFeatures[j]->mNormal.normalize();
+    }
+
 }
 
 Eigen::Vector3d Frame::UnProject(const cv::Point2f tPixel, const float d)

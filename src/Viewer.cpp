@@ -37,6 +37,9 @@ Viewer::Viewer(System *tSystem, Tracking *pTracking, Map *tMap):
 void Viewer::DrawMapPoints()
 {
     const std::vector<MapPoint*> &tvMapPoints = mMap->GetAllMapPoints();
+    const std::vector<MapPoint*> &tvRefMapPoints = mMap->GetReferenceMapPoints();
+    std::set<MapPoint*> tsRefMps(tvRefMapPoints.begin(), tvRefMapPoints.end());
+
 
     //! Draw all the MapPoints
     glPointSize(mfPointSize);
@@ -45,7 +48,7 @@ void Viewer::DrawMapPoints()
 
     for (size_t i = 0; i < tvMapPoints.size(); ++i)
     {
-        if(tvMapPoints[i]->Get_Pose().isZero() || tvMapPoints[i]->IsBad())
+        if(tvMapPoints[i]->Get_Pose().isZero() || tvMapPoints[i]->IsBad() || tsRefMps.count(tvMapPoints[i]))
             continue;
 
         Eigen::Vector3f tPose = tvMapPoints[i]->Get_Pose().cast<float>();
@@ -53,7 +56,21 @@ void Viewer::DrawMapPoints()
     }
     glEnd();
 
-    //TODO Add the local MapPoints
+    //! Draw all the MapPoints
+    glPointSize(mfPointSize);
+    glBegin(GL_POINTS);
+    glColor3f(1.0, 0.0, 0.0);
+
+    for (size_t i = 0; i < tvRefMapPoints.size(); ++i)
+    {
+        if(tvRefMapPoints[i]->Get_Pose().isZero() || tvRefMapPoints[i]->IsBad())
+            continue;
+
+        Eigen::Vector3f tPose = tvRefMapPoints[i]->Get_Pose().cast<float>();
+        glVertex3f(tPose(0), tPose(1), tPose(2));
+    }
+    glEnd();
+
 }
 
 void Viewer::DrawKeyframes()

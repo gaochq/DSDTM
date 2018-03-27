@@ -56,6 +56,20 @@ int Map::ReturnKeyFramesSize()
     return msKeyFrames.size();
 }
 
+void Map::SetReferenceMapPoints(const std::vector<MapPoint *> tMps)
+{
+    std::unique_lock<std::mutex> lock(mMapMutex);
+
+    mvpReferenceMapPoints = tMps;
+}
+
+std::vector<MapPoint*> Map::GetReferenceMapPoints()
+{
+    std::unique_lock<std::mutex> lock(mMapMutex);
+
+    return mvpReferenceMapPoints;
+}
+
 void Map::EraseMapPoint(MapPoint *tMp)
 {
     std::unique_lock<std::mutex> lock(mMapMutex);

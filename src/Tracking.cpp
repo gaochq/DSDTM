@@ -298,6 +298,12 @@ void Tracking::UpdateLocalMap()
             }
         }
     }
+
+    std::vector<MapPoint*> tRefMps;
+    for(auto it:mvpLocalMapPoints)
+        tRefMps.push_back(it.first);
+
+    mMap->SetReferenceMapPoints(tRefMps);
 }
 
 void Tracking::GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame *, double> > &tClose_kfs) const
