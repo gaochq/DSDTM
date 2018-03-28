@@ -82,7 +82,7 @@ void Viewer::DrawKeyframes()
     const std::vector<KeyFrame*> tvKFrames = mMap->GetAllKeyFrames();
     int N = tvKFrames.size();
 
-    /*
+
     for (size_t i = 0; i < N; ++i)
     {
         KeyFrame *tKFrame = tvKFrames[i];
@@ -120,7 +120,7 @@ void Viewer::DrawKeyframes()
 
         glPopMatrix();
     }
-    */
+
 
     //! Draw lines between two frames
     glPointSize(2);

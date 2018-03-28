@@ -85,6 +85,7 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
         if(mState==OK)
         {
             bool bOK;
+            bool bRelocalization = false;
 
             bOK = TrackWithLastFrame();
 
@@ -96,9 +97,12 @@ Sophus::SE3 Tracking::Track_RGBDCam(const cv::Mat &colorImg, const cv::Mat &dept
                 //std::cout << tc.toc() << std::endl;
             }
             else
+            {
                 LOG(ERROR) << "Tracking lost with last frame" << std::endl;
+                bRelocalization = Relocalization();
+            }
 
-            if(bOK)
+            if(bOK || bRelocalization)
             {
                 mViewer->SetCurrentCameraPose(mCurrentFrame->Get_Pose());
 
@@ -239,8 +243,8 @@ bool Tracking::TrackWithLocalMap()
     {
         LOG(WARNING)<< "Too few Features tracked" << std::endl;
 
-        //if(N < 10)
-        //    return false;
+        if(N < 20)
+            return false;
 
         return true;
     }
@@ -306,7 +310,7 @@ void Tracking::UpdateLocalMap()
     mMap->SetReferenceMapPoints(tRefMps);
 }
 
-void Tracking::GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame *, double> > &tClose_kfs) const
+void Tracking::GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame *, double> > &tClose_kfs, KeyFrame* tClosetKf) const
 {
     std::vector<KeyFrame*> tvKeyFrames = mMap->GetAllKeyFrames();
     //TODO improve the stragedy to choose the local keyframes
@@ -329,6 +333,13 @@ void Tracking::GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFra
             }
         }
     }
+    if(!tClosetKf)
+        return;;
+
+    tClose_kfs.sort(boost::bind(&std::pair<KeyFrame *, double>::second, _1) <
+                    boost::bind(&std::pair<KeyFrame *, double>::second, _2));
+
+    tClosetKf = tClose_kfs.front().first;
 }
 
 bool Tracking::NeedKeyframe()
@@ -337,7 +348,8 @@ bool Tracking::NeedKeyframe()
     //! https://github.com/HeYijia/svo_edgelet/blob/master/src/frame_handler_mono.cpp#L501
     TicToc tc;
     int N = mCurrentFrame->Get_VaildMpNums();
-    if(N >= 10 && N <= 50)
+
+    if(N >= 20 && N <= 50)
     {
         return true;
     }
@@ -447,10 +459,27 @@ void Tracking::CraeteKeyframe()
     mProcessedFrames = 0;
 
     LOG(INFO)<< "Create new Keyframe " << tKFrame->mlId << " with " << tNum << " new MapPoints" <<std::endl;
+}
 
-    Eigen::Matrix3d tMt;
-    Sophus::SO3 tRot(tMt);
-    Eigen::Vector3d tvt = tRot.log();
+bool Tracking::Relocalization()
+{
+    bool bRelocalize = false;
+    std::cout << "Try to relocalize the camera" << std::endl;
+    mCurrentFrame->Set_Pose(mpLastKF->Get_Pose());
+
+    std::list<std::pair<KeyFrame *, double> > tClose_kfs;
+    KeyFrame *tKf = mpLastKF;
+    GetCloseKeyFrames(mLastFrame.get(), tClose_kfs, tKf);
+
+    int tnPts = mSprase_ImgAlign->Run(mCurrentFrame, mpLastKF->mFrame);
+    if(tnPts > 30)
+    {
+        bRelocalize = TrackWithLocalMap();
+    }
+    if(bRelocalize)
+        std::cout << "Relocalize the camera successfully" << std::endl;
+
+    return bRelocalize;
 }
 
 void Tracking::MotionRemoval()

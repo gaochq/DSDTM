@@ -39,6 +39,21 @@ void LocalMapping::ProcessNewKeyframe()
             }
         }
     }
+
+    /*
+    for (int i = 0; i < mvMapPoints.size(); ++i)
+    {
+        MapPoint *tMp = mvMapPoints[i];
+
+        if(tMp)
+        {
+            if(!(tMp->IsBad()))
+            {
+
+            }
+        }
+    }
+     */
 }
 
 void LocalMapping::MapPointCulling()
