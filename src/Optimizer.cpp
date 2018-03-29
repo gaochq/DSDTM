@@ -78,13 +78,17 @@ void Optimizer::PoseOptimization(FramePtr tCurFrame, int tIterations)
     //std::cout<< "Residual: "<<std::sqrt(summary.initial_cost / summary.num_residuals)<<"----"<<std::sqrt(summary.final_cost / summary.num_residuals)<<std::endl;
     tCurFrame->Set_Pose(Sophus::SE3(Sophus::SO3::exp(tT_c2rArray.tail<3>()), tT_c2rArray.head<3>()));
 
-    int  n = 0;
     std::vector<double> tvdResidual = GetReprojectReidual(problem);
     for (int i = 0; i < tvdResidual.size(); ++i)
     {
         if(tvdResidual[i] > tOutlineThres)
         {
-            n++;
+            if(!tvMpts[i])
+                continue;
+
+            if(tvMpts[i]->IsBad())
+                continue;
+
             tvMpts[i]->EraseFound();
         }
     }
@@ -244,7 +248,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *tKFrame, Map *tMap)
     }
 
     //! Pick out outlines
-
+    std::unique_lock<std::mutex> lock(tMap->mMutexMapUpdate);
     int tOutlineNum = 0;
     std::vector<double> tResidualSets;
     std::vector<std::pair<MapPoint*, KeyFrame*>> tObs;

@@ -135,18 +135,17 @@ void Frame::UndistortFeatures()
         mvFeatures[j]->mNormal.normalize();
     }
      */
-    for (int i = 0; i < tNum; ++i)
+
+    for (int j = 0; j < tNum; ++j)
     {
-        if(mvFeatures[i]->mbInitial)
+        if(mvFeatures[j]->mbInitial)
             continue;
 
-        mvFeatures[i]->mpx.x = mat.at<float>(i, 0);
-        mvFeatures[i]->mpx.y = mat.at<float>(i, 1);
+        mvFeatures[j]->mpx.x = mat.at<float>(j, 0);
+        mvFeatures[j]->mpx.y = mat.at<float>(j, 1);
 
-        mvFeatures[i]->mNormal = mCamera->Pixel2Camera(mvFeatures[i]->mpx, 1.0);
-        mvFeatures[i]->mNormal.normalize();
-
-
+        mvFeatures[j]->mNormal = mCamera->Pixel2Camera(mvFeatures[j]->mpx, 1.0);
+        mvFeatures[j]->mNormal.normalize();
     }
 }
 

@@ -7,24 +7,24 @@
 namespace DSDTM
 {
 LocalMapping::LocalMapping(Map *tMap):
-    mMap(tMap)
+    mMap(tMap), mbRequestFinish(false), mbFinished(false)
 {
 
 }
 
 void LocalMapping::InsertKeyFrame(KeyFrame *tKFrame)
 {
-    //std::unique_lock<std::mutex> lock(mMutexKFlist);
+    std::unique_lock<std::mutex> lock(mMutexKFlist);
     mlNewKeyFrames.push_back(tKFrame);
 }
 
-void LocalMapping::ProcessNewKeyframe(KeyFrame *tKf)
+void LocalMapping::ProcessNewKeyframe()
 {
-    //std::unique_lock<std::mutex> lock(mMutexKFlist);
-    //mCurrentKframe = mlNewKeyFrames.front();
-    //mlNewKeyFrames.pop_front();
+    std::unique_lock<std::mutex> lock(mMutexKFlist);
+    mCurrentKframe = mlNewKeyFrames.front();
+    mlNewKeyFrames.pop_front();
 
-    mCurrentKframe = tKf;
+    //mCurrentKframe = tKf;
 
     const std::vector<MapPoint*> mvMapPoints = mCurrentKframe->GetMapPoints();
     for (const auto &it : mvMapPoints)
@@ -39,6 +39,21 @@ void LocalMapping::ProcessNewKeyframe(KeyFrame *tKf)
             }
         }
     }
+
+    /*
+    for (int i = 0; i < mvMapPoints.size(); ++i)
+    {
+        MapPoint *tMp = mvMapPoints[i];
+
+        if(tMp)
+        {
+            if(!(tMp->IsBad()))
+            {
+
+            }
+        }
+    }
+     */
 }
 
 void LocalMapping::MapPointCulling()
@@ -74,20 +89,114 @@ void LocalMapping::MapPointCulling()
 
 bool LocalMapping::CheckNewFrames()
 {
-    //std::unique_lock<std::mutex> lock(mMutexKFlist);
+    std::unique_lock<std::mutex> lock(mMutexKFlist);
 
     return mlNewKeyFrames.empty();
 }
 
-void LocalMapping::Run(KeyFrame *tKf)
+void LocalMapping::Run()
 {
-    ProcessNewKeyframe(tKf);
-    //MapPointCulling();
+    mbFinished = false;
 
-    mCurrentKframe = tKf;
+    while(1)
+    {
+        if(!CheckNewFrames())
+        {
+            ProcessNewKeyframe();
 
-    if(mMap->ReturnKeyFramesSize() > 2)
-        Optimizer::LocalBundleAdjustment(mCurrentKframe, mMap);
+            //MapPointCulling();
+
+
+            if(mMap->ReturnKeyFramesSize() > 2)
+                Optimizer::LocalBundleAdjustment(mCurrentKframe, mMap);
+        }
+
+        if(CheckFinish())
+            break;
+
+        if(Stop())
+        {
+            while(IsStopped())
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(3));
+            }
+        }
+    }
+
+    SetFinish();
 }
+
+void LocalMapping::RequestFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    mbRequestFinish = true;
+}
+
+bool LocalMapping::CheckFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    return mbRequestFinish;
+}
+
+bool LocalMapping::IsFinished()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    return mbFinished;
+}
+
+void LocalMapping::SetFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    mbFinished = true;
+}
+
+void LocalMapping::RequestStart()
+{
+    if(mbPaused)
+        mbPaused = false;
+}
+
+void LocalMapping::RequestPause()
+{
+    if(!mbPaused)
+        mbPaused = true;
+}
+
+void LocalMapping::RequestStop()
+{
+    if(!mbStopped)
+        mbRequestStop = true;
+}
+
+bool LocalMapping::Stop()
+{
+    if(mbRequestStop)
+    {
+        mbStopped = true;
+        mbRequestStop = false;
+        return true;
+    }
+
+    return false;
+}
+
+bool LocalMapping::IsStopped()
+{
+    return mbStopped;
+}
+
+void LocalMapping::Release()
+{
+    mbStopped = true;
+    mbRequestStop = false;
+
+    mbFinished = false;
+    mbRequestFinish = false;
+}
+
 
 }//namespace DSDTM

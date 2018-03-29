@@ -10,7 +10,8 @@ namespace DSDTM
 
 Viewer::Viewer(System *tSystem, Tracking *pTracking, Map *tMap):
         mSystem(tSystem), mTracker(pTracking), mbStopped(false),
-        mbRequestStop(false), mbPaused(true), mMap(tMap)
+        mbRequestStop(false), mbPaused(true), mMap(tMap), mbRequestFinish(false),
+        mbFinished(false)
 {
     float fps = Config::Get<int>("Camera.fps");
     if(fps < 1)
@@ -36,6 +37,9 @@ Viewer::Viewer(System *tSystem, Tracking *pTracking, Map *tMap):
 void Viewer::DrawMapPoints()
 {
     const std::vector<MapPoint*> &tvMapPoints = mMap->GetAllMapPoints();
+    const std::vector<MapPoint*> &tvRefMapPoints = mMap->GetReferenceMapPoints();
+    std::set<MapPoint*> tsRefMps(tvRefMapPoints.begin(), tvRefMapPoints.end());
+
 
     //! Draw all the MapPoints
     glPointSize(mfPointSize);
@@ -44,7 +48,7 @@ void Viewer::DrawMapPoints()
 
     for (size_t i = 0; i < tvMapPoints.size(); ++i)
     {
-        if(tvMapPoints[i]->Get_Pose().isZero() || tvMapPoints[i]->IsBad())
+        if(tvMapPoints[i]->Get_Pose().isZero() || tvMapPoints[i]->IsBad() || tsRefMps.count(tvMapPoints[i]))
             continue;
 
         Eigen::Vector3f tPose = tvMapPoints[i]->Get_Pose().cast<float>();
@@ -52,7 +56,21 @@ void Viewer::DrawMapPoints()
     }
     glEnd();
 
-    //TODO Add the local MapPoints
+    //! Draw all the MapPoints
+    glPointSize(mfPointSize);
+    glBegin(GL_POINTS);
+    glColor3f(1.0, 0.0, 0.0);
+
+    for (size_t i = 0; i < tvRefMapPoints.size(); ++i)
+    {
+        if(tvRefMapPoints[i]->Get_Pose().isZero() || tvRefMapPoints[i]->IsBad())
+            continue;
+
+        Eigen::Vector3f tPose = tvRefMapPoints[i]->Get_Pose().cast<float>();
+        glVertex3f(tPose(0), tPose(1), tPose(2));
+    }
+    glEnd();
+
 }
 
 void Viewer::DrawKeyframes()
@@ -224,6 +242,7 @@ void Viewer::Run()
     Twc.SetIdentity();
 
     bool tbFollow = true;
+    mbFinished = false;
 
     while(1)
     {
@@ -232,19 +251,13 @@ void Viewer::Run()
         GetCurrentOpenGLCameraMatrix(Twc);
 
         {
-            Sophus::SE3 tPose = mCameraPose.inverse();
-            Eigen::Quaterniond q = tPose.unit_quaternion();
-            Eigen::Vector3f t = tPose.translation().cast<float>();
-            Eigen::Vector3d Euler = q.toRotationMatrix().eulerAngles(0, 1, 2);
-            Euler = Euler*180/3.14;
-            // 对界面显示的变量进行赋值
-            menuDisplayPose_X =  t[2];
-            menuDisplayPose_Y =  t[0];
-            menuDisplayPose_Z =  t[1];
+            menuDisplayPose_X = Twc.m[14];
+            menuDisplayPose_Y = -Twc.m[12];
+            menuDisplayPose_Z = -Twc.m[13];
 
-            menuDisplayPose_Roll = Euler[0];
-            menuDisplayPose_Pitch = Euler[1];
-            menuDisplayPose_Yaw = Euler[2];
+            menuDisplayPose_Roll = atan(Twc.m[1]/Twc.m[0]) / 3.14 * 180;
+            menuDisplayPose_Pitch = -atan(Twc.m[9] / Twc.m[10]) / 3.14 * 180;
+            menuDisplayPose_Yaw = atan(-Twc.m[2] / sqrt( Twc.m[6] * Twc.m[6]+ Twc.m[10] * Twc.m[10])) / 3.14 * 180;
         }
 
         //! choose the way to follow the Camera
@@ -311,7 +324,12 @@ void Viewer::Run()
                 std::this_thread::sleep_for(std::chrono::milliseconds(3));
             }
         }
+
+        if(CheckFinish())
+            break;
     }
+
+    SetFinish();
 }
 
 void Viewer::RequestStart()
@@ -353,6 +371,34 @@ void Viewer::Release()
 {
     mbStopped = true;
     mbRequestStop = false;
+}
+
+void Viewer::RequestFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    mbRequestFinish = true;
+}
+
+bool Viewer::CheckFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    return mbRequestFinish;
+}
+
+bool Viewer::IsFinished()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    return mbFinished;
+}
+
+void Viewer::SetFinish()
+{
+    std::unique_lock<std::mutex> lock(mMutexFinish);
+
+    mbFinished = true;
 }
 
 }// namesapce DSDTM

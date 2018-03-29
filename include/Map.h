@@ -40,15 +40,27 @@ public:
     std::vector<KeyFrame*> GetAllKeyFrames();
     int ReturnKeyFramesSize();
 
+    //! Set and get local MapPoints for viewer
+    void SetReferenceMapPoints(const std::vector<MapPoint*> tMps);
+    std::vector<MapPoint*> GetReferenceMapPoints();
+
     //! Erase MapPoint
     void EraseMapPoint(MapPoint *tMp);
 
     //! Clera all vars in map
     void Release();
 
+public:
+
+    //! Avoid simultaneously create mappoint in separate thread
+    std::mutex mMutexMPCreation;
+    std::mutex mMutexMapUpdate;
+
 protected:
     std::set<KeyFrame*>     msKeyFrames;
     std::set<MapPoint*>     msMapPoints;
+
+    std::vector<MapPoint*>  mvpReferenceMapPoints;
 
     std::mutex mMapMutex;
 };

@@ -23,7 +23,7 @@ public:
     void InsertKeyFrame(KeyFrame *tKFrame);
 
     //! Insert keyframe into map and create new MapPoints
-    void ProcessNewKeyframe(KeyFrame *tKf= static_cast<KeyFrame*>(NULL));
+    void ProcessNewKeyframe();
 
     //! Recent MapPoints culling refer to orb-slam2
     void MapPointCulling();
@@ -32,8 +32,28 @@ public:
     bool CheckNewFrames();
 
     //! The main function in local mapping
-    void Run(KeyFrame *tKf= static_cast<KeyFrame*>(NULL));
+    void Run();
 
+    //! Check whether the stop menu is choosed
+    bool IsStopped();
+
+    void Release();
+
+    void RequestFinish();
+
+    bool IsFinished();
+
+    void RequestStart();
+    void RequestPause();
+    void RequestStop();
+
+
+protected:
+
+    bool Stop();
+
+    bool CheckFinish();
+    void SetFinish();
 
 protected:
 
@@ -43,7 +63,15 @@ protected:
     std::list<KeyFrame*>    mlNewKeyFrames;
     std::list<MapPoint*>    mlRecentMapPoints;
 
+    bool        mbRequestFinish;
+    bool        mbFinished;
+
+    bool        mbStopped;
+    bool        mbRequestStop;
+    bool        mbPaused;
+
     std::mutex mMutexKFlist;
+    std::mutex mMutexFinish;
 
 };
 

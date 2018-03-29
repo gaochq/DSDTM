@@ -36,6 +36,8 @@ public:
     void SaveKeyFrameTrajectoryTUM(const string &filename);
     void SaveCameraTrajectory(const string &filename);
 
+    void Shutdown();
+
     void Reset();
 
     int ReturnKeyFramesSize() { return mMap->GetAllKeyFrames().size(); }
