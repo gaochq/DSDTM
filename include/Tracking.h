@@ -90,7 +90,7 @@ private:
     void UpdateLocalMap();
 
     //! Get frames have an overlapping field of current view
-    void GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame*, double> >& tClose_kfs) const;
+    void GetCloseKeyFrames(const Frame *tFrame, std::list<std::pair<KeyFrame*, double> >& tClose_kfs, KeyFrame* tClosetKf = static_cast<KeyFrame*>(NULL)) const;
 
     //! Reset mvcStatus
     void Reset_Status();
@@ -103,6 +103,9 @@ private:
 
     //! Create new Keyframe
     void CraeteKeyframe();
+
+    //! Try to relocalize the camera
+    bool Relocalization();
 
     //! Motion removal using scene flow
     void MotionRemoval();
