@@ -104,7 +104,7 @@ void LocalMapping::Run()
         {
             ProcessNewKeyframe();
 
-            //MapPointCulling();
+            MapPointCulling();
 
 
             if(mMap->ReturnKeyFramesSize() > 2)

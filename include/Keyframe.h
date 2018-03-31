@@ -58,6 +58,8 @@ public:
         return pKF1->mlId < pKF2->mlId;
     }
 
+    std::vector<KeyFrame*> GetKeyFrameConnection(const int weight);
+
 public:
     unsigned long int           mlId;
     static unsigned long int    mlNextId;
@@ -91,6 +93,8 @@ protected:
     std::map<KeyFrame*, int>                    mConnectedKFs;
     std::vector<std::pair<int, KeyFrame*>>      mOrderedCovGraph;
 
+    std::mutex mMutexPose;
+    std::mutex mMutexConnections;
 };
 
 } //DSDTM

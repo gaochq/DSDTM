@@ -93,7 +93,7 @@ void Viewer::DrawKeyframes()
         glMultMatrixf(tKfPoseMat.data());
 
         glLineWidth(mfKeyFrameLineWidth);
-        glColor3f(0.0f, 1.0f, 0.0f);
+        glColor3f(0.0f, 0.0f, 1.0f);
 
         glBegin(GL_LINES);
         glVertex3f(0, 0, 0);
@@ -132,6 +132,39 @@ void Viewer::DrawKeyframes()
         glVertex3d(tPose(0), tPose(1), tPose(2));
     }
     glEnd();
+
+    //! Draw the connections between keyframes
+
+    {
+        glLineWidth(mfGraphLineWidth);
+        glColor4f(0.0f, 1.0f, 0.0f, 0.6f);
+        glBegin(GL_LINES);
+
+        for (auto &itKf:tvKFrames)
+        {
+            const  std::vector<std::pair<int, KeyFrame*>> tCovKfs = itKf->GetCovKFrames();
+            Eigen::Vector3d tOw0 = itKf->Get_CameraCnt();
+
+
+            if(!tCovKfs.empty())
+            {
+                for (auto &it:tCovKfs)
+                {
+                    if(it.first <60)
+                        continue;
+
+                    Eigen::Vector3d tOw1 = it.second->Get_CameraCnt();
+
+                    glVertex3d(tOw0(0), tOw0(1), tOw0(2));
+                    glVertex3d(tOw1(0), tOw1(1), tOw1(2));
+                }
+            }
+
+
+        }
+        glEnd();
+    }
+
 
     /*
     glLineWidth(mfKeyFrameLineWidth);

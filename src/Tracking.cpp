@@ -225,7 +225,7 @@ bool Tracking::TrackWithLocalMap()
     mCurrentFrame->mvFeatures.size();
 
     TicToc tcc;
-    MotionRemoval();
+    //MotionRemoval();
     mvMotionDetection.push_back(tcc.toc());
     //MotionRemovalTest1();
 

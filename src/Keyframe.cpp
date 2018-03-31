@@ -156,6 +156,7 @@ void KeyFrame::UpdateCovGraph(KeyFrame *tKF, int tWeight)
 std::vector<std::pair<int, KeyFrame*>> KeyFrame::GetCovKFrames()
 {
     //TODO add lock
+    std::unique_lock<std::mutex> lock(mMutexConnections);
 
     return mOrderedCovGraph;
 }
