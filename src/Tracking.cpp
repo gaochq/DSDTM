@@ -349,10 +349,13 @@ bool Tracking::NeedKeyframe()
     TicToc tc;
     int N = mCurrentFrame->Get_VaildMpNums();
 
+
     if(N >= 20 && N <= 50)
     {
+        std::cout << "aa" <<std::endl;
         return true;
     }
+
 
     std::vector<double> tPixDist;
     for (auto it = mpLastKF->mvFeatures.begin(); it !=mpLastKF->mvFeatures.end() ; ++it)
@@ -375,8 +378,10 @@ bool Tracking::NeedKeyframe()
     double d = utils::GetMedian(tPixDist);
     if(d > 40)
     {
+        std::cout << "bb" <<std::endl;
         return true;
     }
+
 
     //! If the translation and rotation difference larger than a threshold
     Sophus::SE3 tDeltaPose = mpLastKF->Get_Pose().inverse()*mCurrentFrame->Get_Pose();
@@ -384,20 +389,31 @@ bool Tracking::NeedKeyframe()
     double tTransNorm = tDeltaPose.translation().norm();
     if(tRotNorm >= mdMinRotParallax || tTransNorm >= mdMinTransParallax)
     {
+        std::cout << "cc" <<std::endl;
         return true;
     }
 
+
     //! This condition from SVO, and only consider translation in keyframe selection
+    bool tbScene = true;
     double tMinDepth, tMeanDepth;
     mCurrentFrame->Get_SceneDepth(tMinDepth, tMeanDepth);
     for (auto it = mvpLocalKeyFrames.begin(); it!=mvpLocalKeyFrames.end() ; ++it)
     {
         Eigen::Vector3d tRelPose = mCurrentFrame->Get_Pose()*(*it)->Get_CameraCnt();
-        if(fabs(tRelPose(0)/tMeanDepth >= tMeanDepth) &&
-           fabs(tRelPose(1)/tMeanDepth >= tMeanDepth*0.8) &&
-           fabs(tRelPose(2)/tMeanDepth >= tMeanDepth*1.3))
-            return true;
+        if(fabs(tRelPose(0)/tMeanDepth < tMeanDepth) &&
+           fabs(tRelPose(1)/tMeanDepth < tMeanDepth*0.8) &&
+           fabs(tRelPose(2)/tMeanDepth < tMeanDepth*1.3))
+        {
+            tbScene = false;
+        }
     }
+    if(tbScene)
+    {
+        std::cout << "dd" <<std::endl;
+        return true;
+    }
+
 
     //! More than 20 frames passed after last KeyFrame insertion
     //if(mProcessedFrames > 20)
@@ -426,7 +442,7 @@ void Tracking::CraeteKeyframe()
         if(tFeature->mbInitial)
         {
             tKFrame->Add_MapPoint(mCurrentFrame->mvMapPoints[i], i);
-            mCurrentFrame->mvMapPoints[i]->Add_Observation(tKFrame, i);
+            //mCurrentFrame->mvMapPoints[i]->Add_Observation(tKFrame, i);
 
             continue;
         }

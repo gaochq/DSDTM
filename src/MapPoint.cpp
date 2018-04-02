@@ -290,4 +290,11 @@ float MapPoint::Get_FoundRatio()
     return (1.0*mnFound/mnVisible);
 }
 
+bool MapPoint::IsInKeyFrame(KeyFrame *tKf)
+{
+    std::unique_lock<std::mutex> lock(mMutexObs);
+
+    return (mObservations.count(tKf));
+}
+
 } // namespace DSDTM

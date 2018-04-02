@@ -68,6 +68,9 @@ public:
     //! Get the ratio between found and visible
     float Get_FoundRatio();
 
+    //! Check whether the keyframe is in the mappoint's observation
+    bool IsInKeyFrame(KeyFrame *tKf);
+
 protected:
 
 public:

@@ -26,6 +26,7 @@ void LocalMapping::ProcessNewKeyframe()
 
     //mCurrentKframe = tKf;
 
+    /*
     const std::vector<MapPoint*> mvMapPoints = mCurrentKframe->GetMapPoints();
     for (const auto &it : mvMapPoints)
     {
@@ -39,21 +40,29 @@ void LocalMapping::ProcessNewKeyframe()
             }
         }
     }
+     */
 
-    /*
-    for (int i = 0; i < mvMapPoints.size(); ++i)
+
+    for (int i = 0; i < mCurrentKframe->mvFeatures.size(); ++i)
     {
-        MapPoint *tMp = mvMapPoints[i];
+        MapPoint *tMp = mCurrentKframe->mvFeatures[i]->Mpt;
 
         if(tMp)
         {
             if(!(tMp->IsBad()))
             {
-
+                if(!tMp->IsInKeyFrame(mCurrentKframe))
+                {
+                    tMp->Add_Observation(mCurrentKframe, i);
+                }
+                else
+                {
+                    mlRecentMapPoints.push_back(tMp);
+                }
             }
         }
     }
-     */
+
 }
 
 void LocalMapping::MapPointCulling()
